@@ -1,0 +1,44 @@
+{
+  "schema": "project-constellation.rehydration-manifest/1",
+  "version": "0.5.0",
+  "operatingMode": "NORMAL_OPERATION",
+  "recoveryMode": false,
+  "rehydratedAt": "2026-08-16T12:52:00-06:00",
+  "branch": "automation/pcx-rehydrate-v0.5.0",
+  "sourceBranch": "project-constellation-v0.5.0-upload",
+  "payload": {
+    "path": "project-constellation/upload-staging/v0.5.0-final",
+    "treeSha": "857f0543711a856da8e827a8ddfc87f2c82ec437",
+    "format": "byte-preserving segmented canonical v0.5.0 recovery payload"
+  },
+  "canonicalDriveFolderId": "1mUSeFlumpIOBtVCmlwbhN11kChRsdblV",
+  "verifiedArtifacts": {
+    "Bert_Project_Second_Brain_Website.zip": {
+      "driveFileId": "10mkzVaIjkHhDP5e93-UFqzjS57XEHiHC",
+      "sha256": "84658e154cf6f8b1b3b8e4004394443fb837ed8cbadd8191a60aeaea3ae7c30b",
+      "size": 114413
+    },
+    "Bert_Project_Constellation_Quick_View.html": {
+      "driveFileId": "1up9K9DTdUVg_fnW-v8bHVAIbjEWX7l77",
+      "sha256": "1aeaaa510ffd75a457bece24ab630d0595c155dcb10c05bc806d55015fa0a654",
+      "size": 127946
+    },
+    "Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html": {
+      "driveFileId": "1yMbhEumf5-ie8Ack2Zj1dQpPvkrdlAbO",
+      "sha256": "e4cefa6a6063c8bd5a5b02e17c33eb324cc0cf473082dccb12502ab4abd21e57",
+      "size": 142242
+    },
+    "Bert_Project_Wiki_Pack.zip": {
+      "driveFileId": "1AUEcHVMLFNePTXu2I_ZYDxccCqawAhSZ",
+      "sha256": "657bc89f23e960e2ed5341c72eddcd83abc8dcb1fa7dbc7ef8f9e6fb0f3248f9",
+      "size": 146408
+    }
+  },
+  "preservation": {
+    "baseMainCommit": "471e3b12893ad19fcecbc1f2b504b16003c44e49",
+    "newerMainWikiWorkPreserved": true,
+    "sportsGroupHubAbsent": true,
+    "trackedProjectCount": 63,
+    "broadRecoverySweep": false
+  }
+}
