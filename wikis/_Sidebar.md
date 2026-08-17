@@ -37,6 +37,7 @@
 
 ## Mascot, Shimeji and Petz
 
+- [[Master Desktop Pet Research|PRJ-020-master-desktop-pet-research]]
 - [[Shimeji Desktop|PCX-037-shimeji-desktop]]
 - [[Shimeji Browser Extension|PCX-038-shimeji-browser-extension]]
 - [[Webmeji|PCX-039-webmeji]]
