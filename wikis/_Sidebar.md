@@ -68,6 +68,8 @@
 
 ## MO2 projects
 
+- [[Bethesda Plugin Info for MO2|PRJ-015-bethesda-plugin-info-for-mo2]]
+- [[Bethesda Creations Version Tracker for MO2|PRJ-016-bethesda-creations-version-tracker-for-mo2]]
 - [[MO2 Drag / Column Compatibility Pack|PRJ-024-mo2-drag-column-compatibility-pack]]
 - [[MO2R|PCX-035-mo2r]]
 
