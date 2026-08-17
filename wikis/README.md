@@ -1,6 +1,8 @@
 # ProjectDump Project Wikis
 
-This directory contains source-controlled wikis for the **projects tracked inside Project Constellation**. Project Constellation itself is the catalog/control plane and is not a normal documentation target. A legacy `PCX-036` continuity wiki remains preserved because it already exists, but it is excluded from target-project wiki coverage and should only be changed for a real control-plane continuity reason.
+This directory is the **version-controlled source** for the real GitHub Wiki at https://github.com/Herbertofury/ProjectDump/wiki. The reader-facing documentation target is the GitHub Wiki, while `wikis/` preserves reviewable source history and drives the verified publisher.
+
+These pages document the **projects tracked inside Project Constellation**. Project Constellation itself is the catalog/control plane and is not a normal documentation target. A legacy `PCX-036` continuity page remains preserved because it already exists, but it is excluded from target-project wiki coverage and should only be changed for a real control-plane continuity reason.
 
 ## Published detailed project wikis
 
@@ -67,6 +69,14 @@ Current detailed target-project wiki coverage: **56 tracked projects**.
 
 - [PCX-036 - Project Constellation](PCX-036-project-constellation.md) - legacy continuity reference only; excluded from the target-project coverage count.
 
+## Publication model
+
+`wikis/` is not the final documentation destination. It is the source tree for GitHub's separate Wiki Git repository.
+
+The publisher is `tools/github-wiki/wiki-sync.sh`, invoked by `.github/workflows/sync-github-wiki.yml`. It mirrors the complete source tree to `Herbertofury/ProjectDump.wiki.git`, then fresh-clones the remote Wiki and byte-compares it with `wikis/`.
+
+Creating a source page creates a real Wiki page, editing it updates the Wiki page, and deleting it removes the corresponding page on the next successful sync. `Home.md` and `_Sidebar.md` provide the actual GitHub Wiki navigation surfaces.
+
 ## Maintenance contract
 
 The Project Constellation wiki maintainer should continue across the full tracked-project catalog, prioritizing active projects with current source repositories and documentation gaps. For each project it should:
@@ -78,12 +88,13 @@ The Project Constellation wiki maintainer should continue across the full tracke
 5. distinguish verified runtime facts from historical recovery material, plans, prototypes, and unresolved gaps;
 6. correct stale Project Constellation summaries when newer project-owned evidence proves a different current state;
 7. avoid invented commands or architecture details;
-8. publish scoped wiki changes to `Herbertofury/ProjectDump` and fetch the remote file or commit and verify it contains the intended content before treating the update as complete;
-9. preserve useful existing detail rather than rewriting pages cosmetically;
-10. document PCX-036 only when there is a real control-plane/continuity change, not as a substitute for project-specific documentation.
+8. publish scoped source changes to `Herbertofury/ProjectDump`, require the `Sync GitHub Wiki` workflow to succeed, and require its fresh-clone byte comparison of `ProjectDump.wiki.git` to pass before treating the Wiki update as published;
+9. verify the intended page is represented in the actual GitHub Wiki publication, not only in the normal repository source tree;
+10. preserve useful existing detail rather than rewriting pages cosmetically;
+11. document PCX-036 only when there is a real control-plane/continuity change, not as a substitute for project-specific documentation.
 
 ## Coverage rule
 
-A project is not considered fully documented merely because it has a short Project Constellation HTML page or catalog entry. The Markdown wiki should grow toward enough verified detail that another developer can operate and modify the project without undocumented tribal knowledge.
+A project is not considered fully documented merely because it has a short Project Constellation HTML page, catalog entry, or Markdown source file. The **actual GitHub Wiki page** should grow toward enough verified detail that another developer can operate and modify the project without undocumented tribal knowledge.
 
 Projects with incomplete/recovery-only source should still have truthful pages describing identity, lineage, blockers, recovery state, and the exact evidence needed before build/use instructions can be completed.

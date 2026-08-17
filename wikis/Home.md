@@ -1,21 +1,36 @@
 # ProjectDump Wiki
 
-ProjectDump is the durable project knowledge hub for Project Constellation and related projects.
+This is the **live GitHub Wiki** for the projects tracked inside Project Constellation.
 
-## Project wikis
+Project Constellation is the catalog and continuity control plane. Its legacy PCX-036 page is preserved as a control-plane reference, but normal wiki maintenance targets the projects tracked inside it.
 
-The canonical project pages are maintained as Markdown in this repository and published to the GitHub Wiki by the verified wiki-sync workflow.
+## Browse the project documentation
 
-Start with these active project pages:
+- [[Complete Project Wiki Index|README]]
+- [[GitHub Wiki Automation]]
 
-- [[Ferrum Browser|PCX-034-ferrum-browser]]
+### Major active projects
+
+- [[GameSync Platform|PRJ-003-gamesync-platform]]
+- [[GameSync Next|PCX-042-gamesync-next]]
+- [[Feature Foundry|PRJ-002-feature-foundry]]
+- [[Sims4CreatorStudio|PCX-033-sims4creatorstudio]]
 - [[MO2R|PCX-035-mo2r]]
-- [[Project Constellation|PCX-036-project-constellation]]
+- [[UltraDeck|PRJ-025-ultradeck]]
+- [[Ferrum Browser|PCX-034-ferrum-browser]]
+- [[RuneLite FlipForge Family|PRJ-010-runelite-flipforge-family]]
 - [[Shimeji Desktop|PCX-037-shimeji-desktop]]
 - [[Shimeji Browser Extension|PCX-038-shimeji-browser-extension]]
+- [[Webmeji|PCX-039-webmeji]]
 
-The complete page set is mirrored from the `wikis/` directory. Adding a Markdown file creates a page, editing the file updates it, and deleting the file removes it from the next published wiki revision.
+Use the sidebar for project families and the complete index for every currently documented tracked project.
 
-## Source of truth
+## How this Wiki is maintained
 
-Versioned wiki source lives in [`wikis/`](https://github.com/Herbertofury/ProjectDump/tree/main/wikis). The published wiki is a generated, independently verified mirror of that source.
+The versioned source for these pages lives in [`wikis/`](https://github.com/Herbertofury/ProjectDump/tree/main/wikis) on the main ProjectDump repository. The `Sync GitHub Wiki` workflow publishes that source into GitHub's real separate `ProjectDump.wiki.git` repository.
+
+A project-wiki change is not considered published merely because its source Markdown exists on `main`. The sync workflow must complete successfully and its publisher must fresh-clone the Wiki and byte-compare the remote page set with the intended source before the Wiki update is treated as complete.
+
+This keeps the documentation source-controlled while making the actual reader-facing documentation the GitHub Wiki at:
+
+https://github.com/Herbertofury/ProjectDump/wiki
