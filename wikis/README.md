@@ -25,10 +25,14 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-038 - Shimeji Browser Extension](PCX-038-shimeji-browser-extension.md)
 - [PCX-039 - Webmeji](PCX-039-webmeji.md)
 - [PCX-040 - Pinterest Nocturne](PCX-040-pinterest-nocturne.md)
+- [PCX-041 - ChatGPT Ultimate Optimizer](PCX-041-chatgpt-ultimate-optimizer.md)
 - [PCX-042 - GameSync Next](PCX-042-gamesync-next.md)
+- [PCX-043 - Feature Foundry Production App](PCX-043-feature-foundry-production-app.md)
+- [PCX-044 - Feature Foundry Living Ecology](PCX-044-feature-foundry-living-ecology.md)
+- [PCX-045 - Feature Foundry Object Intelligence](PCX-045-feature-foundry-object-intelligence.md)
 - [PCX-053 - GameSync Bounty / Rewards Runtime](PCX-053-gamesync-bounty-rewards-runtime.md)
 
-Current indexed detailed-wiki coverage: **23 tracked projects**.
+Current indexed detailed-wiki coverage: **27 tracked projects**.
 
 ## Maintenance contract
 
