@@ -46,8 +46,9 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-058 - Project Compass Northpoints](PCX-058-project-compass-northpoints.md)
 - [PCX-059 - Feature Foundry Project Brain Bridge](PCX-059-feature-foundry-project-brain-bridge.md)
 - [PCX-060 - ACS Voice / Speech Runtime](PCX-060-acs-voice-speech-runtime.md)
+- [PCX-061 - Petz Shared Core](PCX-061-petz-shared-core.md)
 
-Current detailed target-project wiki coverage: **42 tracked projects**.
+Current detailed target-project wiki coverage: **43 tracked projects**.
 
 ## Preserved control-plane reference
 
