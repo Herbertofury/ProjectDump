@@ -1,0 +1,30 @@
+name: Sync GitHub Wiki
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wikis/**'
+      - 'tools/github-wiki/**'
+      - '.github/workflows/sync-github-wiki.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-wiki-sync-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v4
+
+      - name: Publish and verify wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash tools/github-wiki/wiki-sync.sh "${{ github.repository }}" wikis "${{ github.server_url }}"
