@@ -34,12 +34,13 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-048 - GameSync Theme Foundry](PCX-048-gamesync-theme-foundry.md)
 - [PCX-049 - GameSync Live Mascot Tavern](PCX-049-gamesync-live-mascot-tavern.md)
 - [PCX-050 - GameSync Real Library Performance](PCX-050-gamesync-real-library-performance.md)
+- [PCX-051 - GameSync Capability Truth / UI QoL](PCX-051-gamesync-capability-truth-ui-qol.md)
 - [PCX-052 - GameSync Release Factory](PCX-052-gamesync-release-factory.md)
 - [PCX-053 - GameSync Bounty / Rewards Runtime](PCX-053-gamesync-bounty-rewards-runtime.md)
 - [PCX-054 - GameSync Source Finder / Entity Resolver](PCX-054-gamesync-source-finder-entity-resolver.md)
 - [PCX-055 - GameSync Script Polling Runtime](PCX-055-gamesync-script-polling-runtime.md)
 
-Current detailed target-project wiki coverage: **34 tracked projects**.
+Current detailed target-project wiki coverage: **35 tracked projects**.
 
 ## Preserved control-plane reference
 
