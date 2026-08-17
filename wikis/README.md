@@ -40,8 +40,12 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-054 - GameSync Source Finder / Entity Resolver](PCX-054-gamesync-source-finder-entity-resolver.md)
 - [PCX-055 - GameSync Script Polling Runtime](PCX-055-gamesync-script-polling-runtime.md)
 - [PCX-056 - GameSync Mod Health](PCX-056-gamesync-mod-health.md)
+- [PCX-057 - Project Catalog / Cross-Chat Database](PCX-057-project-catalog-cross-chat-database.md)
+- [PCX-058 - Project Compass Northpoints](PCX-058-project-compass-northpoints.md)
+- [PCX-059 - Feature Foundry Project Brain Bridge](PCX-059-feature-foundry-project-brain-bridge.md)
+- [PCX-060 - ACS Voice / Speech Runtime](PCX-060-acs-voice-speech-runtime.md)
 
-Current detailed target-project wiki coverage: **36 tracked projects**.
+Current detailed target-project wiki coverage: **40 tracked projects**.
 
 ## Preserved control-plane reference
 
