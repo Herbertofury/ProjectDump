@@ -6,6 +6,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 
 - [PRJ-002 - Feature Foundry](PRJ-002-feature-foundry.md)
 - [PRJ-003 - GameSync Platform](PRJ-003-gamesync-platform.md)
+- [PRJ-005 - Mascot / Screenmate Platform](PRJ-005-mascot-screenmate-platform.md)
 - [PRJ-006 - ACS Agent Parity Runtime](PRJ-006-acs-agent-parity-runtime.md)
 - [PRJ-022 - Feral Unified Native Base](PRJ-022-feral-unified-native-base.md)
 - [PRJ-023 - Feature Foundry Portable Feature Starter](PRJ-023-feature-foundry-portable-feature-starter.md)
@@ -46,7 +47,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-059 - Feature Foundry Project Brain Bridge](PCX-059-feature-foundry-project-brain-bridge.md)
 - [PCX-060 - ACS Voice / Speech Runtime](PCX-060-acs-voice-speech-runtime.md)
 
-Current detailed target-project wiki coverage: **41 tracked projects**.
+Current detailed target-project wiki coverage: **42 tracked projects**.
 
 ## Preserved control-plane reference
 
