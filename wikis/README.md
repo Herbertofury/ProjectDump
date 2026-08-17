@@ -11,7 +11,9 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PRJ-006 - ACS Agent Parity Runtime](PRJ-006-acs-agent-parity-runtime.md)
 - [PRJ-007 - PF Magic Petz Runtime Integration](PRJ-007-pf-magic-petz-runtime-integration.md)
 - [PRJ-008 - Mascot Games / Sports and Golf Flagship](PRJ-008-mascot-games-sports-golf.md)
+- [PRJ-009 - Bert's Skill Atlas / Skill Guide](PRJ-009-berts-skill-atlas.md)
 - [PRJ-010 - RuneLite FlipForge / Farm Material Ranker / No-Hitch / 117HD Family](PRJ-010-runelite-flipforge-family.md)
+- [PRJ-021 - GX Slim](PRJ-021-gx-slim.md)
 - [PRJ-022 - Feral Unified Native Base](PRJ-022-feral-unified-native-base.md)
 - [PRJ-023 - Feature Foundry Portable Feature Starter](PRJ-023-feature-foundry-portable-feature-starter.md)
 - [PRJ-024 - MO2 Drag/Column Compatibility Pack](PRJ-024-mo2-drag-column-compatibility-pack.md)
@@ -51,9 +53,10 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-059 - Feature Foundry Project Brain Bridge](PCX-059-feature-foundry-project-brain-bridge.md)
 - [PCX-060 - ACS Voice / Speech Runtime](PCX-060-acs-voice-speech-runtime.md)
 - [PCX-061 - Petz Shared Core](PCX-061-petz-shared-core.md)
+- [PCX-062 - RuneLite QA Cockpit](PCX-062-runelite-qa-cockpit.md)
 - [PCX-063 - Feature Foundry Aesthetic Vault](PCX-063-feature-foundry-aesthetic-vault.md)
 
-Current detailed target-project wiki coverage: **48 tracked projects**.
+Current detailed target-project wiki coverage: **51 tracked projects**.
 
 ## Preserved control-plane reference
 
