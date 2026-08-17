@@ -23,6 +23,9 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-038 - Shimeji Browser Extension](PCX-038-shimeji-browser-extension.md)
 - [PCX-040 - Pinterest Nocturne](PCX-040-pinterest-nocturne.md)
 - [PCX-042 - GameSync Next](PCX-042-gamesync-next.md)
+- [PCX-053 - GameSync Bounty / Rewards Runtime](PCX-053-gamesync-bounty-rewards-runtime.md)
+
+Current indexed detailed-wiki coverage: **20 tracked projects**.
 
 ## Maintenance contract
 
