@@ -1,6 +1,6 @@
 # ProjectDump Project Wikis
 
-This directory contains source-controlled wikis for the **projects tracked inside Project Constellation**. Project Constellation itself is normally the catalog/control plane, but it now has an explicit continuity wiki because Project Constellation is itself tracked as PCX-036 and the hourly evolution task explicitly requires inspecting and improving the control plane.
+This directory contains source-controlled wikis for the **projects tracked inside Project Constellation**. Project Constellation itself is the catalog/control plane and is not a normal documentation target. A legacy `PCX-036` continuity wiki remains preserved because it already exists, but it is excluded from target-project wiki coverage and should only be changed for a real control-plane continuity reason.
 
 ## Published detailed project wikis
 
@@ -20,7 +20,6 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-033 - Sims4CreatorStudio](PCX-033-sims4creatorstudio.md)
 - [PCX-034 - Ferrum Browser](PCX-034-ferrum-browser.md)
 - [PCX-035 - MO2R](PCX-035-mo2r.md)
-- [PCX-036 - Project Constellation](PCX-036-project-constellation.md)
 - [PCX-037 - Shimeji Desktop](PCX-037-shimeji-desktop.md)
 - [PCX-038 - Shimeji Browser Extension](PCX-038-shimeji-browser-extension.md)
 - [PCX-039 - Webmeji](PCX-039-webmeji.md)
@@ -31,8 +30,13 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-044 - Feature Foundry Living Ecology](PCX-044-feature-foundry-living-ecology.md)
 - [PCX-045 - Feature Foundry Object Intelligence](PCX-045-feature-foundry-object-intelligence.md)
 - [PCX-053 - GameSync Bounty / Rewards Runtime](PCX-053-gamesync-bounty-rewards-runtime.md)
+- [PCX-054 - GameSync Source Finder / Entity Resolver](PCX-054-gamesync-source-finder-entity-resolver.md)
 
-Current indexed detailed-wiki coverage: **27 tracked projects**.
+Current detailed target-project wiki coverage: **27 tracked projects**.
+
+## Preserved control-plane reference
+
+- [PCX-036 - Project Constellation](PCX-036-project-constellation.md) - legacy continuity reference only; excluded from the target-project coverage count.
 
 ## Maintenance contract
 
