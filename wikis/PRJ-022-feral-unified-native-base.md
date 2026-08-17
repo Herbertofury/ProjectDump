@@ -6,85 +6,80 @@
 
 ## Purpose and resolved identity
 
-Direct inspection of the recovered archive resolves the previously ambiguous project identity. The package identifies itself as **Feral Unified App Base**, package `feral-unified-app-base` version `0.1.0`.
+Direct inspection of the recovered archive resolves the previously ambiguous identity. The package identifies itself as **Feral Unified App Base**, package `feral-unified-app-base` version `0.1.0`.
 
-Its Feature Foundry blueprint describes it as **a complete, fully moddable Feature Foundry 2.0 foundation ready for product-specific work**, targeting `desktop-app` on a `react-vite` stack. It is therefore best treated as a generated reusable Feature Foundry base/foundation, not as a separately proven finished Feral product.
-
-This corrects the older Project Constellation state that left Feral unresolved between standalone product, generic native base, generated experiment, or precursor.
+Its Feature Foundry blueprint describes it as a complete, moddable Feature Foundry 2.0 foundation ready for product-specific work, targeting `desktop-app` on a `react-vite` stack. Treat it as a generated reusable Feature Foundry foundation, not a separately proven finished Feral product.
 
 ## Verified archive structure and stack
 
-The inspected `package.json` records:
+The inspected package records:
 
-- package name `feral-unified-app-base`;
-- package version `0.1.0`;
+- package `feral-unified-app-base` version `0.1.0`;
 - React 19.2.7;
 - React DOM 19.2.7;
 - Vite 8.1.5;
 - `@vitejs/plugin-react` 6.0.4;
 - TypeScript 5.8.3;
 - Vitest `^3.2.4`;
-- development, build, preview, lint, test, Foundry check/validate/rehearse, and rollback scripts.
+- development, build, preview, lint, test, Foundry check/validate/rehearse and rollback scripts.
 
-The archive also carries Feature Foundry-style App DNA, mod-cartridge, preview-runtime, validation, promotion, ownership, and golden-fleet structures.
+The archive also carries Feature Foundry-style App DNA, mod-cartridge, preview-runtime, validation, promotion, ownership and golden-fleet structures.
 
 ## Feature Foundry contracts present
 
-The recovered foundation includes contracts for reusable generated-app behavior rather than only a bare Vite scaffold. Preserve these when reusing or upgrading the base:
+Preserve these contracts if the base is reused or upgraded:
 
 - App DNA and stable application identity;
 - theme and UI-sound capability manifests;
 - mod-cartridge composition;
 - semantic event declarations;
-- explicit file ownership / generated-file boundaries;
+- explicit file ownership and generated-file boundaries;
 - validation and promotion evidence;
 - upgrade rehearsal;
 - rollback capability;
 - golden-fleet CI expectations;
 - preview/runtime metadata.
 
-Do not flatten this into a generic React starter if the base is promoted for future product work.
+Do not flatten this into a generic React starter.
 
 ## Current validation boundary
 
-The included validation report records generated scenarios for `desktop-tool` and `embedded-panel`, but both are **not run**. The report records:
+The included validation report records generated `desktop-tool` and `embedded-panel` scenarios as **not run**:
 
 - passed: 0;
 - failed: 0;
 - blocked: 0;
 - `shippable: false`.
 
-This is an explicit acceptance boundary. Archive completeness and generated configuration do not prove a runnable/shippable application.
+Archive completeness and configuration do not prove a runnable or shippable application.
 
 ## Preview runtime
 
-The archive's preview runtime describes a browser-native React/Vite path and indicates that the generated framework build should be verified through an appropriate local/WebContainer-style runner. Treat that as scaffolding metadata, not production runtime proof.
+The archive's preview runtime describes a browser-native React/Vite path and indicates that the generated framework build should be verified through an appropriate local or WebContainer-style runner. Treat that as scaffolding metadata, not production runtime proof.
 
 ## Current technology delta, checked 2026-08-17
 
-Primary package sources show newer maintained releases than several pins in the recovered 0.1.0 base:
+Current primary package/release evidence is newer than several pins in the recovered 0.1.0 base:
 
-- Vite 8.2.0 versus recovered 8.1.5;
-- TypeScript 7.0.2 versus recovered 5.8.3;
-- Vitest 4.1.10 versus recovered `^3.2.4`;
-- React 19.2.8 versus recovered 19.2.7.
+- **Vite 8.2.2** versus recovered 8.1.5;
+- **TypeScript 7.0.2** versus recovered 5.8.3;
+- **Vitest 4.1.10** versus recovered 3.x;
+- **React 19.2.8** versus recovered 19.2.7.
 
-The React/Vite plugin line is already close to current. The TypeScript and Vitest gaps are larger and should be treated as migrations rather than blind version bumps.
+This corrects the earlier wiki note that stopped at Vite 8.2.0. The Vite delta is a small build-tool patch/minor-line movement; the TypeScript and Vitest deltas are major migrations and must not be bundled into a blind all-at-once upgrade.
 
-## Upgrade strategy
-
-Do not update every dependency at once. The narrow evidence-backed path is:
+## Sequenced upgrade strategy
 
 1. extract the exact recovered archive into a fresh location;
 2. record archive/package hashes and lockfile state;
 3. install the baseline exactly as recoverable;
-4. run build, lint, tests, Foundry check, Foundry validation, Foundry rehearsal, rollback checks, and any preview/runtime smoke that is actually supported;
-5. capture the baseline generated output and behavior;
-6. update Vite and its React plugin as one coherent build-tool pair;
+4. run build, lint, tests, Foundry check, validation, rehearsal, rollback and any supported preview/runtime smoke;
+5. capture baseline generated output and behavior;
+6. update Vite and its React plugin coherently, beginning with the current 8.2.x line only after checking peer compatibility;
 7. rerun every baseline gate and compare output;
-8. evaluate TypeScript 7 separately because it is a major compiler migration;
-9. evaluate Vitest 4 separately because it is a major test-runner migration;
-10. only promote changes that preserve all Foundry contracts and improve maintainability without reducing behavior or evidence.
+8. evaluate TypeScript 7 separately as a major compiler migration;
+9. evaluate Vitest 4 separately as a major test-runner migration;
+10. only promote changes that preserve all Foundry contracts and improve maintainability or correctness without reducing behavior or evidence.
 
 ## Anti-degradation requirements
 
@@ -101,21 +96,21 @@ A toolchain upgrade must not:
 
 ## Exact current next action
 
-**Preserve Feral as a generated Feature Foundry 2.0 foundation, establish a fresh clean baseline, and run its complete build/test/Foundry validation flow before deciding whether it is suitable for reuse.** Only then evaluate isolated current-toolchain upgrades.
+**Preserve Feral as a generated Feature Foundry 2.0 foundation, establish a clean v0.1.0 baseline, and run its complete build/test/Foundry validation flow before reuse. Then evaluate Vite 8.2.2 as the smallest toolchain delta, with TypeScript 7 and Vitest 4 isolated behind their own migration and regression gates.**
 
 ## Evidence still needed
 
-To move this project beyond generated-foundation status, resolve:
+To move beyond generated-foundation status, resolve:
 
-- the exact archive SHA-256 if not already cataloged elsewhere;
-- a clean dependency install result;
+- exact archive SHA-256 if not already cataloged elsewhere;
+- clean dependency-install result;
 - build output;
 - test result;
 - Foundry validation/rehearsal result;
 - rollback proof;
 - actual preview/runtime behavior;
-- whether a real downstream Feral product repository adopted this base.
+- whether a downstream Feral product repository adopted this base.
 
 ## Wiki maintenance
 
-Update this page if a canonical downstream repository is found, a clean build/runtime is proven, dependency migrations are verified, Foundry validation becomes shippable, or the base's ownership/promotion contracts change. Preserve the original 0.1.0 evidence as lineage.
+Update this page if a canonical downstream repository is found, clean runtime proof is obtained, dependency migrations are verified, Foundry validation becomes shippable, or ownership/promotion contracts change. Preserve the original 0.1.0 evidence as lineage.
