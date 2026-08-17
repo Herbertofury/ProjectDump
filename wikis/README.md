@@ -29,11 +29,16 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-043 - Feature Foundry Production App](PCX-043-feature-foundry-production-app.md)
 - [PCX-044 - Feature Foundry Living Ecology](PCX-044-feature-foundry-living-ecology.md)
 - [PCX-045 - Feature Foundry Object Intelligence](PCX-045-feature-foundry-object-intelligence.md)
+- [PCX-046 - Feature Foundry Source Hubs](PCX-046-feature-foundry-source-hubs.md)
+- [PCX-047 - Favorite Artist Worlds Database](PCX-047-favorite-artist-worlds-database.md)
+- [PCX-048 - GameSync Theme Foundry](PCX-048-gamesync-theme-foundry.md)
+- [PCX-049 - GameSync Live Mascot Tavern](PCX-049-gamesync-live-mascot-tavern.md)
+- [PCX-050 - GameSync Real Library Performance](PCX-050-gamesync-real-library-performance.md)
 - [PCX-052 - GameSync Release Factory](PCX-052-gamesync-release-factory.md)
 - [PCX-053 - GameSync Bounty / Rewards Runtime](PCX-053-gamesync-bounty-rewards-runtime.md)
 - [PCX-054 - GameSync Source Finder / Entity Resolver](PCX-054-gamesync-source-finder-entity-resolver.md)
 
-Current detailed target-project wiki coverage: **28 tracked projects**.
+Current detailed target-project wiki coverage: **33 tracked projects**.
 
 ## Preserved control-plane reference
 
