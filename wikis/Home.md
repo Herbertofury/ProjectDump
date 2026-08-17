@@ -9,6 +9,8 @@ Project Constellation is the catalog and continuity control plane. Its legacy PC
 - [[Complete Project Wiki Index|README]]
 - [[GitHub Wiki Automation]]
 
+The complete index currently contains detailed pages for **all 62 tracked project targets**. The preserved PCX-036 Project Constellation control-plane reference is intentionally excluded from that target-project count.
+
 ### Major active projects
 
 - [[GameSync Platform|PRJ-003-gamesync-platform]]
