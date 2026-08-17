@@ -21,6 +21,7 @@ These pages document the **projects tracked inside Project Constellation**. Proj
 - [PRJ-013 - Money App / AI Monetization Station](PRJ-013-money-app-ai-monetization-station.md)
 - [PRJ-014 - Grim Dawn Cairn Codex](PRJ-014-grim-dawn-cairn-codex.md)
 - [PRJ-015 - Bethesda Plugin Info for MO2](PRJ-015-bethesda-plugin-info-for-mo2.md)
+- [PRJ-016 - Bethesda Creations Version Tracker for MO2](PRJ-016-bethesda-creations-version-tracker-for-mo2.md)
 - [PRJ-021 - GX Slim](PRJ-021-gx-slim.md)
 - [PRJ-022 - Feral Unified Native Base](PRJ-022-feral-unified-native-base.md)
 - [PRJ-023 - Feature Foundry Portable Feature Starter](PRJ-023-feature-foundry-portable-feature-starter.md)
@@ -64,7 +65,7 @@ These pages document the **projects tracked inside Project Constellation**. Proj
 - [PCX-062 - RuneLite QA Cockpit](PCX-062-runelite-qa-cockpit.md)
 - [PCX-063 - Feature Foundry Aesthetic Vault](PCX-063-feature-foundry-aesthetic-vault.md)
 
-Current detailed target-project wiki coverage: **57 tracked projects**.
+Current detailed target-project wiki coverage: **58 tracked projects**.
 
 ## Preserved control-plane reference
 
