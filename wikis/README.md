@@ -18,6 +18,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-033 - Sims4CreatorStudio](PCX-033-sims4creatorstudio.md)
 - [PCX-034 - Ferrum Browser](PCX-034-ferrum-browser.md)
 - [PCX-038 - Shimeji Browser Extension](PCX-038-shimeji-browser-extension.md)
+- [PCX-040 - Pinterest Nocturne](PCX-040-pinterest-nocturne.md)
 - [PCX-042 - GameSync Next](PCX-042-gamesync-next.md)
 
 ## Maintenance contract
