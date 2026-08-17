@@ -1,180 +1,257 @@
 # Ferrum Browser Wiki
 
-**Project Constellation ID:** PCX-034  
-**Canonical repository:** `Herbertofury/Ferrum-Browser`  
+**Project Constellation ID:** `PCX-034`  
+**Canonical repository:** [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser)  
 **Canonical branch:** `main`  
 **Verified project version:** `0.2.0`  
-**Verified canonical code commit:** `b94902e34db716ffc88395909108901cd4de415a`  
+**Verified canonical code commit:** `536bbc23dfee068e26eda8b32574f06ce19a43f1`  
+**Verified workflow run:** `31987413168`  
+**Verified at:** `2026-08-17T02:16:15Z`  
 **Project state:** verified canonical implementation on main
 
 ## Purpose
 
-Ferrum is an agent-native full application tester. It is designed to make real browser-extension and application verification fast enough to use continuously while preserving runtime fidelity, diagnostics, evidence, restart proof, and exact target identity.
+Ferrum is an agent-native full application tester and is the preferred full-fidelity extension acceptance layer for GameSync when available. It is designed to make repeated verification fast while preserving target identity, runtime fidelity, diagnostics, evidence, restart proof, and failure visibility.
 
-GameSync is the first-class workload, but Ferrum is intentionally broader. The same test-spec model supports browser extensions, ordinary web applications, Electron applications, arbitrary processes/services, and Appium-backed native/mobile targets.
+Ferrum is broader than a browser wrapper. The same deterministic test/evidence model covers:
 
-Ferrum does not replace Chromium's rendering engine. It orchestrates real runtimes through deterministic test lanes and produces evidence bundles that can prove what actually ran.
+- ordinary web applications;
+- unpacked Manifest V3 extensions;
+- Electron applications;
+- arbitrary processes/services;
+- Appium-backed native/mobile targets when that lane is qualified.
+
+Ferrum orchestrates real runtimes. A successful tool handshake, mock, or rendered dashboard is not a substitute for exercising the target application.
 
 ## Current verified status
 
-Ferrum 0.2.0 is recorded in project-owned `.agents-memory/STATUS.json` as a verified canonical implementation on `main`.
+Project-owned `.agents-memory/STATUS.json` now records Ferrum 0.2.0 at commit `536bbc23dfee068e26eda8b32574f06ce19a43f1` as the verified canonical implementation.
 
-The current verified evidence includes:
+### Linux Chromium lane
 
-- 11 unit tests passing with zero failures.
-- Syntax checks passing.
-- MCP surface validation passing.
-- Chromium web smoke passing on Linux and Windows.
-- Manifest V3 extension smoke passing on Linux and Windows.
-- Workbench smoke passing on Linux and Windows.
-- Full browser restart proof passing.
-- Post-restart service-worker messaging passing.
-- Zero recorded runtime errors for the verified Chromium runs.
-- Verified exact extension SHA-256 inventory and runtime extension identity.
-- Lightpanda 0.3.7 direct-CDP smoke passing.
-- Published artifact round-trip verification with downloaded bytes matching provider digests.
+Verified passed:
 
-The Electron and Appium target runners are implemented, but project status explicitly says they are not yet runtime-qualified against real target applications. Do not represent those lanes as fully verified until real Electron/Appium acceptance runs exist.
+- web smoke;
+- MV3 extension smoke;
+- Workbench smoke;
+- **real Electron application smoke**;
+- service-worker diagnostics before restart;
+- service-worker diagnostics after restart;
+- full browser restart proof.
 
-## Requirements
+### Windows Chromium lane
 
-### Runtime
+Verified passed:
+
+- web smoke;
+- MV3 extension smoke;
+- Workbench smoke;
+- **real Electron application smoke**;
+- service-worker diagnostics before restart;
+- service-worker diagnostics after restart;
+- full browser restart proof.
+
+### Lightpanda lane
+
+Verified:
+
+- Lightpanda **0.3.7**;
+- native direct-CDP transport;
+- release binary SHA-256 `895339b02205171a181dde743ae0068bb4564884076feac8482baca9c212aa5a`.
+
+### Agent interfaces
+
+Verified:
+
+- compact CLI result summaries;
+- compact MCP responses by default;
+- explicit full-output MCP escape hatch;
+- exact evidence-directory return;
+- complete evidence preserved on disk.
+
+### Benchmark evidence
+
+Current benchmark output is verified to retain:
+
+- median and p95;
+- machine/runtime metadata;
+- workload metadata;
+- step budget;
+- success rate;
+- timeout accounting;
+- per-sample evidence directory.
+
+### Current unqualified lane
+
+Only the **Appium** runner remains implemented-but-not-runtime-qualified against a real native/mobile application/device/emulator.
+
+The previous wiki statement that Electron was unqualified is obsolete and has been superseded by current project-owned runtime evidence.
+
+## Runtime and package baseline
 
 Ferrum requires Node.js 24 or newer.
 
-Install dependencies and Chromium:
+Current `package.json` pins:
 
-```bash
-npm install
-npx playwright install chromium
-```
+- Playwright **1.62.1**;
+- Electron **43.2.0**.
 
-Lightpanda is optional. To enable it, set `FERRUM_LIGHTPANDA` to a verified Lightpanda binary, or place a compatible `lightpanda` executable on `PATH`.
+[Playwright 1.62.1](https://github.com/microsoft/playwright/releases/tag/v1.62.1) is the current official Playwright stable release as of this review.
+
+The official Electron repository currently identifies **Electron 43.4.0** as its latest stable release, published August 11, 2026. Ferrum remains pinned to 43.2.0, so 43.4.0 is a **stack-upgrade candidate**, not a silently accepted dependency change.
+
+### Electron upgrade rule
+
+Before advancing Electron:
+
+1. baseline current 43.2.0 Electron smoke on Linux and Windows;
+2. upgrade only the Electron dependency on a proposal branch;
+3. rerun unit/regression checks;
+4. run the real secure preload/renderer/main IPC Electron target on Linux and Windows;
+5. verify runtime identity, main-process console, renderer diagnostics, IPC interaction, screenshot/evidence output, and restart-relevant behavior;
+6. compare evidence completeness and timing;
+7. keep 43.2.0 if 43.4.0 introduces any target/evidence regression that cannot be repaired in the same proposal.
 
 ## Main commands
 
-Inspect local runtime availability:
+Inspect runtime availability:
 
 ```bash
 npx ferrum doctor
 ```
 
-Run the built-in web self-test:
+Web smoke:
 
 ```bash
 npx ferrum test examples/self-test-web.json --headless
 ```
 
-Run the built-in Manifest V3 extension self-test:
+MV3 extension smoke:
 
 ```bash
 npx ferrum test examples/self-test-extension.json --headless
 ```
 
-Run independent specs concurrently:
+Electron smoke:
+
+```bash
+npm run smoke:electron
+```
+
+Run bounded parallel specs:
 
 ```bash
 npx ferrum suite examples/self-test-web.json examples/self-test-extension.json --workers 2 --headless
 ```
 
-Benchmark one workload repeatedly and report median/p95 timings:
+Benchmark a fixed workload:
 
 ```bash
 npx ferrum bench path/to/benchmark-spec.json --engines chromium,lightpanda --runs 7 --warmup 1 --headless
 ```
 
-Open the local Chromium-based workbench:
+Open Workbench:
 
 ```bash
 npx ferrum dashboard
 ```
 
-Expose Ferrum to agents over MCP stdio:
+Expose MCP stdio:
 
 ```bash
 npx ferrum mcp
 ```
 
-The repository also exposes these package scripts:
+Current package scripts include:
 
 ```bash
 npm test
 npm run smoke:web
 npm run smoke:extension
+npm run smoke:electron
 npm run smoke:lightpanda
 npm run smoke:dashboard
 npm run ci
 ```
 
-`npm run ci` runs unit tests plus Chromium web, extension, and dashboard smoke checks.
+## Chromium fidelity lane
 
-## Execution lanes
+Ferrum uses real Playwright persistent Chromium contexts for browser and extension correctness.
 
-### Chromium fidelity lane
+This lane is required for Chromium-specific claims involving:
 
-Ferrum uses Playwright persistent Chromium contexts for browser and extension correctness.
-
-This is the mandatory lane for:
-
-- unpacked Chromium/Manifest V3 extensions;
+- unpacked MV3 extensions;
 - service workers;
 - content scripts;
 - extension pages;
 - permissions;
-- persistent browser profiles;
-- restart and state persistence proof.
+- persistent profiles;
+- browser restart and state recovery.
 
-Headless extension runs intentionally use Playwright's full `chromium` channel instead of the reduced headless shell because the reduced shell previously failed to provide the required extension behavior.
+Headless extension runs intentionally use the full Chromium channel rather than Playwright's reduced headless shell because the reduced shell previously failed the required MV3 behavior.
 
-### Lightpanda speed lane
+## Service-worker observability
 
-Lightpanda is an optional fast web lane driven through native CDP.
+Current Ferrum evidence now goes beyond worker discovery and messaging.
 
-Use it only for web workloads where a headless DOM/JavaScript engine is sufficient. It is not valid proof for Chromium-specific extension behavior.
+Verified worker evidence includes:
 
-The current verified Lightpanda lane uses version 0.3.7 and has smoke coverage for:
+- worker console output;
+- worker-owned request/response/failure diagnostics;
+- interception evidence;
+- lifecycle evidence;
+- assertions before restart;
+- assertions after restart.
 
-- open;
-- snapshot;
-- click;
-- assert-text;
-- assert-console-clean.
+This is particularly important for extension testing because a popup rendering correctly does not prove the background/service-worker path is healthy.
 
-### Electron lane
+## Lightpanda speed lane
 
-Ferrum uses Playwright `_electron` so Electron applications can reuse the same ordered step/evidence model.
+Lightpanda remains a fast web-only lane driven through its native CDP server.
 
-The lane is implemented but not yet qualified against a real Electron application in the current verified status.
+Use it for compatible web workloads where the goal is fast deterministic DOM/JavaScript coverage. It is not proof for Chromium-only behavior, browser-extension APIs, or MV3 service workers.
 
-### Process lane
+Do not route Lightpanda back through Playwright lifecycle assumptions; that previously caused timeouts.
 
-Ferrum can launch arbitrary CLI tools, services, or desktop processes and capture:
+## Electron lane
 
-- stdout;
-- stderr;
-- optional health checks;
-- exit status;
-- evidence output.
+Ferrum's Electron runner is now runtime-qualified against a real Electron application on both Ubuntu and Windows.
 
-This lane is already part of the verified Workbench flow.
+Verified evidence includes:
 
-### Appium lane
+- real Electron application launch;
+- main-process console;
+- process streams;
+- runtime identity;
+- renderer diagnostics;
+- IPC interaction;
+- screenshots/evidence output.
 
-Ferrum can speak W3C WebDriver directly to an Appium endpoint for native/mobile targets when the required platform driver is available.
+Treat reappearance of an "implementation-only" Electron state as a regression in Project Constellation documentation unless project-owned evidence proves a newer failure.
 
-The lane is implemented but not yet runtime-qualified against a real device or emulator.
+## Process lane
+
+Ferrum can launch arbitrary CLI tools, services, or desktop processes and retain stdout, stderr, health/exit evidence, and related artifacts.
+
+This remains useful for test infrastructure and companion services that are not browser-native.
+
+## Appium lane
+
+Ferrum can speak W3C WebDriver to an Appium endpoint, but the current status still lacks real native/mobile device or emulator qualification.
+
+Do not present Appium as fully verified until a concrete application/device/emulator run passes and survives the same evidence/identity scrutiny as the other lanes.
 
 ## Test specification format
 
-Ferrum test specs are JSON documents containing:
+Ferrum JSON specs contain:
 
 - `version`;
 - `name`;
 - `target`;
-- optional timeouts/artifact settings;
+- optional timeout/artifact settings;
 - ordered `steps`.
 
-Supported target types are:
+Supported target types:
 
 - `web`;
 - `extension`;
@@ -182,267 +259,177 @@ Supported target types are:
 - `process`;
 - `appium`.
 
-Common browser steps include:
+Common browser steps include open, wait, click, fill, press, snapshot, screenshot, text/visibility/url assertions, evaluate, vitals, and console-clean assertions.
 
-- `open`;
-- `wait`;
-- `click`;
-- `fill`;
-- `press`;
-- `snapshot`;
-- `screenshot`;
-- `assert-text`;
-- `assert-visible`;
-- `assert-url`;
-- `evaluate`;
-- `vitals`;
-- `assert-console-clean`.
+Extension workflows add extension-page/service-worker/restart operations.
 
-Extension-only steps include:
-
-- `extension-page`;
-- `assert-service-worker`;
-- `restart`.
-
-Every step records timing and failure context. Browser failures preserve a Playwright trace.
-
-## Repository architecture
-
-The current top-level source layout is:
-
-| Path | Responsibility |
-| --- | --- |
-| `bin/ferrum.mjs` | Package CLI entry point exposed as `ferrum`. |
-| `src/cli.mjs` | Command parsing and CLI orchestration. |
-| `src/core/` | Test-spec handling, runner orchestration, benchmarking, evidence, hashing, paths, statistics, doctor, and suites. |
-| `src/browser/` | Browser-specific control and browser test primitives. |
-| `src/runners/` | Target-specific runners. |
-| `src/mcp/` | MCP stdio exposure for agent control. |
-| `src/server/` | Local server/workbench support. |
-| `ui/` | Workbench UI assets. |
-| `examples/` | Built-in executable example specs including web and extension self-tests. |
-| `tests/` | Automated regression tests. |
-| `docs/ARCHITECTURE.md` | Execution-lane and evidence architecture. |
-| `docs/TEST_SPEC.md` | Test-spec contract. |
-| `docs/UPSTREAMS.md` | Upstream/reference implementations and sources. |
-| `.agents-memory/` | Project identity, Compass, verified status, and handoff state. |
-
-### Core modules
-
-`src/core/` currently contains modules for:
-
-- `benchmark.mjs` - repeatable benchmark orchestration;
-- `doctor.mjs` - environment/runtime detection;
-- `evidence.mjs` - evidence-bundle management;
-- `hash.mjs` - target/file hashing;
-- `paths.mjs` - path resolution;
-- `process-utils.mjs` - process lifecycle utilities;
-- `runner.mjs` - common run orchestration;
-- `spec.mjs` - test-spec normalization/validation;
-- `stats.mjs` - benchmark statistics;
-- `suite.mjs` - bounded concurrent suites.
+Every step must preserve timing and failure context. Browser failures retain trace evidence.
 
 ## Evidence model
 
-Each Ferrum run creates its own unique evidence folder under an `artifacts/` path. The current model uses a timestamp, test name, and nonce so parallel same-name runs cannot collide.
+Each run owns a unique evidence directory. Parallel same-name runs use nonces to avoid collisions.
 
-Evidence can include:
+Evidence may include:
 
-- normalized `spec.json`;
-- `result.json` with per-step timing;
+- normalized spec;
+- result JSON with per-step timing;
 - screenshots;
-- Playwright trace files;
-- console/page/network failure events;
+- Playwright traces;
+- page/console/network/service-worker failures;
+- worker lifecycle/traffic evidence;
 - runtime diagnostics;
-- extension build SHA-256 inventory;
-- resolved runtime extension ID and how that identity was obtained;
-- browser restart proof;
-- process or Appium output when applicable.
+- target/build SHA-256 inventory;
+- resolved extension ID and discovery path;
+- restart proof;
+- process/Appium output;
+- benchmark machine/workload/reliability metadata.
 
-Failed runs preserve their artifacts. Parallel runs must never share the same evidence directory.
+Failed runs preserve evidence. Compact agent output does not mean evidence was discarded.
 
-## Manifest V3 extension verification
+## Compact CLI and MCP contract
 
-Ferrum's extension lane is designed to prove more than build success.
+A prior pain point was excessive successful-run output consuming agent context while making the evidence directory harder to find.
 
-For an unpacked extension it can:
+Current Ferrum solves this by:
 
-1. load the exact build directory into a persistent Chromium profile;
-2. hash extension files;
-3. resolve the runtime extension ID;
-4. exercise popup/options/content-script/service-worker behavior;
-5. capture screenshots, diagnostics, and traces;
-6. restart the browser using the same profile;
-7. resolve the extension again after restart;
-8. prove post-restart messaging/behavior;
+- returning concise actionable CLI/MCP summaries by default where requested;
+- always returning or exposing the exact evidence directory;
+- preserving the complete evidence set on disk;
+- allowing explicit full MCP output when deeper inspection is needed.
+
+This is an efficiency improvement with **no evidence reduction**.
+
+## Manifest V3 verification
+
+For an unpacked extension Ferrum can:
+
+1. load the exact build into a persistent Chromium profile;
+2. hash the build files;
+3. resolve runtime extension identity;
+4. exercise popup/options/content-script/service-worker paths;
+5. capture screenshots, traces, console/network/worker diagnostics;
+6. restart the browser with the same profile;
+7. re-resolve the extension;
+8. verify post-restart behavior and worker diagnostics;
 9. retain the complete evidence bundle.
 
-The verified self-test currently resolves extension ID `felmepoiflfponlkemhjaadagpppepgf` and a fixture extension SHA-256 of `57024706eed1b4dc2f07ab0f343a0bbc0524bf10c43fb7a2c810c4ddb8bebebb` on both Linux and Windows.
+This is the core reason Ferrum is preferred for GameSync extension acceptance.
 
 ## GameSync integration
 
-`examples/gamesync-extension.json` is the starting acceptance workload for the standalone GameSync extension.
+Ferrum should be used for every applicable GameSync extension change when available, with Opera GX retained as additional compatibility coverage.
 
-Point its `target.path` at the freshly built GameSync `dist` directory.
+For each changed workflow:
 
-Ferrum is an additional full-fidelity acceptance layer. Generic CI or an Opera smoke test alone is not considered sufficient evidence for a changed GameSync extension workflow when Ferrum coverage applies.
+1. build the exact GameSync artifact;
+2. record its hash/path/runtime identity;
+3. load that build in Ferrum;
+4. exercise the exact changed control/flow;
+5. inspect popup/content-script/service-worker behavior;
+6. test relevant failure behavior;
+7. repeat after reload and full browser restart when stateful;
+8. inspect retained evidence;
+9. run Opera GX compatibility smoke separately where applicable.
 
-For each changed GameSync feature:
-
-1. build the current GameSync extension;
-2. point the Ferrum workload at the exact new build;
-3. exercise the changed user flow;
-4. verify relevant service-worker/content-script behavior;
-5. include restart/persistence checks when stateful;
-6. preserve evidence;
-7. keep Opera GX as an additional compatibility lane rather than replacing Ferrum.
-
-If real GameSync testing exposes reusable Ferrum defects such as slow discovery, weak diagnostics, flaky selectors, missing target coverage, evidence collisions, or unnecessary round trips, fix Ferrum itself, add regression coverage, and rerun GameSync instead of routing around the tester.
+If GameSync exposes reusable Ferrum shortcomings, improve Ferrum rather than masking them with a weaker alternate test.
 
 ## Workbench
 
-`npx ferrum dashboard` opens Ferrum's local Workbench inside controlled Chromium.
+The Workbench is a real Chromium-controlled workflow, not merely a static dashboard.
 
-The current verified status records end-to-end Workbench proof on Linux and Windows for:
+Current verified Linux and Windows coverage includes:
 
-- selected process spec;
+- Doctor;
+- spec input/selection;
 - Headless control;
-- populated Doctor output;
-- Run button;
-- visible PASSED result;
+- Run action;
+- visible result;
 - browser diagnostics;
-- screenshots with zero browser errors.
+- screenshot evidence.
 
-A prior Workbench bug where an ephemeral port was reported as port `0` was fixed. The server now reports the actual bound port.
+Previously fixed Workbench incidents include:
 
-A missing favicon/static-asset request also previously surfaced as HTTP 500. Missing static assets now return a truthful 404, and the Workbench uses an inline data favicon.
+- ephemeral port mode reporting `0` instead of the bound port;
+- missing static assets surfacing as HTTP 500 instead of truthful 404.
 
-## MCP agent interface
+Reappearance of either behavior is a regression.
 
-`npx ferrum mcp` exposes Ferrum over MCP stdio.
+## Benchmarks
 
-The current MCP surface includes:
+`ferrum bench` must compare fixed workloads rather than cherry-picked single timings.
 
-- doctor;
-- single-run execution;
-- suites;
-- benchmarks.
+Current output records median/p95 plus environment and reliability context. Keep this data when comparing runtimes or performance changes.
 
-The design intentionally keeps deterministic Playwright/CDP behavior under the agent-facing surface rather than replacing the underlying runner with opaque semantic automation.
+A faster run is not an improvement if it removes test steps, diagnostics, evidence, restart proof, target coverage, or failure visibility.
 
-## Parallel suites and benchmarking
+## Important resolved incidents
 
-`ferrum suite` runs independent specs with bounded concurrency. Each run keeps a separate evidence ID and evidence directory.
+Project-owned status records fixes for:
 
-`ferrum bench` repeats an identical workload with explicit warmup and run counts and reports median and p95 timing.
+- reduced Playwright headless shell breaking MV3 verification;
+- Lightpanda timeouts under Chromium lifecycle assumptions;
+- evidence-directory collisions during parallel runs;
+- explicit warmup `0` being coerced to `1`;
+- checkout line-ending differences changing fixture hashes;
+- Workbench ephemeral-port reporting;
+- missing static assets returning HTTP 500;
+- service-worker observability stopping at discovery/messaging;
+- agent CLI/MCP output flooding context;
+- Electron existing without real runtime qualification;
+- benchmark results lacking enough machine/workload/reliability context.
 
-An earlier bug coerced explicit warmup `0` to `1`; current 0.2.0 status records that explicit zero warmup is now preserved.
-
-When a spec is compatible with both engines, the same workload can compare Chromium and Lightpanda without duplicating the test definition.
-
-## Important correctness rules
-
-- Chromium is the proof lane for Chromium-only behavior.
-- Lightpanda performance results do not prove extension behavior.
-- Evidence/diagnostics may not be reduced merely to improve speed.
-- A run must identify the exact build it tested.
-- Stateful extension verification should include restart proof.
-- Failed tests keep their evidence.
-- Parallel runs must not collide on artifact directories.
-- A generic browser test is not equivalent to testing the real extension/service-worker flow.
+Preserve regression coverage for these behaviors.
 
 ## Development workflow
 
 Before editing:
 
-1. read `AGENTS.md`;
+1. read repository `AGENTS.md`;
 2. read `.agents-memory/PROJECT.json`, `STATUS.json`, `HANDOFF.md`, and `COMPASS.json`;
-3. confirm the canonical branch and current verified commit;
-4. reproduce the target issue with an existing spec or a new minimal spec.
+3. confirm the exact current main commit;
+4. reproduce the target issue with an existing or minimal new spec;
+5. establish the current target/evidence baseline.
 
-After editing:
+After editing, run applicable checks such as:
 
 ```bash
 npm test
 npm run smoke:web
 npm run smoke:extension
+npm run smoke:electron
 npm run smoke:dashboard
 ```
 
-Run `npm run smoke:lightpanda` when the change affects the Lightpanda lane and the binary is available.
+Run Lightpanda smoke when that lane is affected. Run real Electron evidence on Linux and Windows for Electron changes. Appium work remains incomplete until a real target is exercised.
 
-Changes affecting one target runner should also exercise that target's exact workflow. Electron/Appium work is not fully complete until tested against a real application/device path.
+## Current next actions
 
-For release-level verification, preserve the resulting evidence bundle and update project-owned `.agents-memory/STATUS.json` only with behavior that was actually exercised.
+Project-owned status identifies these continuing improvements:
 
-## Troubleshooting
+- use Ferrum on every applicable GameSync extension verification;
+- turn real GameSync workflows into reusable production workload packs;
+- expand browser compatibility beyond the current Chromium lane to installed Chrome, Edge, Brave, and Opera GX where exact qualification is possible;
+- add isolated parallel Spaces/profile cloning for authenticated concurrent workloads;
+- build a session replay/evidence viewer over retained traces, screenshots, diagnostics, and summaries;
+- add semantic locator recovery as an additive fallback above deterministic selectors without hiding deterministic failures;
+- qualify Appium against a real native/mobile application/device/emulator;
+- keep improving speed/reliability/observability/setup only when the complete evidence and target contract is preserved.
 
-### Extension fails only in headless mode
+### Current stack candidate
 
-Confirm the test is using Ferrum's full Playwright Chromium channel rather than the reduced headless shell. This exact issue previously broke Manifest V3 verification.
-
-### Lightpanda times out through Playwright
-
-Ferrum's verified design uses Lightpanda's native CDP server directly. Do not route the Lightpanda lane back through Chromium lifecycle assumptions.
-
-### Parallel runs overwrite evidence
-
-The current evidence ID includes a random nonce. If collisions reappear, treat that as a Ferrum regression rather than serializing all work as a workaround.
-
-### Extension identity changes unexpectedly
-
-Check the target build path and SHA-256 inventory first. Ferrum is intended to prove exact build identity, not simply that some extension with a similar name loaded.
-
-### Restart test passes before restart but fails after relaunch
-
-Inspect the persistent profile, runtime extension ID, service-worker discovery, and post-restart evidence. The verified acceptance model requires the same build to return and remain functional after relaunch.
-
-### Workbench reports the wrong local port
-
-The known port-0 bug is resolved in the current verified implementation. Reappearance should be treated as a regression.
-
-### Missing static files appear as server 500 errors
-
-The current server should return 404 for missing assets. A 500 is a regression and should be covered by a server/Workbench test.
-
-## Known limitations and open work
-
-Project-owned status currently lists these next actions:
-
-- use Ferrum in every applicable GameSync extension verification;
-- convert real GameSync flows into reusable Ferrum workload packs;
-- improve speed, reliability, observability, setup, and target coverage when real workloads expose reusable problems;
-- add richer extension service-worker CDP console/network inspection;
-- qualify Electron against a real Electron application;
-- qualify Appium against a real device/emulator path.
-
-There are currently no recorded blockers in `.agents-memory/STATUS.json`.
+Electron **43.4.0** is newer than Ferrum's pinned 43.2.0. Evaluate it on a maintained proposal branch with full Linux + Windows real-Electron proof. Do not advance the pin solely because a newer release exists.
 
 ## Source-of-truth hierarchy
 
-For Ferrum facts, prefer sources in this order:
+For Ferrum facts, prefer:
 
-1. current `Herbertofury/Ferrum-Browser` repository and runtime evidence;
-2. `.agents-memory/STATUS.json` and current handoff/Compass;
-3. `README.md` and project docs;
-4. Project Constellation catalog summaries.
+1. current `Herbertofury/Ferrum-Browser` source and real evidence;
+2. `.agents-memory/STATUS.json` / current project memory;
+3. repository docs/manifests;
+4. Project Constellation summaries.
 
-If Project Constellation conflicts with the project repository, update the wiki from the project-owned evidence rather than preserving stale catalog text.
+Project-owned evidence supersedes stale Project Constellation wording.
 
 ## Wiki maintenance triggers
 
-Update this page when any of the following materially changes:
-
-- Ferrum version;
-- verified canonical commit/workflow;
-- supported target types;
-- test-spec schema or step set;
-- Chromium/Lightpanda behavior;
-- evidence format;
-- MCP tool surface;
-- Workbench controls;
-- GameSync integration contract;
-- runtime qualification status for Electron/Appium;
-- required Node/Playwright versions;
-- verification commands;
-- known incidents or troubleshooting guidance.
+Update this page whenever the verified commit/workflow, supported target matrix, service-worker diagnostics, evidence schema, CLI/MCP output contract, Workbench behavior, GameSync acceptance contract, Electron/Appium qualification, dependency pins, or project-owned next actions materially change.
