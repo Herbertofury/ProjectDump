@@ -69,9 +69,12 @@ if ! git_auth clone --depth 1 "$remote_url" "$wiki_dir"; then
   git -C "$wiki_dir" remote add origin "$remote_url"
 fi
 
+# Mirror exactly while preserving the destination wiki repository's .git data.
 find "$wiki_dir" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 cp -a "$source_dir"/. "$wiki_dir"/
-rm -rf "$wiki_dir/.git" "$wiki_dir/.github"
+# A wiki source directory should contain content only. Do not publish GitHub
+# workflow metadata even if a future caller points this tool at a broader tree.
+rm -rf "$wiki_dir/.github"
 
 git -C "$wiki_dir" config user.name 'github-actions[bot]'
 git -C "$wiki_dir" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
