@@ -18,11 +18,12 @@ The repository describes v8.1.0 as reconstructed from the exact verified v8.0.0 
 
 A newer **v8.2.0 source bootstrap is currently being staged in the canonical UltraDeck repository**, but it is not yet treated as the latest verified usable release in this wiki.
 
-Current repository evidence:
+Current repository evidence at this checkpoint:
 
 - commit `f7f06eedabdbbeda2df64ba02b447d46289cc3cb` began `Stage UltraDeck v8.2.0 source bootstrap`;
-- commit `32a9ce530622ea3d64ebc0f120cc4df64ec72e15` added `bootstrap/v82.b64.000` with message `Stage UltraDeck v8.2 bootstrap 001/018`;
-- the repository currently exposes the first numbered bootstrap part while the commit message explicitly indicates an 18-part transfer.
+- commits have advanced through `da8730240779d1e2508737a0b8c5eee38a0bd11d`, message `Stage UltraDeck v8.2 bootstrap 005/018`;
+- `bootstrap/` currently exposes `v82.b64.000` through `v82.b64.004`, each 8,000 bytes, plus the earlier `source.b64.000` bootstrap material;
+- the numbered commit sequence explicitly indicates an 18-part transfer, so the currently visible five parts are incomplete.
 
 Because the v8.2 source transfer is incomplete, do not promote v8.2.0 to the verified release line yet. The correct next step is to wait for all numbered parts, reconstruct the source deterministically, verify archive/hash integrity and version metadata, inspect the complete source tree and changelog, then run its own build/test/package/runtime gates. Until that succeeds, v8.1.0 remains the newest fully documented usable line and the v8.2 staging is recorded as an in-progress successor.
 
@@ -181,11 +182,11 @@ Reject that approach for UltraDeck's core retained-feed behavior. Optimize proce
 
 ### A v8.2 bootstrap part appears
 
-Do not treat a single chunk as a complete release. Confirm the expected part count/order, reconstruct only after the full transfer is present, verify bytes/archive integrity, inspect the actual v8.2 manifests/changelog, then run the real verification suite before promotion.
+Do not treat a partial chunk set as a complete release. Confirm the expected part count/order, reconstruct only after the full transfer is present, verify bytes/archive integrity, inspect the actual v8.2 manifests/changelog, then run the real verification suite before promotion.
 
 ## Current documentation gap
 
-The connected repository now exposes the README and the beginning of a v8.2 multi-part source bootstrap, but the complete v8.2 transfer is not yet present and the complete v8.1 release/source tree referenced by the README is not exposed at the repository root. The next documentation upgrade should ingest the fully reconstructed v8.2 source once all parts are present, then add exact install/build/test/package commands and module-level architecture from that verified source.
+The connected repository now exposes the README and an actively growing v8.2 multi-part source bootstrap, but the complete v8.2 transfer is not yet present and the complete v8.1 release/source tree referenced by the README is not exposed at the repository root. The next documentation upgrade should ingest the fully reconstructed v8.2 source once all parts are present, then add exact install/build/test/package commands and module-level architecture from that verified source.
 
 ## Wiki maintenance
 
