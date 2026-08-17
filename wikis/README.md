@@ -1,6 +1,6 @@
 # ProjectDump Project Wikis
 
-This directory contains source-controlled wikis for the **projects tracked inside Project Constellation**. Project Constellation itself is the catalog/control plane and is intentionally not a wiki target here unless explicitly requested.
+This directory contains source-controlled wikis for the **projects tracked inside Project Constellation**. Project Constellation itself is normally the catalog/control plane, but it now has an explicit continuity wiki because Project Constellation is itself tracked as PCX-036 and the hourly evolution task explicitly requires inspecting and improving the control plane.
 
 ## Published detailed project wikis
 
@@ -20,12 +20,15 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-033 - Sims4CreatorStudio](PCX-033-sims4creatorstudio.md)
 - [PCX-034 - Ferrum Browser](PCX-034-ferrum-browser.md)
 - [PCX-035 - MO2R](PCX-035-mo2r.md)
+- [PCX-036 - Project Constellation](PCX-036-project-constellation.md)
+- [PCX-037 - Shimeji Desktop](PCX-037-shimeji-desktop.md)
 - [PCX-038 - Shimeji Browser Extension](PCX-038-shimeji-browser-extension.md)
+- [PCX-039 - Webmeji](PCX-039-webmeji.md)
 - [PCX-040 - Pinterest Nocturne](PCX-040-pinterest-nocturne.md)
 - [PCX-042 - GameSync Next](PCX-042-gamesync-next.md)
 - [PCX-053 - GameSync Bounty / Rewards Runtime](PCX-053-gamesync-bounty-rewards-runtime.md)
 
-Current indexed detailed-wiki coverage: **20 tracked projects**.
+Current indexed detailed-wiki coverage: **23 tracked projects**.
 
 ## Maintenance contract
 
@@ -40,7 +43,7 @@ The Project Constellation wiki maintainer should continue across the full tracke
 7. avoid invented commands or architecture details;
 8. publish scoped wiki changes to `Herbertofury/ProjectDump` and fetch the remote file or commit and verify it contains the intended content before treating the update as complete;
 9. preserve useful existing detail rather than rewriting pages cosmetically;
-10. avoid documenting Project Constellation itself in place of its tracked projects.
+10. document PCX-036 only when there is a real control-plane/continuity change, not as a substitute for project-specific documentation.
 
 ## Coverage rule
 
