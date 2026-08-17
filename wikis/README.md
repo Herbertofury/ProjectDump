@@ -10,6 +10,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PRJ-005 - Mascot / Screenmate Platform](PRJ-005-mascot-screenmate-platform.md)
 - [PRJ-006 - ACS Agent Parity Runtime](PRJ-006-acs-agent-parity-runtime.md)
 - [PRJ-008 - Mascot Games / Sports and Golf Flagship](PRJ-008-mascot-games-sports-golf.md)
+- [PRJ-010 - RuneLite FlipForge / Farm Material Ranker / No-Hitch / 117HD Family](PRJ-010-runelite-flipforge-family.md)
 - [PRJ-022 - Feral Unified Native Base](PRJ-022-feral-unified-native-base.md)
 - [PRJ-023 - Feature Foundry Portable Feature Starter](PRJ-023-feature-foundry-portable-feature-starter.md)
 - [PRJ-024 - MO2 Drag/Column Compatibility Pack](PRJ-024-mo2-drag-column-compatibility-pack.md)
@@ -50,7 +51,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-060 - ACS Voice / Speech Runtime](PCX-060-acs-voice-speech-runtime.md)
 - [PCX-061 - Petz Shared Core](PCX-061-petz-shared-core.md)
 
-Current detailed target-project wiki coverage: **45 tracked projects**.
+Current detailed target-project wiki coverage: **46 tracked projects**.
 
 ## Preserved control-plane reference
 
