@@ -8,6 +8,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PRJ-003 - GameSync Platform](PRJ-003-gamesync-platform.md)
 - [PRJ-022 - Feral Unified Native Base](PRJ-022-feral-unified-native-base.md)
 - [PRJ-023 - Feature Foundry Portable Feature Starter](PRJ-023-feature-foundry-portable-feature-starter.md)
+- [PRJ-024 - MO2 Drag/Column Compatibility Pack](PRJ-024-mo2-drag-column-compatibility-pack.md)
 - [PRJ-025 - UltraDeck](PRJ-025-ultradeck.md)
 - [PCX-033 - Sims4CreatorStudio](PCX-033-sims4creatorstudio.md)
 - [PCX-034 - Ferrum Browser](PCX-034-ferrum-browser.md)
@@ -24,7 +25,7 @@ The Project Constellation wiki maintainer should continue across the full tracke
 5. distinguish verified runtime facts from historical recovery material, plans, prototypes, and unresolved gaps;
 6. correct stale Project Constellation summaries when newer project-owned evidence proves a different current state;
 7. avoid invented commands or architecture details;
-8. publish scoped wiki changes to `Herbertofury/ProjectDump` and fetch the remote file back to verify the intended content;
+8. publish scoped wiki changes to `Herbertofury/ProjectDump` and fetch the remote file or commit and verify it contains the intended content before treating the update as complete;
 9. preserve useful existing detail rather than rewriting pages cosmetically;
 10. avoid documenting Project Constellation itself in place of its tracked projects.
 
