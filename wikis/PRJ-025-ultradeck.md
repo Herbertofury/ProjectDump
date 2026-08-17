@@ -10,9 +10,21 @@ UltraDeck is a lossless ultrawide multi-column feed engine for Tumblr, Patreon, 
 
 ## Current verified version
 
-The current project-owned repository README identifies **UltraDeck v8.1.0** as the newest recovered/hardened line. This supersedes the older Project Constellation catalog summary that still listed v7.5.0.
+The current project-owned repository README identifies **UltraDeck v8.1.0** as the newest fully described recovered/hardened line. This supersedes the older Project Constellation catalog summary that still listed v7.5.0.
 
 The repository describes v8.1.0 as reconstructed from the exact verified v8.0.0 source plus the recovered v8.1.0 WIP-009 prepackage source patch, followed by additional hardening for current Patreon and X feed semantics.
+
+## v8.2 source staging detected
+
+A newer **v8.2.0 source bootstrap is currently being staged in the canonical UltraDeck repository**, but it is not yet treated as the latest verified usable release in this wiki.
+
+Current repository evidence:
+
+- commit `f7f06eedabdbbeda2df64ba02b447d46289cc3cb` began `Stage UltraDeck v8.2.0 source bootstrap`;
+- commit `32a9ce530622ea3d64ebc0f120cc4df64ec72e15` added `bootstrap/v82.b64.000` with message `Stage UltraDeck v8.2 bootstrap 001/018`;
+- the repository currently exposes the first numbered bootstrap part while the commit message explicitly indicates an 18-part transfer.
+
+Because the v8.2 source transfer is incomplete, do not promote v8.2.0 to the verified release line yet. The correct next step is to wait for all numbered parts, reconstruct the source deterministically, verify archive/hash integrity and version metadata, inspect the complete source tree and changelog, then run its own build/test/package/runtime gates. Until that succeeds, v8.1.0 remains the newest fully documented usable line and the v8.2 staging is recorded as an in-progress successor.
 
 ## v8.1.0 behavior recorded by the canonical README
 
@@ -85,19 +97,19 @@ The canonical README references these v8.1.0 deliverables:
 - Tumblr userscript;
 - recovered WIP-009 source patch.
 
-The currently connected repository surface exposes the README but not those referenced release files through the root contents API. Treat the README as version/lineage evidence, while separately verifying release artifact presence before presenting any package as downloadable/current.
+The currently connected repository surface exposes the README plus bootstrap transfer material, but not the complete referenced v8.1.0 release tree through the root contents API. Treat the README as version/lineage evidence, while separately verifying release artifact presence before presenting any package as downloadable/current.
 
 ## Historical Project Constellation evidence
 
 The older durable Project Constellation record preserved v7.5.0 performance and artifact history, including startup/reload A/B tests, mutation-hotpath A/B tests, off-screen interaction checks, no-cap scaling checks, real MV3 checks, media-network checks, and release/source artifacts.
 
-That history remains valuable as regression evidence, but it is no longer the newest version claim because the project-owned repository records v8.1.0.
+That history remains valuable as regression evidence, but it is no longer the newest version claim because the project-owned repository records v8.1.0 and now also contains an incomplete v8.2 successor transfer.
 
 ## Development workflow
 
 The canonical README says the complete source archive contains the WXT/TypeScript shell, portable builder, shared runtime, adapters, research notes, regression fixtures, and performance tests. Until the source archive is directly present/verified in the connected repository, do not invent package commands here.
 
-When the complete v8.1.0 source is resolved:
+When the complete verified source is resolved:
 
 1. verify archive identity/hash;
 2. extract to a fresh location;
@@ -110,6 +122,8 @@ When the complete v8.1.0 source is resolved:
 9. verify native controls for visible and retained/off-screen cards;
 10. verify reload/navigation/feed-tab behavior;
 11. prove no viewport/culling regression.
+
+For v8.2 specifically, add a prerequisite before step 1: reconstruct all numbered bootstrap parts and prove the reconstructed archive/source is complete before treating any v8.2 command or changelog as authoritative.
 
 ## Adapter verification checklist
 
@@ -165,10 +179,14 @@ Use the restoration path without moving/hiding the visible UltraDeck deck. Verif
 
 Reject that approach for UltraDeck's core retained-feed behavior. Optimize processing while preserving all retained cards.
 
+### A v8.2 bootstrap part appears
+
+Do not treat a single chunk as a complete release. Confirm the expected part count/order, reconstruct only after the full transfer is present, verify bytes/archive integrity, inspect the actual v8.2 manifests/changelog, then run the real verification suite before promotion.
+
 ## Current documentation gap
 
-The connected repository currently exposes the README but not the complete v8.1.0 source/release tree referenced by it. The next documentation upgrade should ingest the actual source archive or repository tree, then add exact install/build/test/package commands and module-level architecture.
+The connected repository now exposes the README and the beginning of a v8.2 multi-part source bootstrap, but the complete v8.2 transfer is not yet present and the complete v8.1 release/source tree referenced by the README is not exposed at the repository root. The next documentation upgrade should ingest the fully reconstructed v8.2 source once all parts are present, then add exact install/build/test/package commands and module-level architecture from that verified source.
 
 ## Wiki maintenance
 
-Update this page when platform adapters, route/card identity rules, no-culling guarantees, release artifacts, source layout, performance evidence, or the verified latest version changes. Preserve older performance/verification evidence as regression history rather than deleting it.
+Update this page when platform adapters, route/card identity rules, no-culling guarantees, release artifacts, source layout, performance evidence, bootstrap completion, or the verified latest version changes. Preserve older performance/verification evidence as regression history rather than deleting it.
