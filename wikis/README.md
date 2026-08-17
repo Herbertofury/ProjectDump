@@ -39,8 +39,9 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-053 - GameSync Bounty / Rewards Runtime](PCX-053-gamesync-bounty-rewards-runtime.md)
 - [PCX-054 - GameSync Source Finder / Entity Resolver](PCX-054-gamesync-source-finder-entity-resolver.md)
 - [PCX-055 - GameSync Script Polling Runtime](PCX-055-gamesync-script-polling-runtime.md)
+- [PCX-056 - GameSync Mod Health](PCX-056-gamesync-mod-health.md)
 
-Current detailed target-project wiki coverage: **35 tracked projects**.
+Current detailed target-project wiki coverage: **36 tracked projects**.
 
 ## Preserved control-plane reference
 
