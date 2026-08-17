@@ -70,6 +70,9 @@
 
 - [[Bethesda Plugin Info for MO2|PRJ-015-bethesda-plugin-info-for-mo2]]
 - [[Bethesda Creations Version Tracker for MO2|PRJ-016-bethesda-creations-version-tracker-for-mo2]]
+- [[MO2 Image Column / MO2R Image Automation|PRJ-017-mo2-image-column-mo2r-image-automation]]
+- [[MO2 Drag-and-Drop Line Restorer|PRJ-018-mo2-drag-and-drop-line-restorer]]
+- [[MO2 Performance Accelerator|PRJ-019-mo2-performance-accelerator]]
 - [[MO2 Drag / Column Compatibility Pack|PRJ-024-mo2-drag-column-compatibility-pack]]
 - [[MO2R|PCX-035-mo2r]]
 
