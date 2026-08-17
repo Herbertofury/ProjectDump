@@ -9,6 +9,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PRJ-004 - Aesthetic Media Companion / Living Room Platform](PRJ-004-aesthetic-media-companion-living-room.md)
 - [PRJ-005 - Mascot / Screenmate Platform](PRJ-005-mascot-screenmate-platform.md)
 - [PRJ-006 - ACS Agent Parity Runtime](PRJ-006-acs-agent-parity-runtime.md)
+- [PRJ-007 - PF Magic Petz Runtime Integration](PRJ-007-pf-magic-petz-runtime-integration.md)
 - [PRJ-008 - Mascot Games / Sports and Golf Flagship](PRJ-008-mascot-games-sports-golf.md)
 - [PRJ-010 - RuneLite FlipForge / Farm Material Ranker / No-Hitch / 117HD Family](PRJ-010-runelite-flipforge-family.md)
 - [PRJ-022 - Feral Unified Native Base](PRJ-022-feral-unified-native-base.md)
@@ -52,7 +53,7 @@ This directory contains source-controlled wikis for the **projects tracked insid
 - [PCX-061 - Petz Shared Core](PCX-061-petz-shared-core.md)
 - [PCX-063 - Feature Foundry Aesthetic Vault](PCX-063-feature-foundry-aesthetic-vault.md)
 
-Current detailed target-project wiki coverage: **47 tracked projects**.
+Current detailed target-project wiki coverage: **48 tracked projects**.
 
 ## Preserved control-plane reference
 
