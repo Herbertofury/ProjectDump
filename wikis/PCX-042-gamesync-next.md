@@ -4,7 +4,7 @@
 **Status:** ACTIVE / TRACKED
 **Canonical connected repository:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next)
 **Default branch:** `main`
-**Current verified main head:** `9e337c720f0180cffa577f140b181c699f0a1650`
+**Current verified main head:** `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`
 **Extension V2 package/manifest version:** `0.8.0`
 **Current shipping parity source:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync) at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 
@@ -16,7 +16,9 @@ The governing rule is **migration with proof, not replacement by assumption**. S
 
 ## Current source authority
 
-The canonical source is the private `Herbertofury/GameSync-Next` repository on `main`. The current main head is `9e337c720f0180cffa577f140b181c699f0a1650`, whose latest change repairs transient Opera extension discovery so failed probes can retry on later polling iterations while preserving de-duplication within one iteration.
+The canonical source is the private `Herbertofury/GameSync-Next` repository on `main`. The current verified main head is `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`, which merged a verified recovery slice for the **Universal Game Tracker**, **Bounty**, and **Animation Tracker** while preserving the previously verified Opera discovery and parity fixes.
+
+The current head materially supersedes the prior documentation baseline `9e337c720f0180cffa577f140b181c699f0a1650`. Bounty and Animation Tracker are no longer parity gaps on current main, and the universal Game Tracker is now a separately verified parity capability.
 
 The standalone shipping baseline is `Herbertofury/Gamesync` at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` in the current durable lead-gate evidence. Do not run a parity audit against an arbitrary older GameSync checkout and treat the result as current.
 
@@ -159,10 +161,16 @@ Important runtime dependencies include:
 - `@gamesync/shared`
 - `@gamesync/ui`
 - Dexie
+- `docx`
 - DOMPurify
 - JSZip
+- `linkedom`
+- `mammoth`
 - morphdom
 - Three.js
+- SheetJS `xlsx`
+
+The document-oriented dependencies are current source requirements for the Universal Game Tracker import/export pipeline. Do not remove them as unused browser dependencies without proving the worker-backed DOCX/XLSX import/export paths still function.
 
 Extension-local commands are:
 
@@ -258,6 +266,7 @@ The current `apps/extension-v2/src` tree is organized into explicit responsibili
 - `background` - service-worker/background implementation.
 - `content` - site detection, overlay, page integrations, and content features.
 - `entrypoints` - WXT application and content/background entrypoints.
+- `features` - typed product vertical slices, now including Bounty, Animation Tracker, and Universal Game Tracker.
 - `game-layer` - game-facing runtime layer.
 - `lib` - extension utilities/domain helpers.
 - `living-room` - living-room scene/runtime slice.
@@ -270,6 +279,8 @@ The current `apps/extension-v2/src` tree is organized into explicit responsibili
 - `wasm` - packaged WASM-facing runtime assets/adapters.
 
 This is a real layered architecture. New functionality should be placed according to ownership rather than growing `App.tsx`, background bootstrap, or content bootstrap into catch-all modules.
+
+The background bootstrap now routes `BOUNTY_*`, `ANIMATION_*`, and `TRACKER_*` messages into their owning services and installs Bounty reminder plus Animation Tracker polling alarm handling. This keeps feature state and browser lifecycle behavior inside dedicated feature modules instead of embedding those contracts in the root shell.
 
 ## User-facing React shell
 
@@ -301,10 +312,12 @@ mascotgames
 achievements
 cardgame
 mascot
+bounty
+tracker
 ai
 ```
 
-The full surface includes Mascot Games, while the popup/panel list includes Shimeji Browser and otherwise uses the compact tab set defined in `App.tsx`.
+`bounty` and `tracker` are now real current-main routes. The popup/panel surface includes both Bounty and Game Tracker; the full surface also includes both while retaining Mascot Games. Animation Tracker is exposed as a specialized subview within the universal Game Tracker rather than a second top-level shell tab.
 
 The shell lazy-loads major feature views rather than placing all implementation into the root bundle, including:
 
@@ -320,6 +333,9 @@ The shell lazy-loads major feature views rather than placing all implementation 
 - Achievements
 - Card Game
 - Mascot Studio / popup surfaces
+- Bounty
+- Universal Game Tracker
+- Animation Tracker through the Game Tracker workspace
 - legacy AI surface
 - Living Game Dock
 - Universal Object Layer
@@ -332,6 +348,13 @@ The shell uses hash routes such as:
 #tab/<tab-id>
 #game/<game-key>
 #cardgame
+```
+
+Current examples now include:
+
+```text
+#tab/bounty
+#tab/tracker
 ```
 
 It also reads search parameters for creator, game, Mods, and selected mod context. Contextual actions should preserve those destination identifiers rather than opening a generic root surface.
@@ -361,7 +384,159 @@ The extension also depends on Dexie and uses typed settings/persistence helpers 
 5. restart the browser/profile when persistence is part of the promise;
 6. verify backup/export and restore behavior where relevant.
 
+The Universal Game Tracker additionally owns the Dexie database `gamesync-game-tracker-v1`. Its verified model includes workspaces, records, relationships, binary assets, activity, and preferences. Tracker records use reversible archive/restore instead of a permanent-delete action in the current verified slice.
+
+Bounty and Animation Tracker maintain their own feature-owned persisted state and alarm-driven lifecycle behavior. Do not merge those stores into generic shell state merely to simplify UI plumbing.
+
 Do not infer migration success from TypeScript compilation or from one in-memory session.
+
+## Universal Game Tracker
+
+Current main includes a verified Universal Game Tracker vertical slice with public entrypoint:
+
+```text
+apps/extension-v2/src/features/game-tracker/index.ts
+```
+
+and UI entrypoint:
+
+```text
+apps/extension-v2/src/ui/app/game-tracker/index.ts
+```
+
+The background message contract currently handles:
+
+```text
+TRACKER_GET_SNAPSHOT
+TRACKER_SET_PREFERENCES
+TRACKER_CREATE_WORKSPACE
+TRACKER_SAVE_WORKSPACE
+TRACKER_UPSERT_RECORD
+TRACKER_ARCHIVE_RECORD
+TRACKER_RESTORE_RECORD
+TRACKER_EXPORT_BUNDLE
+```
+
+### Data model
+
+The verified tracker is not a Sims-only hardcoded database. It supports template workspaces for:
+
+- The Sims 4
+- animations
+- quests
+- collectibles
+- mods
+- custom tracking
+
+The Sims 4 baseline includes households, individual Sims, missing households, worlds, lots, and CC/mod dependencies. Users can add typed fields and collections without changing source. Unknown spreadsheet or JSON columns are preserved through custom collections rather than being silently discarded or forced into an unrelated schema.
+
+### Import/export
+
+Current verified import formats include:
+
+- `.docx`
+- `.xlsx`
+- `.xls`
+- `.csv`
+- `.tsv`
+- GameSync JSON
+- exact Google Docs links through the official DOCX export endpoint
+- exact Google Sheets links through the official XLSX export endpoint
+
+Current export formats include:
+
+- lossless GameSync JSON
+- multi-sheet XLSX
+- editable image-aware DOCX
+- active-collection CSV
+
+DOCX import reads native Word `w:sdt` dropdown controls from `word/document.xml` alongside the visual/table parser. Selected values, complete option lists, control aliases, and source shading are preserved as tracker field schema. Single-select, multi-select, relation, and boolean values render as accessible inline pill editors.
+
+### Worker and binary-data contract
+
+DOCX parsing, spreadsheet parsing, relationship resolution/persistence, and document generation run in a dedicated worker. Word images remain binary `Blob` values rather than being converted to base64 across the UI boundary. Large exports remain worker-owned behind a temporary Blob URL until Opera reports the download complete.
+
+### Merge rules
+
+Imports merge by collection and primary identity, resolve relation names after all records exist, preserve unresolved names with warnings, and reuse identical record/field assets on repeated imports. These rules are part of the current lossless-import contract.
+
+### Current exact Opera evidence
+
+Separate clean isolated Opera runs imported both the supplied 43 MB local DOCX and its supplied live Google Docs URL. The verified snapshot contained:
+
+- 181 active records
+- 75 households
+- 4 populated Sims
+- 67 lots
+- 35 worlds
+- 75 relationships
+- 124 schema-bound images
+- 836 rendered pills
+
+The source wardrobe options `Dirty`, `Cleaned`, `Corrupt`, `Missing CC`, and `Need Names` remained available. A `Cleaned -> Dirty` inline edit persisted. JSON, XLSX, DOCX, and CSV downloads completed and passed content checks. The React root mount count remained `1`, with zero extension console/page/request errors recorded in the acceptance run.
+
+## Bounty in GameSync Next
+
+Current main now contains a typed Bounty vertical slice at:
+
+```text
+apps/extension-v2/src/features/bounty/
+apps/extension-v2/src/ui/app/bounty/
+```
+
+The public background contract includes:
+
+```text
+BOUNTY_GET_SNAPSHOT
+BOUNTY_SYNC
+BOUNTY_SET_PREFERENCES
+BOUNTY_SET_CLAIM
+BOUNTY_EXPORT_ICS
+```
+
+The background bootstrap routes Bounty messages and owns the Bounty reminder alarm. The verified current-main acceptance synced **107 live GamerPower records** with zero rejected rows, persisted a healthy source state, rendered the calendar, and kept the React root mounted exactly once.
+
+This does not erase the richer shipping `Gamesync` Bounty implementation or its provider-specific history. It closes the prior GameSync Next parity gap for the Bounty tab/calendar vertical slice with current runtime evidence. Provider-by-provider equivalence beyond the verified Next slice still requires paired evidence when migration completeness is claimed.
+
+## Animation Tracker in GameSync Next
+
+Current main includes a typed Animation Tracker feature at:
+
+```text
+apps/extension-v2/src/features/animation-tracker/
+apps/extension-v2/src/ui/app/animation-tracker/
+```
+
+The specialized creator/version/update workflow is embedded inside the Universal Game Tracker workspace.
+
+Current message handling includes:
+
+```text
+ANIMATION_GET_SNAPSHOT
+ANIMATION_GET_STATS
+ANIMATION_GET_CREATORS
+ANIMATION_GET_PACKS
+ANIMATION_ADD_CREATOR
+ANIMATION_FOLLOW_CREATOR
+ANIMATION_UNFOLLOW_CREATOR
+ANIMATION_ADD_PACK
+ANIMATION_UPDATE_PACK
+ANIMATION_START_POLL
+ANIMATION_DETECT_VERSION
+ANIMATION_COMPARE_VERSIONS
+ANIMATION_GET_PREFS
+ANIMATION_SET_PREF
+ANIMATION_SET_PREFS
+ANIMATION_EXPORT_DATA
+ANIMATION_IMPORT_DATA
+ANIMATION_INIT_DB
+```
+
+Source URLs are required to be complete HTTPS URLs. The current initialization path deliberately installs **no fabricated URL seed**. Users or imports supply verified source URLs.
+
+The feature owns creators, packs, poll history, and preferences including auto-check interval, notifications, view mode, sorting, and tier filtering. Version detection accepts common release/version patterns and normalized semantic-like versions.
+
+A clean isolated Opera run verified an exact HTTPS source, detected a semantic version, persisted creator/source state, polled the source, rendered an installed-pack update, and retained a single React root mount.
 
 ## Shipping parity contract
 
@@ -384,6 +559,9 @@ The current matrix records verified evidence for capabilities including:
 - multi-source Found Mods discovery with packaged offscreen MiniLM/WASM reranking;
 - Living Room scene surface;
 - universal all-site page mascot shim;
+- Bounty tab and calendar workflow;
+- Animation Tracker source/version/update workflow;
+- Universal Game Tracker, Sims 4 baseline, relationship persistence, editable field schema, and document/spreadsheet import/export;
 - keyboard command center;
 - offscreen transformer runtime.
 
@@ -412,14 +590,14 @@ Do not rewrite those statuses as verified merely because the React views or type
 
 ### Current explicit gaps
 
-The matrix currently identifies real product gaps including:
+The current matrix still identifies real product gaps including:
 
 - complete JavaScript mascot arcade catalog parity, with several later page-game modes absent from Next;
-- expanded Petz generations and ACS content/offscreen intelligence parity;
-- Bounty tab/calendar workflow;
-- Animation Tracker tab/tools.
+- expanded Petz generations and ACS content/offscreen intelligence parity.
 
-These are documented gaps, not optional cleanup. A migration-complete claim must either close them with evidence or explicitly supersede them through a verified product decision.
+Bounty and Animation Tracker are **not** current gaps on `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`; both are verified. The Universal Game Tracker is also a verified capability.
+
+These remaining gaps are documented gaps, not optional cleanup. A migration-complete claim must either close them with evidence or explicitly supersede them through a verified product decision.
 
 ## Clean-checkout parity behavior
 
@@ -481,6 +659,8 @@ For Opera-specific work:
 5. test page reload and browser restart when stateful;
 6. verify same-ID upgrade behavior if migration identity is involved;
 7. retain generated evidence rather than relying on a CDP handshake.
+
+For Bounty, Game Tracker, or Animation Tracker changes, the maintained verifier must exercise the exact corresponding tab/subview and persistence/export/polling path rather than merely proving that the extension loaded.
 
 ## Desktop host
 
@@ -574,7 +754,7 @@ The root manifest currently resolves/declares major tooling such as:
 - Chrome Remote Interface
 - WebSocket support
 
-The Extension V2 workspace itself remains on WXT `0.21.4` and version `0.8.0`.
+The Extension V2 workspace itself remains on WXT `0.21.4` and version `0.8.0`. Its current tracker document pipeline also uses Dexie, `docx`, `mammoth`, `linkedom`, JSZip, and SheetJS `xlsx`.
 
 ### Pending stack proposal, not current main
 
@@ -599,7 +779,7 @@ Current durable lead-gate evidence and current PR metadata agree on the followin
 - no equivalent full-fidelity connected path currently proves exact private proposal build + Ferrum + Windows Opera acceptance;
 - therefore branch-only or historical evidence must not be promoted into exact-current-head merge proof.
 
-This is an infrastructure blocker, not evidence that current `main` is broken.
+This is an infrastructure blocker for affected proposal acceptance, not evidence that current `main` is broken. The `cd906ff` tracker/Bounty/Animation recovery has explicit project-owned isolated Opera evidence and is documented as current main behavior.
 
 ## Testing discipline
 
@@ -616,6 +796,8 @@ For changed GameSync Next behavior:
 9. reload/restart for stateful behavior;
 10. run broader shared-package/host regressions when a cross-cutting package changed.
 
+For Universal Game Tracker changes, add import/export fixtures that preserve field schema, relationships, binary assets, unresolved-name warnings, repeated-import identity, and visible labels. For Bounty changes, preserve complete record admission and calendar/claim/source state. For Animation Tracker changes, prove source identity, version detection, polling, update state, import/export, and alarm behavior.
+
 Do not weaken the parity matrix, skip a failing real-runtime lane, or treat a build as an end-to-end pass.
 
 ## Troubleshooting
@@ -626,7 +808,7 @@ Confirm the source includes the clean-checkout rebuild repair, install dependenc
 
 ### Opera extension discovery fails transiently
 
-Current main includes retry behavior for transient probe failures. Confirm the loaded source is `9e337c720f0180cffa577f140b181c699f0a1650` or a verified descendant before inventing a second discovery path.
+Current main includes retry behavior for transient probe failures. Confirm the loaded source is `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` or a verified descendant before inventing a second discovery path.
 
 ### `npm run test:e2e-opera` fails because the test file is missing
 
@@ -636,17 +818,33 @@ That is a known current-main script/path mismatch. The declared target file `ope
 
 Open `docs/gamesync-parity-matrix.json`, find the capability ID, inspect its current status/reason/evidence, and run the listed/current host verification. Visible UI or typed implementation does not override an `implemented-unverified` or `gap` status.
 
+### Bounty or Tracker tab is missing
+
+Confirm the loaded source is `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` or a verified descendant, rebuild Extension V2, and verify that `App.tsx` contains `bounty` and `tracker` in the current tab union and route parser. A profile loading an older `0.8.0` build can show the same package version while missing the newer source behavior, so prove the loaded build identity rather than relying on the version string alone.
+
+### Universal Game Tracker imports lose fields or relationships
+
+Check the worker import path, collection/primary identity merge rule, deferred relation resolution, and unresolved-name warnings. Unknown spreadsheet/JSON columns must remain representable through custom schema/collections. Repeated imports must reuse identical record/field assets rather than multiplying them.
+
+### DOCX dropdowns do not match the source document
+
+Verify the native `w:sdt` control parser ran against `word/document.xml` and that visual/table parsing did not overwrite the selected value, option list, alias, or source shading. JSON should retain canonical values/schema while Office/CSV exports use visible labels.
+
+### Animation Tracker reports the wrong version
+
+Verify the exact HTTPS source URL, the persisted creator record, the current poll result, and the normalization/comparison result. Do not seed fabricated source URLs or infer a version from a different creator/page.
+
 ### The wrong GameSync repository is used as parity source
 
 The current standalone baseline is `Herbertofury/Gamesync`. Use the canonical sibling/source resolution supported by the audit and verify its head before comparing. Case-sensitive source-root handling has had explicit regression fixes.
 
 ### Extension surface opens but shows stale behavior
 
-Verify the loaded extension build path, generated `app-*` page, extension ID/version, browser profile, and service-worker instance. Root compatibility pages redirect to generated app surfaces, so editing/observing the wrong page can create false conclusions.
+Verify the loaded extension build path, generated `app-*` page, extension ID/version, browser profile, source commit, and service-worker instance. Root compatibility pages redirect to generated app surfaces, so editing/observing the wrong page can create false conclusions.
 
 ### State disappears after reload or restart
 
-Identify whether the feature is owned by browser storage, Dexie/IndexedDB, world database/backup logic, or host-specific persistence. Test the declared migration/restart contract rather than adding a second storage mechanism.
+Identify whether the feature is owned by browser storage, Dexie/IndexedDB, the Game Tracker database, a Bounty/Animation feature store, world database/backup logic, or host-specific persistence. Test the declared migration/restart contract rather than adding a second storage mechanism.
 
 ### Server reports schema mismatch
 
@@ -688,13 +886,17 @@ For a scoped contribution:
 
 When a capability spans extension, desktop, server, native host, or Feature Foundry, record the shared contract and each adapter instead of creating parallel incompatible implementations.
 
+For tracker-related changes, preserve the dedicated feature/service/import-export boundaries and worker ownership instead of pushing document parsing, export generation, Bounty state, or Animation polling into the React shell.
+
 ## Exact current next actions
 
-1. Preserve current `main` and shipping Gamesync parity identity as the baseline.
-2. Keep closing machine-readable parity gaps and `implemented-unverified` capabilities with paired real-runtime evidence.
-3. Repair/promote the stale `test:e2e-opera` compatibility entrypoint only after a candidate passes current Ferrum and Windows Opera acceptance.
-4. Keep PR #8's Vite 8.2.1 migration and PR #7's incremental package-build optimization separate from current-main documentation until their exact heads execute every required acceptance gate and are merged.
-5. Continue verifying extension state across popup, panel, full page, content script, service worker, offscreen runtime, restart, and supported provider/site paths.
+1. Preserve current `main` at `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` and shipping Gamesync parity identity as the baseline.
+2. Keep the newly verified Bounty, Animation Tracker, and Universal Game Tracker capability rows current while continuing to close the remaining machine-readable parity gaps.
+3. Expand paired provider/runtime evidence where GameSync Next's Bounty slice is narrower than shipping GameSync's provider set.
+4. Keep Universal Game Tracker import/export fixtures lossless across large DOCX/Google Docs/XLSX inputs, custom schema, relationships, assets, archive/restore, and all declared export formats.
+5. Repair/promote the stale `test:e2e-opera` compatibility entrypoint only after a candidate passes current Ferrum and Windows Opera acceptance.
+6. Keep PR #8's Vite 8.2.1 migration and PR #7's incremental package-build optimization separate from current-main documentation until their exact heads execute every required acceptance gate and are merged.
+7. Continue verifying extension state across popup, panel, full page, content script, service worker, offscreen runtime, restart, and supported provider/site paths.
 
 ## Wiki maintenance
 
@@ -706,6 +908,8 @@ Update this page when any of the following changes materially:
 - root or workspace commands;
 - WXT manifest permissions/surfaces/commands;
 - UI tab/workspace routing;
+- Universal Game Tracker schema/import/export/worker behavior;
+- Bounty or Animation Tracker service/message/alarm behavior;
 - persistence/schema ownership;
 - parity status/gap set;
 - Opera/Ferrum verification path;
