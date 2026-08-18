@@ -104,3 +104,5 @@ The Project Constellation wiki maintainer should continue across the full tracke
 A project is not considered fully documented merely because it has a short Project Constellation HTML page, catalog entry, or Markdown source file. The **actual GitHub Wiki page** should grow toward enough verified detail that another developer can operate and modify the project without undocumented tribal knowledge.
 
 Projects with incomplete/recovery-only source should still have truthful pages describing identity, lineage, blockers, recovery state, and the exact evidence needed before build/use instructions can be completed.
+
+<!-- repository-cleanup-trigger -->
