@@ -6,7 +6,7 @@
 **Canonical repository path:** `project-constellation/`  
 **Canonical Drive folder ID:** `1mUSeFlumpIOBtVCmlwbhN11kChRsdblV`  
 **Current reviewed main base:** `4335d671d238bb9a85bfc6e1c4472e75bb4ffc8c`  
-**Tracked-project invariant:** exactly 63 projects; Sports Group Hub remains excluded.
+**Tracked-project invariant:** exactly 63 projects.
 
 ## Purpose
 
@@ -71,7 +71,6 @@ A newer timestamp or larger filename is not enough to supersede a known-good sta
 Project Constellation must never improve its UI or speed by losing project content. In particular:
 
 - keep all 63 projects available;
-- never re-add Sports Group Hub unless the user explicitly reverses that decision;
 - preserve user edits, project history, requirements, blockers, research, artifact hashes, and source lineage;
 - never use viewport culling, virtualization, hidden caps, or incomplete datasets as a shortcut;
 - never regenerate presentation artifacts from an older source if doing so would discard later evidence;
@@ -107,7 +106,6 @@ Before claiming a Project Constellation evolution is complete:
 
 - canonical GitHub main and Drive ACTIVE CHECKPOINT were reread;
 - exactly 63 project records are present;
-- Sports Group Hub is absent;
 - current project-owned evidence supersedes stale summary fields;
 - JSON parses;
 - generated HTML JavaScript parses;
