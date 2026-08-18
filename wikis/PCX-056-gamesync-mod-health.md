@@ -1,10 +1,10 @@
 # GameSync Mod Health Wiki
 
-**Project Constellation ID:** PCX-056  
-**Project:** GameSync Mod Health  
-**Status:** ACTIVE / TRACKED  
-**Canonical implementation:** `Herbertofury/Gamesync`  
-**Verified source baseline:** GameSync `0.6.3`, `main` observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
+**Project Constellation ID:** PCX-056
+**Project:** GameSync Mod Health
+**Status:** ACTIVE / TRACKED
+**Canonical implementation:** `Herbertofury/Gamesync`
+**Verified source baseline:** GameSync `0.6.3`, `main` observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 **Primary goal:** Detect meaningful mod-health, compatibility, version, and source signals without destructive automation. Preserve current mod state, evidence findings, and keep repairs explicit and reversible.
 
 ## What this project is
@@ -34,30 +34,30 @@ The current implementation is not a generic one-click mod repair engine. It is a
 
 ```text
 Configured health sources
-  -> CSV/text fetch
-  -> normalize + parse
-  -> merge by normalized URL/name
-  -> gsModHealthDb in chrome.storage.local
+ -> CSV/text fetch
+ -> normalize + parse
+ -> merge by normalized URL/name
+ -> gsModHealthDb in chrome.storage.local
 
 Nexus mod page
-  -> Mod Health overlay OR background scan
-  -> Nexus Posts + optional Bugs acquisition
-  -> offscreen parsing
-  -> evidence dedupe
-       -> overlay path: evidence cache + delayed cache-based AutoNotes sync
-       -> background path: direct ModHealthEngine analysis/job result
-  -> ModHealthEngine
-       -> classify comments
-       -> apply time window
-       -> build evidence hits
-       -> cluster issues
-       -> confidence + severity
-       -> category summaries
-       -> Green / Yellow / Red health
-       -> trend record / alert
-       -> markdown + issue templates
-  -> AutoNotes ingestion
-  -> user-visible evidence and follow-up workflow
+ -> Mod Health overlay OR background scan
+ -> Nexus Posts + optional Bugs acquisition
+ -> offscreen parsing
+ -> evidence dedupe
+ -> overlay path: evidence cache + delayed cache-based AutoNotes sync
+ -> background path: direct ModHealthEngine analysis/job result
+ -> ModHealthEngine
+ -> classify comments
+ -> apply time window
+ -> build evidence hits
+ -> cluster issues
+ -> confidence + severity
+ -> category summaries
+ -> Green / Yellow / Red health
+ -> trend record / alert
+ -> markdown + issue templates
+ -> AutoNotes ingestion
+ -> user-visible evidence and follow-up workflow
 ```
 
 ## Shipping extension baseline
@@ -78,23 +78,23 @@ The current database schema is version 1 and is shaped around:
 
 ```text
 {
-  version: 1,
-  games: {
-    [modsKey]: {
-      key,
-      title,
-      gameKey,
-      sources,
-      master: {
-        entries,
-        updatedAt
-      },
-      user: {
-        overrides
-      },
-      lastSyncAt
-    }
-  }
+ version: 1,
+ games: {
+ [modsKey]: {
+ key,
+ title,
+ gameKey,
+ sources,
+ master: {
+ entries,
+ updatedAt
+ },
+ user: {
+ overrides
+ },
+ lastSyncAt
+ }
+ }
 }
 ```
 

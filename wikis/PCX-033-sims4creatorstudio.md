@@ -1,7 +1,7 @@
 # Sims4CreatorStudio Wiki
 
-**Project Constellation ID:** `PCX-033`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-033`
+**Status:** ACTIVE / TRACKED
 **Connected repository:** [Herbertofury/Sims4CreatorStudio](https://github.com/Herbertofury/Sims4CreatorStudio)
 
 ## Purpose

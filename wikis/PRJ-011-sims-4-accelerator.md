@@ -1,8 +1,8 @@
 # PRJ-011 - The Sims 4 Accelerator
 
-**Project Constellation ID:** `PRJ-011`  
-**Status:** SPEC / SCAFFOLD  
-**Recovered authority:** `TS4_ACCELERATOR_AGENT_PLAN.md` plus starter workspace README  
+**Project Constellation ID:** `PRJ-011`
+**Status:** SPEC / SCAFFOLD
+**Recovered authority:** `TS4_ACCELERATOR_AGENT_PLAN.md` plus starter workspace README
 **Source boundary:** no canonical runnable repository or current build has been resolved in the connected GitHub/Drive state.
 
 ## Goal

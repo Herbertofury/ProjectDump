@@ -1,11 +1,11 @@
 # GameSync Next Wiki
 
-**Project Constellation ID:** `PCX-042`  
-**Status:** ACTIVE / TRACKED  
-**Canonical connected repository:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next)  
-**Default branch:** `main`  
-**Current verified main head:** `9e337c720f0180cffa577f140b181c699f0a1650`  
-**Extension V2 package/manifest version:** `0.8.0`  
+**Project Constellation ID:** `PCX-042`
+**Status:** ACTIVE / TRACKED
+**Canonical connected repository:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next)
+**Default branch:** `main`
+**Current verified main head:** `9e337c720f0180cffa577f140b181c699f0a1650`
+**Extension V2 package/manifest version:** `0.8.0`
 **Current shipping parity source:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync) at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 
 ## Purpose
@@ -184,10 +184,10 @@ The extension `build` command runs WXT and then the offscreen-runtime verifier. 
 The WXT configuration maps the legacy root page names to current app entrypoints:
 
 ```text
-full.html    -> app-full.html
+full.html -> app-full.html
 options.html -> app-options.html
-panel.html   -> app-panel.html
-popup.html   -> app-popup.html
+panel.html -> app-panel.html
+popup.html -> app-popup.html
 ```
 
 The source entrypoint tree contains dedicated app surfaces for:
@@ -220,7 +220,7 @@ The current WXT config emits a Manifest V3 extension named `GameSync V2 (MALSync
 
 ```text
 Ctrl+Shift+K -> open-command-center
-Alt+G        -> toggle-overlay
+Alt+G -> toggle-overlay
 ```
 
 The parity matrix records the command center as verified through a real Windows key chord in Opera. The verified flow opens/focuses the canonical full surface and renders the command palette without duplicating the React root.

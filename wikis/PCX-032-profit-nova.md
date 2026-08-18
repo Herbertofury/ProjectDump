@@ -1,7 +1,7 @@
 # Profit Nova Wiki
 
-**Project Constellation ID:** `PCX-032`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-032`
+**Status:** ACTIVE / TRACKED
 **Current source boundary:** direct strict master-plan artifacts are present in the durable project evidence; no canonical production GitHub application repository has yet been resolved.
 
 ## Purpose

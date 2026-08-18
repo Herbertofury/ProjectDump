@@ -1,8 +1,8 @@
 # PRJ-009 - Bert's Skill Atlas / Skill Guide
 
-**Project Constellation ID:** `PRJ-009`  
-**Status:** ACTIVE RuneLite project  
-**Source status:** canonical current repository/ZIP not yet re-resolved  
+**Project Constellation ID:** `PRJ-009`
+**Status:** ACTIVE RuneLite project
+**Source status:** canonical current repository/ZIP not yet re-resolved
 **Preserved latest lineage:** QA Cockpit after Unified Cockpit
 
 ## Purpose

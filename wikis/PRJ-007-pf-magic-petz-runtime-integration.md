@@ -1,11 +1,11 @@
 # PRJ-007 - PF Magic Petz Runtime Integration
 
-**Project Constellation ID:** PRJ-007  
-**Status:** ACTIVE GameSync / Mascot integration track  
-**Goal:** keep one PF Magic Petz behavior/runtime core and integrate it through GameSync hosts without flattening Petz into ordinary mascot animation.  
-**Historical rollout intent:** GameSync shipping extension -> GameSync Next Extension V2 -> desktop host.  
-**Current strongest source evidence:** `Herbertofury/GameSync-Next` contains a typed, platform-agnostic Petz core plus compatibility, format and mascot-bridge packages; `Herbertofury/Gamesync` remains the current shipping JavaScript extension and parity baseline.  
-**Current integration blocker:** [GameSync Next issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9) records a source-proven persistence defect in `packages/petz-bridge/src/mascot-bridge.ts`: spawn-time loading uses `breedId`, shutdown saving uses generated `pet.id`, and the loaded value is ignored. Cross-restart Petz persistence through the typed bridge is therefore not complete.  
+**Project Constellation ID:** PRJ-007
+**Status:** ACTIVE GameSync / Mascot integration track
+**Goal:** keep one PF Magic Petz behavior/runtime core and integrate it through GameSync hosts without flattening Petz into ordinary mascot animation.
+**Historical rollout intent:** GameSync shipping extension -> GameSync Next Extension V2 -> desktop host.
+**Current strongest source evidence:** `Herbertofury/GameSync-Next` contains a typed, platform-agnostic Petz core plus compatibility, format and mascot-bridge packages; `Herbertofury/Gamesync` remains the current shipping JavaScript extension and parity baseline.
+**Current integration blocker:** [GameSync Next issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9) records a source-proven persistence defect in `packages/petz-bridge/src/mascot-bridge.ts`: spawn-time loading uses `breedId`, shutdown saving uses generated `pet.id`, and the loaded value is ignored. Cross-restart Petz persistence through the typed bridge is therefore not complete.
 **Important boundary:** source now proves a real cross-host Petz architecture exists in GameSync Next, but this documentation pass does not claim complete original PF Magic behavioral parity or a freshly exercised end-to-end Petz flow in every host.
 
 ## 1. What this project owns
@@ -52,16 +52,16 @@ That path is important provenance, but it is not directly readable through the c
 
 ```mermaid
 flowchart LR
-    A[PF Magic originals / extracted source / mods] --> B[petz-formats]
-    B --> C[Normalized breeds / pets / toys / clothing / scenes]
-    D[petz-compat] --> E[Per-family physics / AI / features]
-    C --> F[petz-engine]
-    E --> F
-    F --> G[petz-bridge]
-    G --> H[GameSync mascot contract]
-    H --> I[Shipping GameSync browser host]
-    H --> J[GameSync Next Extension V2]
-    H --> K[GameSync Next desktop host]
+ A[PF Magic originals / extracted source / mods] --> B[petz-formats]
+ B --> C[Normalized breeds / pets / toys / clothing / scenes]
+ D[petz-compat] --> E[Per-family physics / AI / features]
+ C --> F[petz-engine]
+ E --> F
+ F --> G[petz-bridge]
+ G --> H[GameSync mascot contract]
+ H --> I[Shipping GameSync browser host]
+ H --> J[GameSync Next Extension V2]
+ H --> K[GameSync Next desktop host]
 ```
 
 The most important separation is that parsing/compatibility/domain behavior is not supposed to live inside one UI host. Rendering, browser APIs, storage and host lifecycle belong at adapter boundaries.

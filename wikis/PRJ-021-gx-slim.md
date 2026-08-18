@@ -1,9 +1,9 @@
 # PRJ-021 - GX Slim
 
-**Project Constellation ID:** `PRJ-021`  
-**Status:** UNRESOLVED IDENTITY  
-**Confidence:** Low  
-**Preserved artifact identity:** `GX-Slim-1.0.0-FULL.zip`  
+**Project Constellation ID:** `PRJ-021`
+**Status:** UNRESOLVED IDENTITY
+**Confidence:** Low
+**Preserved artifact identity:** `GX-Slim-1.0.0-FULL.zip`
 **Preserved SHA-256:** `5ad8aa6d13a898af1ead4d50b7922829ec94d427199475f17522b2ed1a4a9717`
 
 ## Purpose

@@ -1,8 +1,8 @@
 # PRJ-001 - Project Compass Orchestrator / Project Second Brain
 
-**Project Constellation ID:** `PRJ-001`  
-**Status:** ACTIVE continuity system  
-**Historical recovered release:** Skill v3.3.0, Artifact Library and Storage Manager  
+**Project Constellation ID:** `PRJ-001`
+**Status:** ACTIVE continuity system
+**Historical recovered release:** Skill v3.3.0, Artifact Library and Storage Manager
 **Current source boundary:** the historical project-brain contract is preserved in the durable cross-chat database, while the exact current installable skill/bundle bytes are not presently resolved as a canonical GitHub or Drive artifact.
 
 ## Purpose
@@ -84,7 +84,7 @@ The lens must never mutate project content or turn a publish acknowledgement int
 - ProjectDump source and GitHub Wiki mirror can be compared without editing either.
 - A source-only change is visibly marked as unpublished until wiki verification completes.
 - A GitHub-only checkpoint is not shown as fully durable when its Drive copy is missing or stale.
-- All 63 tracked projects remain available; Sports Group Hub remains absent.
+- All 63 tracked projects remain available
 - User edits always outrank generated mirror state.
 
 ## Exact current next action

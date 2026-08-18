@@ -1,7 +1,7 @@
 # GameSync Capability Truth / UI QoL Wiki
 
-**Project Constellation ID:** `PCX-051`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-051`
+**Status:** ACTIVE / TRACKED
 **Current source authorities:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync) and [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next)
 
 ## Purpose

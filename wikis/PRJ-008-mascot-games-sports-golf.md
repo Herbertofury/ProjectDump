@@ -2,12 +2,12 @@
 
 ## Status and canonical evidence
 
-**Project Constellation ID:** PRJ-008  
-**Tracked name:** Mascot Games / sports and Golf flagship  
-**Current documentation status:** ACTIVE implementation track with a verified shipping runtime  
-**Strongest verified implementation host:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)  
-**Verified shipping baseline:** GameSync `0.6.3`, `main`, observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
-**Canonical editable source root:** `app/`  
+**Project Constellation ID:** PRJ-008
+**Tracked name:** Mascot Games / sports and Golf flagship
+**Current documentation status:** ACTIVE implementation track with a verified shipping runtime
+**Strongest verified implementation host:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)
+**Verified shipping baseline:** GameSync `0.6.3`, `main`, observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
+**Canonical editable source root:** `app/`
 **Generated production extension:** `dist/`
 
 Project Constellation historically described this track through `mascotgames_master_agent_ordered_wxt_react_vite_v2_aligned_playable_contract_glorious_sports_golf_flagship.md`. That durable plan required Golf as the flagship, real playable sports loops, and popup/panel/full-view support aligned with the newer mascot stack.
@@ -36,27 +36,27 @@ The historical project label emphasizes sports and Golf, but the current executa
 
 ```text
 GameSync UI / game launcher
-        |
-        | GS_START_GAME { game }
-        v
+ |
+ | GS_START_GAME { game }
+ v
 background mascot-game-handler.js
-        |
-        | validates game id
-        | resolves active last-focused tab
-        v
+ |
+ | validates game id
+ | resolves active last-focused tab
+ v
 active tab content script
-        |
-        | GS_START_GAME
-        v
+ |
+ | GS_START_GAME
+ v
 game overlay / requested game mode
-        |
-        +--> shared/mascot-games/game-core.js
-        +--> shared/mascot-games/game-mascot-runtime.js
-        +--> shared/mascot-games/game-openworld*.js
-        +--> shared progression / challenge / modifier / unlock modules
-        +--> content/<game>/<Mode>.js or shared game implementation
-        |
-        v
+ |
+ +--> shared/mascot-games/game-core.js
+ +--> shared/mascot-games/game-mascot-runtime.js
+ +--> shared/mascot-games/game-openworld*.js
+ +--> shared progression / challenge / modifier / unlock modules
+ +--> content/<game>/<Mode>.js or shared game implementation
+ |
+ v
 real mascot pack runtime + persistent local/browser state
 ```
 
@@ -64,8 +64,8 @@ A second controlled path supports dynamic game-script injection:
 
 ```text
 content script -> GS_INJECT_GAME_SCRIPTS
-              -> background allowlist validation
-              -> chrome.scripting.executeScript(...)
+ -> background allowlist validation
+ -> chrome.scripting.executeScript(...)
 ```
 
 The injection path is intentionally allowlisted. A requested filename that is not in the hardcoded list is discarded rather than executed.

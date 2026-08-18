@@ -1,8 +1,8 @@
 # Feature Foundry Wiki
 
-**Project Constellation ID:** `PRJ-002`  
-**Status:** ACTIVE, major production rebuild; V33 FINAL_READY executable lineage verified  
-**Connected repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)  
+**Project Constellation ID:** `PRJ-002`
+**Status:** ACTIVE, major production rebuild; V33 FINAL_READY executable lineage verified
+**Connected repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)
 **Production-source boundary:** the connected repository still does not prove the complete production application source. The newest verified standalone lineage is V33, but it remains a verified runnable/executable reference rather than the canonical maintainable production app.
 
 ## Mission

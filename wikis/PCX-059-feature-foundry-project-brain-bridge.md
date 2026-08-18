@@ -1,7 +1,7 @@
 # Feature Foundry Project Brain Bridge Wiki
 
-**Project Constellation ID:** `PCX-059`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-059`
+**Status:** ACTIVE / TRACKED
 **Goal:** Keep Feature Foundry second-brain import/export portable, additive, provenance-aware, and truthful about integration status.
 
 ## Purpose

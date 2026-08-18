@@ -1,10 +1,10 @@
 # ACS Agent Parity Runtime Wiki
 
-**Project Constellation ID:** `PRJ-006`  
-**Status:** SPEC / ACTIVE IMPLEMENTATION TRACK  
-**Current verified host source:** `Herbertofury/Gamesync`  
-**Verified GameSync version:** `0.6.3`  
-**Verified source baseline:** commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
+**Project Constellation ID:** `PRJ-006`
+**Status:** SPEC / ACTIVE IMPLEMENTATION TRACK
+**Current verified host source:** `Herbertofury/Gamesync`
+**Verified GameSync version:** `0.6.3`
+**Verified source baseline:** commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 **Historical parity contract:** `acs-agent-parity-checklist-generalized-v3.md`
 
 ## Mission
@@ -19,20 +19,20 @@ This does **not** mean complete Microsoft Agent parity is proven. Current source
 
 ```mermaid
 flowchart LR
-    ACS[.acs character file] --> Parser[app/background/acs-parser.js]
-    Parser --> Parsed[parsed character info, images, audio, animations]
-    Parsed --> Clippy[app/background/acs-to-clippy.js]
-    Parsed --> Shimeji[app/background/acs-to-shimeji.js]
-    Clippy --> Sprite[deduplicated RGBA spritesheet]
-    Clippy --> AgentData[clippy.js-compatible agent data]
-    Clippy --> Audio[WAV/audio entries]
-    Shimeji --> XML[Shimeji actions/behaviors/config]
-    AgentData --> Mascot[app/Mascot_Engine.js]
-    XML --> Mascot
-    Audio --> Mascot
-    Mascot --> UI[GameSync popup/panel/page mascot runtime]
-    BG[app/background/background.js] --> Parser
-    BG --> Clippy
+ ACS[.acs character file] --> Parser[app/background/acs-parser.js]
+ Parser --> Parsed[parsed character info, images, audio, animations]
+ Parsed --> Clippy[app/background/acs-to-clippy.js]
+ Parsed --> Shimeji[app/background/acs-to-shimeji.js]
+ Clippy --> Sprite[deduplicated RGBA spritesheet]
+ Clippy --> AgentData[clippy.js-compatible agent data]
+ Clippy --> Audio[WAV/audio entries]
+ Shimeji --> XML[Shimeji actions/behaviors/config]
+ AgentData --> Mascot[app/Mascot_Engine.js]
+ XML --> Mascot
+ Audio --> Mascot
+ Mascot --> UI[GameSync popup/panel/page mascot runtime]
+ BG[app/background/background.js] --> Parser
+ BG --> Clippy
 ```
 
 ## Verified current source

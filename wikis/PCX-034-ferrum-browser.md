@@ -1,15 +1,15 @@
 # Ferrum Browser Wiki
 
-**Project Constellation ID:** `PCX-034`  
-**Canonical repository:** [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser)  
-**Canonical branch:** `main`  
-**Verified project version:** `0.2.0`  
-**Current verified product commit:** `71f85c8c7e10f6098dc5d49a501b07e9c4c4d21f`  
-**Current verified product workflow:** `32134811799`  
-**Latest verified additive service-acceptance commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`  
-**Service-acceptance workflows:** Ferrum CI `32139957979`, disposable-service workflow `32139957988`  
-**Latest observed main commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`  
-**Earlier important verified product commits:** Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`  
+**Project Constellation ID:** `PCX-034`
+**Canonical repository:** [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser)
+**Canonical branch:** `main`
+**Verified project version:** `0.2.0`
+**Current verified product commit:** `71f85c8c7e10f6098dc5d49a501b07e9c4c4d21f`
+**Current verified product workflow:** `32134811799`
+**Latest verified additive service-acceptance commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`
+**Service-acceptance workflows:** Ferrum CI `32139957979`, disposable-service workflow `32139957988`
+**Latest observed main commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`
+**Earlier important verified product commits:** Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`
 **Project state:** verified complete product checkpoint on main with later verified additive service-fixture acceptance
 
 ## Purpose
@@ -354,12 +354,12 @@ A process spec can now exercise the running service directly:
 
 ```json
 {
-  "action": "http-request",
-  "method": "POST",
-  "url": "http://127.0.0.1:8080/echo",
-  "json": { "source": "local" },
-  "status": 200,
-  "text": "\"source\":\"local\""
+ "action": "http-request",
+ "method": "POST",
+ "url": "http://127.0.0.1:8080/echo",
+ "json": { "source": "local" },
+ "status": 200,
+ "text": "\"source\":\"local\""
 }
 ```
 

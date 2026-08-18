@@ -1,7 +1,7 @@
 # Project Compass Northpoints Wiki
 
-**Project Constellation ID:** `PCX-058`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-058`
+**Status:** ACTIVE / TRACKED
 **Goal:** Preserve durable product intent, goals, guardrails, wants, feature pillars, publication targets, and measurable acceptance signals without silently rewriting foundational intent.
 
 ## What Project Compass is

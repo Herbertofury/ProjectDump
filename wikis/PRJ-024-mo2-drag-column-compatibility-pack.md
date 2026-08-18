@@ -1,6 +1,6 @@
 # MO2 Drag/Column Compatibility Pack Wiki
 
-**Project Constellation ID:** `PRJ-024`  
+**Project Constellation ID:** `PRJ-024`
 **Status:** VALIDATED COMPATIBILITY WORK; current-host live stack proof pending
 
 ## Coordinated versions

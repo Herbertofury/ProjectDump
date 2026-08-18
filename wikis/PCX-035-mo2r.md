@@ -1,8 +1,8 @@
 # MO2R Wiki
 
-**Project Constellation ID:** `PCX-035`  
-**Status:** ACTIVE / TRACKED  
-**Connected repository:** [Herbertofury/MO2R](https://github.com/Herbertofury/MO2R)  
+**Project Constellation ID:** `PCX-035`
+**Status:** ACTIVE / TRACKED
+**Connected repository:** [Herbertofury/MO2R](https://github.com/Herbertofury/MO2R)
 **Repository evidence boundary:** the connected repository currently contains only a minimal `# MO2R` README. The real implementation source/worktree has not yet been verified from that repository.
 
 ## Purpose

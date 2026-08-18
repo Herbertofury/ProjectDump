@@ -1,8 +1,8 @@
 # Feature Foundry Portable Feature Starter Wiki
 
-**Project Constellation ID:** `PRJ-023`  
-**Status:** GENERATED FEATURE FOUNDRY 2.6 STARTER, NOT SHIPPABLE  
-**Verified artifact:** `Feature_Foundry_Portable_Feature_Starter.zip`  
+**Project Constellation ID:** `PRJ-023`
+**Status:** GENERATED FEATURE FOUNDRY 2.6 STARTER, NOT SHIPPABLE
+**Verified artifact:** `Feature_Foundry_Portable_Feature_Starter.zip`
 **Package:** `feature-foundry-portable-feature-base` v0.1.0
 
 ## Purpose

@@ -1,11 +1,11 @@
 # PCX-061 - Petz Shared Core
 
-**Project Constellation ID:** PCX-061  
-**Status:** ACTIVE / TRACKED  
-**Project goal:** preserve PF Magic Petz behavior in one shared core for GameSync hosts.  
-**Primary requirement:** one engine with adapters, preserved source/assets, and no flattening of Petz into ordinary mascot animation.  
-**Current strongest shared-core source:** `Herbertofury/GameSync-Next`, with dedicated typed `packages/petz-engine`, `packages/petz-compat`, `packages/petz-formats`, and `packages/petz-bridge` workspaces.  
-**Current shipping parity baseline:** `Herbertofury/Gamesync` GameSync `0.6.3`, `main` observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`.  
+**Project Constellation ID:** PCX-061
+**Status:** ACTIVE / TRACKED
+**Project goal:** preserve PF Magic Petz behavior in one shared core for GameSync hosts.
+**Primary requirement:** one engine with adapters, preserved source/assets, and no flattening of Petz into ordinary mascot animation.
+**Current strongest shared-core source:** `Herbertofury/GameSync-Next`, with dedicated typed `packages/petz-engine`, `packages/petz-compat`, `packages/petz-formats`, and `packages/petz-bridge` workspaces.
+**Current shipping parity baseline:** `Herbertofury/Gamesync` GameSync `0.6.3`, `main` observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`.
 **Current implementation boundary:** current source proves both a substantial shipping JavaScript Petz runtime and a newer typed cross-host core architecture. Complete original PF Magic behavioral parity, completed save restore through the typed mascot bridge, complete use of every inventoried Petz resource, and end-to-end parity across shipping GameSync, Extension V2, and desktop are not yet proven.
 
 ## 1. Purpose and scope
@@ -35,18 +35,18 @@ Petz-specific motives, personality, breeds, actions, formats, Ballz geometry, ph
 
 ```mermaid
 flowchart LR
-    A[PF Magic originals / extracted source / mods] --> B[petz-formats]
-    B --> C[Normalized breeds / pets / toys / clothing / scenes]
-    D[petz-compat] --> E[Per-family compatibility rules]
-    C --> F[petz-engine]
-    E --> F
-    F --> G[petz-bridge]
-    G --> H[GameSync mascot contract]
-    H --> I[Shipping GameSync browser host]
-    H --> J[GameSync Next Extension V2]
-    K[Shipping GameSync JS Petz runtime] --> L[Parity and resource baseline]
-    L --> F
-    L --> I
+ A[PF Magic originals / extracted source / mods] --> B[petz-formats]
+ B --> C[Normalized breeds / pets / toys / clothing / scenes]
+ D[petz-compat] --> E[Per-family compatibility rules]
+ C --> F[petz-engine]
+ E --> F
+ F --> G[petz-bridge]
+ G --> H[GameSync mascot contract]
+ H --> I[Shipping GameSync browser host]
+ H --> J[GameSync Next Extension V2]
+ K[Shipping GameSync JS Petz runtime] --> L[Parity and resource baseline]
+ L --> F
+ L --> I
 ```
 
 The key ownership rule is that parsing, family compatibility, simulation state, motives, personality, actions, physics, save data, and custom content belong in the shared Petz domain layer. Browser APIs, DOM rendering, extension storage, desktop windows, and host lifecycle belong at adapter boundaries.
@@ -258,21 +258,21 @@ The current shipping `Herbertofury/Gamesync` repository remains essential becaus
 
 ```mermaid
 flowchart TD
-    A[GameSync mascot request / imported pack] --> B[engine_router.js]
-    B -->|engineOverride=petz or importType petz/pfmagic/oddballz| C[engine_petz.js]
-    C --> D[PetzAdapter]
-    C --> E[PetzCreature]
-    E --> F[Motives + weighted AI]
-    E --> G[Physics: gravity / drag / throw / bounce]
-    E --> H[Animation + sound]
-    E --> I{Renderer available?}
-    I -->|Ballz geometry + skeletons| J[Canvas / Ballz renderer]
-    I -->|Fallback / pack sprites| K[GIF/image renderer]
-    L[Petz pack JS files] --> C
-    M[breed-geometry-data.js] --> J
-    N[default-skeletons.js] --> J
-    O[app/assets/petz/**] --> L
-    P[game-resource-catalog.json] --> Q[Source/resource inventory]
+ A[GameSync mascot request / imported pack] --> B[engine_router.js]
+ B -->|engineOverride=petz or importType petz/pfmagic/oddballz| C[engine_petz.js]
+ C --> D[PetzAdapter]
+ C --> E[PetzCreature]
+ E --> F[Motives + weighted AI]
+ E --> G[Physics: gravity / drag / throw / bounce]
+ E --> H[Animation + sound]
+ E --> I{Renderer available?}
+ I -->|Ballz geometry + skeletons| J[Canvas / Ballz renderer]
+ I -->|Fallback / pack sprites| K[GIF/image renderer]
+ L[Petz pack JS files] --> C
+ M[breed-geometry-data.js] --> J
+ N[default-skeletons.js] --> J
+ O[app/assets/petz/**] --> L
+ P[game-resource-catalog.json] --> Q[Source/resource inventory]
 ```
 
 ### Shipping core files

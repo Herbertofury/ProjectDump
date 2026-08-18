@@ -1,9 +1,9 @@
 # ChatGPT Ultimate Optimizer Wiki
 
-**Project Constellation ID:** `PCX-041`  
-**Status:** ACTIVE / TRACKED  
-**Latest verified release:** `v1.0.1`  
-**Canonical release commit:** `78a92c68a07b49e152723457fcfb80fb03baf564`  
+**Project Constellation ID:** `PCX-041`
+**Status:** ACTIVE / TRACKED
+**Latest verified release:** `v1.0.1`
+**Canonical release commit:** `78a92c68a07b49e152723457fcfb80fb03baf564`
 **Surface research checked:** `2026-08-18`
 
 ## Purpose

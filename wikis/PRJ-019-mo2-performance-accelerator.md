@@ -1,7 +1,7 @@
 # MO2 Performance Accelerator Wiki
 
-**Project Constellation ID:** `PRJ-019`  
-**Status:** ACTIVE / corrected after reproduced crash; real-host qualification pending  
+**Project Constellation ID:** `PRJ-019`
+**Status:** ACTIVE / corrected after reproduced crash; real-host qualification pending
 **Latest recovered version:** **4.0.1**
 
 ## Purpose

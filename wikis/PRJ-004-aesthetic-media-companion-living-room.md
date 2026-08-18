@@ -2,11 +2,11 @@
 
 ## Status at a glance
 
-**Project Constellation ID:** `PRJ-004`  
-**Historical Constellation status:** PRECURSOR / MERGED  
-**Historical plan lineage:** `master-living-room-aesthetic-plan-v3.md`  
-**Newest verified implementation host:** [`Herbertofury/Gamesync`](https://github.com/Herbertofury/Gamesync), shipping extension `0.6.3`  
-**Observed GameSync main baseline:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
+**Project Constellation ID:** `PRJ-004`
+**Historical Constellation status:** PRECURSOR / MERGED
+**Historical plan lineage:** `master-living-room-aesthetic-plan-v3.md`
+**Newest verified implementation host:** [`Herbertofury/Gamesync`](https://github.com/Herbertofury/Gamesync), shipping extension `0.6.3`
+**Observed GameSync main baseline:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 **Cross-host contract owner:** [`Herbertofury/GameSync-Next`](https://github.com/Herbertofury/GameSync-Next), [`packages/shared/src/livingRoom.ts`](https://github.com/Herbertofury/GameSync-Next/blob/main/packages/shared/src/livingRoom.ts)
 
 The original Project Constellation record correctly preserves this project as a precursor whose scope overlaps Feature Foundry. Newer project-owned source adds an important refinement: a substantial **GameSync Living Room runtime now exists** and the cross-host ownership/schema contract lives in GameSync Next. Do not create a separate replacement repository merely because the historical PRJ-004 record called the product merged. Treat the old plan as product lineage, GameSync as the strongest verified shipping runtime host, GameSync Next as the shared contract layer, and Feature Foundry as the related authoring/data-platform family.
@@ -33,24 +33,24 @@ The historical PRJ-004 goals of room runtime, asset vault, aesthetic catalogue/e
 
 ```mermaid
 flowchart TD
-    A[GameSync full UI\nRoom tab] --> B[modules/living-room/index.js\ncontract + host bridge]
-    B --> C[living-room-tab.bundle.js\nshipping browser runtime]
-    C --> D[host.js\nLivingRoomHostController]
-    D --> E[Room state]
-    D --> F[Physics]
-    D --> G[Pixi renderer]
-    D --> H[Asset Vault]
-    D --> I[Aesthetic Explorer]
-    D --> J[Mystery Engine]
-    D --> K[World Orchestration]
-    D --> L[Mascot + Loot]
-    D --> M[AI Assistant]
-    D --> N[Export / Import]
+ A[GameSync full UI\nRoom tab] --> B[modules/living-room/index.js\ncontract + host bridge]
+ B --> C[living-room-tab.bundle.js\nshipping browser runtime]
+ C --> D[host.js\nLivingRoomHostController]
+ D --> E[Room state]
+ D --> F[Physics]
+ D --> G[Pixi renderer]
+ D --> H[Asset Vault]
+ D --> I[Aesthetic Explorer]
+ D --> J[Mystery Engine]
+ D --> K[World Orchestration]
+ D --> L[Mascot + Loot]
+ D --> M[AI Assistant]
+ D --> N[Export / Import]
 
-    O[GameSync Next\npackages/shared/src/livingRoom.ts] --> P[Shared types, ownership, namespaces, rollout]
-    P --> B
-    P --> Q[Extension V2 hostBridge.ts]
-    P --> R[Desktop future rollout]
+ O[GameSync Next\npackages/shared/src/livingRoom.ts] --> P[Shared types, ownership, namespaces, rollout]
+ P --> B
+ P --> Q[Extension V2 hostBridge.ts]
+ P --> R[Desktop future rollout]
 ```
 
 ### Ownership model

@@ -1,14 +1,14 @@
 # Shimeji Browser Extension Wiki
 
-**Project Constellation ID:** PCX-038  
-**Tracked project:** Shimeji Browser Extension  
-**Verified implementation evidence:** GameSync `Herbertofury/Gamesync` and GameSync Next `Herbertofury/GameSync-Next`, both on `main`  
-**GameSync package version inspected:** `0.6.3`  
-**GameSync commit inspected:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
-**GameSync Next Extension V2 package version inspected:** `0.8.0`  
-**GameSync Next current main inspected:** `9e337c720f0180cffa577f140b181c699f0a1650`  
-**GameSync Next universal mascot parity commit:** `60940e8479af518f3373a79efa091902f4843842`  
-**Standalone Shimeji Browser Extension repository:** unresolved in connected GitHub  
+**Project Constellation ID:** PCX-038
+**Tracked project:** Shimeji Browser Extension
+**Verified implementation evidence:** GameSync `Herbertofury/Gamesync` and GameSync Next `Herbertofury/GameSync-Next`, both on `main`
+**GameSync package version inspected:** `0.6.3`
+**GameSync commit inspected:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
+**GameSync Next Extension V2 package version inspected:** `0.8.0`
+**GameSync Next current main inspected:** `9e337c720f0180cffa577f140b181c699f0a1650`
+**GameSync Next universal mascot parity commit:** `60940e8479af518f3373a79efa091902f4843842`
+**Standalone Shimeji Browser Extension repository:** unresolved in connected GitHub
 **Documentation boundary:** this page documents the strongest verified browser-Shimeji implementations currently connected through GameSync and GameSync Next. It does not claim that either containing repository is the canonical standalone Shimeji Browser Extension source repository.
 
 ## Purpose

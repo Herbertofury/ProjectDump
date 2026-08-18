@@ -1,8 +1,8 @@
 # GameSync Platform Wiki
 
-**Project Constellation ID:** `PRJ-003`  
-**Status:** ACTIVE, multiple hosts  
-**Primary current repository:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)  
+**Project Constellation ID:** `PRJ-003`
+**Status:** ACTIVE, multiple hosts
+**Primary current repository:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)
 **Typed successor / migration repository:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next)
 
 ## Purpose

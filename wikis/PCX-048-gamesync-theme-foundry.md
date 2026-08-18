@@ -1,8 +1,8 @@
 # GameSync Theme Foundry Wiki
 
-**Project Constellation ID:** `PCX-048`  
-**Status:** ACTIVE / TRACKED  
-**Goal:** Author and package GameSync themes without drifting from Feature Foundry source contracts.  
+**Project Constellation ID:** `PCX-048`
+**Status:** ACTIVE / TRACKED
+**Goal:** Author and package GameSync themes without drifting from Feature Foundry source contracts.
 **Current durable implementation evidence:** GameSync 0.25.9 progress checkpoint plus current GameSync Next monorepo source and Feature Foundry North Star UI validation evidence.
 
 ## Verified current state

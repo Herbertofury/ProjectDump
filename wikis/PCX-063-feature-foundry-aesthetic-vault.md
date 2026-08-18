@@ -2,11 +2,11 @@
 
 ## Status
 
-**Tracked project:** PCX-063  
-**Current verified implementation name:** **Inspiration Vault**  
-**Current implementation host:** `Herbertofury/GameSync-Next` on `main`  
-**Primary source path:** `apps/feature-foundry/`  
-**Bridge source:** `apps/extension-v2/src/entrypoints/feature-foundry-bridge/` plus `apps/extension-v2/src/background/bootstrap.ts`  
+**Tracked project:** PCX-063
+**Current verified implementation name:** **Inspiration Vault**
+**Current implementation host:** `Herbertofury/GameSync-Next` on `main`
+**Primary source path:** `apps/feature-foundry/`
+**Bridge source:** `apps/extension-v2/src/entrypoints/feature-foundry-bridge/` plus `apps/extension-v2/src/background/bootstrap.ts`
 **Shared capture contract:** `packages/shared/src/featureFoundryCapture.ts`
 
 Project Constellation originally describes this track as an Aesthetic Vault that must become a real searchable asset/aesthetic operating surface rather than an empty drawer, with persistent assets, source provenance, visual direction, capture flows, and reversible organization. Current project-owned source shows that this goal now has an implemented browser-connected Feature Foundry workspace named **Inspiration Vault**.
@@ -39,30 +39,30 @@ Verified current capabilities include:
 
 ```text
 Browser page
-   |
-   | right-click "Save to Feature Foundry"
-   v
+ |
+ | right-click "Save to Feature Foundry"
+ v
 GameSync Extension V2 background service worker
-   |
-   | create FeatureFoundryBridgeCapture
-   | store temporary envelope in chrome.storage.local
-   v
+ |
+ | create FeatureFoundryBridgeCapture
+ | store temporary envelope in chrome.storage.local
+ v
 feature-foundry-bridge extension page
-   |
-   | validate envelope
-   | copy envelope into window.name
-   | remove temporary chrome.storage.local record
-   v
+ |
+ | validate envelope
+ | copy envelope into window.name
+ | remove temporary chrome.storage.local record
+ v
 Feature Foundry app at http://127.0.0.1:5175/
-   |
-   | ?ff-workspace=inspiration-vault
-   v
+ |
+ | ?ff-workspace=inspiration-vault
+ v
 InspirationVaultEditor
-   |
-   +--> persistent vault state in localStorage
-   +--> boards / tags / intent / source provenance
-   +--> local cleanup bench
-   +--> PNG and palette output
+ |
+ +--> persistent vault state in localStorage
+ +--> boards / tags / intent / source provenance
+ +--> local cleanup bench
+ +--> PNG and palette output
 ```
 
 ### Primary implementation files
@@ -247,10 +247,10 @@ The current editor includes a browser-side local cleanup bench rather than only 
 Verified controls include:
 
 - background mode:
-  - none;
-  - remove light;
-  - remove dark;
-  - remove green;
+ - none;
+ - remove light;
+ - remove dark;
+ - remove green;
 - threshold;
 - brightness;
 - contrast;

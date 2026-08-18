@@ -1,7 +1,7 @@
 # MO2 Image Column / MO2R Image Automation Wiki
 
-**Project Constellation ID:** `PRJ-017`  
-**Status:** ACTIVE corrected build; current-host live stack proof pending  
+**Project Constellation ID:** `PRJ-017`
+**Status:** ACTIVE corrected build; current-host live stack proof pending
 **Latest recovered version:** **Image Column 1.4.12**
 
 ## Purpose

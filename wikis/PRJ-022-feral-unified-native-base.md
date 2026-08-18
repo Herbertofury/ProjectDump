@@ -1,7 +1,7 @@
 # Feral Unified Native Base Wiki
 
-**Project Constellation ID:** `PRJ-022`  
-**Status:** IDENTITY RESOLVED / GENERATED FEATURE FOUNDRY BASE, NOT SHIPPABLE  
+**Project Constellation ID:** `PRJ-022`
+**Status:** IDENTITY RESOLVED / GENERATED FEATURE FOUNDRY BASE, NOT SHIPPABLE
 **Verified artifact:** `Feral_Unified_Native_Base.zip`
 
 ## Purpose and resolved identity

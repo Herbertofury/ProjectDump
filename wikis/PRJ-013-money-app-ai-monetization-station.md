@@ -1,8 +1,8 @@
 # PRJ-013 - Money App / AI Monetization Station
 
-**Project Constellation ID:** `PRJ-013`  
-**Historical state:** SPEC / PLAN  
-**Recovered historical plan:** `money_app_plan_v38_no_meta_prompts.md`  
+**Project Constellation ID:** `PRJ-013`
+**Historical state:** SPEC / PLAN
+**Recovered historical plan:** `money_app_plan_v38_no_meta_prompts.md`
 **Current continuity decision:** preserve this record as the historical Money App lineage and route active implementation work through `PCX-032 Profit Nova` unless explicit newer user direction separates them again.
 
 ## Purpose

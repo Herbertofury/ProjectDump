@@ -1,10 +1,10 @@
 # PCX-055 - GameSync Script Polling Runtime
 
-**Project Constellation ID:** PCX-055  
-**Status:** ACTIVE / TRACKED  
-**Canonical implementation:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)  
-**Verified repository version:** GameSync `0.6.3`  
-**Observed canonical commit:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
+**Project Constellation ID:** PCX-055
+**Status:** ACTIVE / TRACKED
+**Canonical implementation:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)
+**Verified repository version:** GameSync `0.6.3`
+**Observed canonical commit:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 **Primary implementation area:** `app/src/script-tracker/` plus `app/modules/library/background/script-tracker-handler.js`
 
 ## Purpose
@@ -17,23 +17,23 @@ The current GameSync source provides a real Manifest V3 implementation rather th
 
 ```text
 GameSync UI / callers
-        |
-        v
+ |
+ v
 SCRIPT_* background messages
-        |
-        v
+ |
+ v
 app/modules/library/background/script-tracker-handler.js
-        |
-        +--------------------+
-        |                    |
-        v                    v
-ScriptPollScheduler       ScriptDb
-        |                    |
-        v                    v
-Source adapters        IndexedDB tables
-        |
-        +--> ScarletRealmAdapter
-        +--> CustomListAdapter
+ |
+ +--------------------+
+ | |
+ v v
+ScriptPollScheduler ScriptDb
+ | |
+ v v
+Source adapters IndexedDB tables
+ |
+ +--> ScarletRealmAdapter
+ +--> CustomListAdapter
 ```
 
 The extension background service worker imports `scriptDb`, the Script Tracker message handler, and the Script Tracker polling scheduler. GameSync's Manifest V3 manifest grants the `alarms` and `storage` permissions required for the scheduler and persistence path.

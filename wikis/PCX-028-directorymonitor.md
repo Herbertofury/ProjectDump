@@ -1,8 +1,8 @@
 # DirectoryMonitor Wiki
 
-**Project Constellation ID:** `PCX-028`  
-**Status:** ACTIVE / TRACKED  
-**Confidence:** Medium  
+**Project Constellation ID:** `PCX-028`
+**Status:** ACTIVE / TRACKED
+**Confidence:** Medium
 **Canonical source repository:** unresolved in connected evidence
 
 ## Purpose

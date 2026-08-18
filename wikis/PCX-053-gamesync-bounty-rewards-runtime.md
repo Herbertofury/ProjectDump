@@ -1,11 +1,11 @@
 # GameSync Bounty / Rewards Runtime Wiki
 
-**Project Constellation ID:** `PCX-053`  
-**Canonical implementation repository:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)  
-**Canonical branch:** `main`  
-**Verified GameSync extension version:** `0.6.3`  
-**Current repository commit observed for this documentation pass:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
-**Architecture / validation evidence repository:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next), `Bounty/`  
+**Project Constellation ID:** `PCX-053`
+**Canonical implementation repository:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)
+**Canonical branch:** `main`
+**Verified GameSync extension version:** `0.6.3`
+**Current repository commit observed for this documentation pass:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
+**Architecture / validation evidence repository:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next), `Bounty/`
 **Project state:** active GameSync feature with real shipping source, verified historical Opera GX runtime evidence, and newer source changes that supersede parts of the July 2026 coverage matrix.
 
 ## Purpose
@@ -38,30 +38,30 @@ The canonical shipping extension uses this layout:
 
 ```text
 Gamesync/
-├── app/                              # editable extension source
-│   ├── src/features/bounty/
-│   │   ├── adapters/
-│   │   │   ├── battle-net.js
-│   │   │   ├── gamerpower.js
-│   │   │   ├── steam-library.js
-│   │   │   └── twitch-viewer.js
-│   │   ├── twitch-miner/
-│   │   │   ├── client.js
-│   │   │   ├── index.js
-│   │   │   ├── normalizer.js
-│   │   │   ├── queries.js
-│   │   │   └── runtime.js
-│   │   ├── background-service.js
-│   │   ├── bounty-service.js
-│   │   ├── browser-session.js
-│   │   ├── calendar.js
-│   │   ├── contracts.js
-│   │   ├── index.js
-│   │   └── source-registry.js
-│   └── shared/ui/bounty/
-│       ├── bounty-ui.js
-│       └── bounty.css
-├── dist/                             # generated production extension
+├── app/ # editable extension source
+│ ├── src/features/bounty/
+│ │ ├── adapters/
+│ │ │ ├── battle-net.js
+│ │ │ ├── gamerpower.js
+│ │ │ ├── steam-library.js
+│ │ │ └── twitch-viewer.js
+│ │ ├── twitch-miner/
+│ │ │ ├── client.js
+│ │ │ ├── index.js
+│ │ │ ├── normalizer.js
+│ │ │ ├── queries.js
+│ │ │ └── runtime.js
+│ │ ├── background-service.js
+│ │ ├── bounty-service.js
+│ │ ├── browser-session.js
+│ │ ├── calendar.js
+│ │ ├── contracts.js
+│ │ ├── index.js
+│ │ └── source-registry.js
+│ └── shared/ui/bounty/
+│ ├── bounty-ui.js
+│ └── bounty.css
+├── dist/ # generated production extension
 ├── package.json
 ├── package-lock.json
 └── vite.config.ts
@@ -75,19 +75,19 @@ The project-owned architecture report describes the primary production path as:
 
 ```text
 popup / panel / full-page / interactive preview
-        |
-        v
+ |
+ v
 shared/ui/bounty/bounty-ui.js + bounty.css
-        |  BOUNTY_* messages
-        v
+ | BOUNTY_* messages
+ v
 src/features/bounty/background-service.js
-        |
-        v
+ |
+ v
 src/features/bounty/bounty-service.js
-   ├── source-registry.js
-   ├── adapters/*
-   ├── calendar.js
-   └── src/storage/db.js / IndexedDB
+ ├── source-registry.js
+ ├── adapters/*
+ ├── calendar.js
+ └── src/storage/db.js / IndexedDB
 ```
 
 The feature is intentionally a vertical slice. Host pages should register navigation and mounting, while Bounty behavior stays inside the Bounty feature/service/UI modules instead of leaking reward-specific logic across unrelated GameSync code.
@@ -141,22 +141,22 @@ Current shipping `source-registry.js` registers four executable adapters and exp
 
 ### GamerPower
 
-**Status:** registered, ready  
-**Authority:** curated aggregator  
+**Status:** registered, ready
+**Authority:** curated aggregator
 **Purpose:** giveaways, free-to-keep games, loot, codes, betas.
 
 This is the broad public-feed adapter. It supplies source links and artwork but is not treated as first-party account ownership proof.
 
 ### Twitch Drops
 
-**Status:** registered, `session-ready`  
+**Status:** registered, `session-ready`
 **Authority:** first-party authorized browser session.
 
 Current source can read viewer reward/campaign evidence from the user's already-authorized Twitch pages and contains a dedicated Twitch mining runtime. GameSync does not need to persist browser cookies or bearer tokens for the browser-session extractor. Authentication remains in the user's browser session.
 
 ### Steam
 
-**Status:** registered, `settings-ready`  
+**Status:** registered, `settings-ready`
 **Authority:** first-party account API.
 
 The Steam adapter reuses Steam identity/API settings already saved in GameSync Options. It accepts a SteamID64 or vanity identity, resolves the effective Steam ID, loads owned games, attempts wishlist reconciliation, and emits per-game verified ownership evidence including Steam App ID and observed playtime/last-played metadata when available.
@@ -165,7 +165,7 @@ If neither Steam ID nor vanity identity is configured, the adapter returns an ex
 
 ### Battle.net / Blizzard
 
-**Status:** registered, `session-ready`  
+**Status:** registered, `session-ready`
 **Authority:** first-party authorized browser session.
 
 The adapter opens or reuses the user's authenticated `account.battle.net/games` page, validates the provider origin/path, extracts visible game-license evidence, and returns verified-account ownership rows. When the user is signed out, it returns an authentication-required state.

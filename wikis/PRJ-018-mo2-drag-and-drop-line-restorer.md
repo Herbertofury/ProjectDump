@@ -1,8 +1,8 @@
 # MO2 Drag-and-Drop Line Restorer Wiki
 
-**Project Constellation ID:** `PRJ-018`  
-**Status:** VALIDATED ARTIFACT; real-host visual/target proof pending  
-**Latest recovered version:** **1.1.0**  
+**Project Constellation ID:** `PRJ-018`
+**Status:** VALIDATED ARTIFACT; real-host visual/target proof pending
+**Latest recovered version:** **1.1.0**
 **Recovered SHA-256:** `615b3b05e081ce6c529b4e9e117dbdc207f30e0dca5c858c31739a0981da7b56`
 
 ## Purpose

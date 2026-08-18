@@ -1,7 +1,7 @@
 # Auralis Wiki
 
-**Project Constellation ID:** `PCX-031`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-031`
+**Status:** ACTIVE / TRACKED
 **Current source boundary:** production build artifacts and implementation directives are recovered in the durable File Library; a canonical GitHub application repository has not yet been resolved.
 
 ## Purpose

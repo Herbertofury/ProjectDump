@@ -1,6 +1,6 @@
 # Feature Foundry Object Intelligence Wiki
 
-**Project Constellation ID:** `PCX-045`  
+**Project Constellation ID:** `PCX-045`
 **Status:** ACTIVE / TRACKED
 
 ## Purpose

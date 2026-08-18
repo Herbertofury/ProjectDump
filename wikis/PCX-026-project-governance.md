@@ -1,8 +1,8 @@
 # Project Governance Wiki
 
-**Project Constellation ID:** `PCX-026`  
-**Status:** ACTIVE / TRACKED  
-**Confidence:** Medium  
+**Project Constellation ID:** `PCX-026`
+**Status:** ACTIVE / TRACKED
+**Confidence:** Medium
 **Durable governance repository:** [Herbertofury/ProjectDump](https://github.com/Herbertofury/ProjectDump)
 
 ## Purpose

@@ -1,7 +1,7 @@
 # UltraDeck Wiki
 
-**Project Constellation ID:** `PRJ-025`  
-**Status:** ACTIVE  
+**Project Constellation ID:** `PRJ-025`
+**Status:** ACTIVE
 **Canonical connected repository:** [Herbertofury/UltraDeck](https://github.com/Herbertofury/UltraDeck)
 
 ## Purpose

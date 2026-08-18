@@ -1,7 +1,7 @@
 # Bethesda Creations Version Tracker for MO2 Wiki
 
-**Project Constellation ID:** `PRJ-016`  
-**Status:** VALIDATED ARTIFACT; current-host live proof pending  
+**Project Constellation ID:** `PRJ-016`
+**Status:** VALIDATED ARTIFACT; current-host live proof pending
 **Latest recovered version:** **2.4.3** shared drag/drop compatibility correction
 
 ## Purpose

@@ -1,11 +1,11 @@
 # PRJ-005 - Mascot / Screenmate Platform
 
-**Project Constellation ID:** PRJ-005  
-**Status:** ACTIVE umbrella  
-**Current verified browser implementation host:** [`Herbertofury/Gamesync`](https://github.com/Herbertofury/Gamesync)  
-**Verified shipping baseline:** GameSync `0.6.3`  
-**Observed canonical commit for this documentation pass:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
-**Historical Project Constellation next action:** resolve which repository owns the shared mascot core.  
+**Project Constellation ID:** PRJ-005
+**Status:** ACTIVE umbrella
+**Current verified browser implementation host:** [`Herbertofury/Gamesync`](https://github.com/Herbertofury/Gamesync)
+**Verified shipping baseline:** GameSync `0.6.3`
+**Observed canonical commit for this documentation pass:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
+**Historical Project Constellation next action:** resolve which repository owns the shared mascot core.
 **Current resolution:** the shipping browser-side mascot implementation is verified inside GameSync, but a single standalone repository owning the entire browser + desktop umbrella is still not proven.
 
 ## Purpose

@@ -1,11 +1,11 @@
 # GameSync Source Finder / Entity Resolver Wiki
 
-**Project Constellation ID:** PCX-054  
-**Status:** ACTIVE / TRACKED  
-**Shipping implementation:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync), GameSync `0.6.3`, observed head `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
-**GameSync Next implementation:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next), observed head `9e337c720f0180cffa577f140b181c699f0a1650`  
-**Primary shipping source root:** `app/`  
-**Primary shipping runtime:** Manifest V3 browser extension service worker  
+**Project Constellation ID:** PCX-054
+**Status:** ACTIVE / TRACKED
+**Shipping implementation:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync), GameSync `0.6.3`, observed head `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
+**GameSync Next implementation:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next), observed head `9e337c720f0180cffa577f140b181c699f0a1650`
+**Primary shipping source root:** `app/`
+**Primary shipping runtime:** Manifest V3 browser extension service worker
 
 ## Purpose
 
@@ -29,20 +29,20 @@ GameSync Next also contains a typed multi-source discovery implementation in `pa
 
 ```mermaid
 flowchart LR
-    UI[GameSync UI / AutoNotes request] --> MSG[Intel message handler]
-    MSG --> DISC[Legacy discovery pipeline]
-    MSG --> SF[Source Finder Service]
-    DISC --> HM[Hybrid Matcher]
-    SF --> RANK[Ranking Service]
-    HM --> FLEX[FlexSearch]
-    HM --> FTS[FTS5 / SQLite]
-    HM --> RANK
-    RANK --> CONTRA[Contradiction / false-positive checks]
-    DISC --> SEM[Optional semantic rerank]
-    RANK --> EVID[Evidence + score breakdown]
-    SEM --> PATCH[Library source patch]
-    EVID --> PATCH
-    PATCH --> DB[GameSync library]
+ UI[GameSync UI / AutoNotes request] --> MSG[Intel message handler]
+ MSG --> DISC[Legacy discovery pipeline]
+ MSG --> SF[Source Finder Service]
+ DISC --> HM[Hybrid Matcher]
+ SF --> RANK[Ranking Service]
+ HM --> FLEX[FlexSearch]
+ HM --> FTS[FTS5 / SQLite]
+ HM --> RANK
+ RANK --> CONTRA[Contradiction / false-positive checks]
+ DISC --> SEM[Optional semantic rerank]
+ RANK --> EVID[Evidence + score breakdown]
+ SEM --> PATCH[Library source patch]
+ EVID --> PATCH
+ PATCH --> DB[GameSync library]
 ```
 
 ### Main shipping modules

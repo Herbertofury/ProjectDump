@@ -1,8 +1,8 @@
 # GameSync Live Mascot Tavern Wiki
 
-**Project Constellation ID:** `PCX-049`  
-**Status:** ACTIVE / TRACKED  
-**Goal:** Run live mascot engines inside GameSync as real interactive systems.  
+**Project Constellation ID:** `PCX-049`
+**Status:** ACTIVE / TRACKED
+**Goal:** Run live mascot engines inside GameSync as real interactive systems.
 **Current verified line:** GameSync 0.25.9 Live Mascot Tavern - Native Engines, with a newer GameSync Next Petz bridge descendant requiring parity repair.
 
 ## Verified current state

@@ -1,9 +1,9 @@
 # Webmeji Wiki
 
-**Project Constellation ID:** `PCX-039`  
-**Status:** ACTIVE / TRACKED  
-**Canonical user-owned standalone source:** unresolved in connected GitHub  
-**Current external behavior reference:** [lars-rooij/webmeji](https://github.com/lars-rooij/webmeji)  
+**Project Constellation ID:** `PCX-039`
+**Status:** ACTIVE / TRACKED
+**Canonical user-owned standalone source:** unresolved in connected GitHub
+**Current external behavior reference:** [lars-rooij/webmeji](https://github.com/lars-rooij/webmeji)
 **Current GameSync integration evidence:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync) at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 
 ## Purpose

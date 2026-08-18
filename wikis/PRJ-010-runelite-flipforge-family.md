@@ -1,9 +1,9 @@
 # PRJ-010 - RuneLite FlipForge / Farm Material Ranker / No-Hitch / 117HD Family
 
-**Project Constellation ID:** PRJ-010  
-**Tracked state:** ACTIVE, release blocker  
-**Confidence:** Medium  
-**Current connected GitHub publication point:** `Herbertofury/FlipForge`  
+**Project Constellation ID:** PRJ-010
+**Tracked state:** ACTIVE, release blocker
+**Confidence:** Medium
+**Current connected GitHub publication point:** `Herbertofury/FlipForge`
 **Current repository state:** placeholder only, not a recovered implementation source
 
 ## Purpose
@@ -116,17 +116,17 @@ The durable record supports this **family-level** architecture, but not exact cu
 
 ```text
 Jagex launcher / real RuneLite client
-          |
-          v
+ |
+ v
 No-Hitch RuneLite runtime / launcher layer
-          |
-          +--> FlipForge external plugin
-          |
-          +--> Farm Material Ranker external plugin
-          |
-          +--> 117HD / RLHD integration
-          |
-          +--> Rust dashboard / bridge
+ |
+ +--> FlipForge external plugin
+ |
+ +--> Farm Material Ranker external plugin
+ |
+ +--> 117HD / RLHD integration
+ |
+ +--> Rust dashboard / bridge
 ```
 
 The critical architecture rule is that a successful standalone build or developer-mode launch is only an intermediate check. The final release path terminates in the actual Jagex-launched client and must survive restart.

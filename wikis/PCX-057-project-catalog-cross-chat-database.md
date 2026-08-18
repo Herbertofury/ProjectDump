@@ -1,8 +1,8 @@
 # Project Catalog / Cross-Chat Database Wiki
 
-**Project Constellation ID:** `PCX-057`  
-**Status:** ACTIVE / TRACKED  
-**Current authority:** Project Constellation 63-record continuity state plus current project-owned evidence  
+**Project Constellation ID:** `PCX-057`
+**Status:** ACTIVE / TRACKED
+**Current authority:** Project Constellation 63-record continuity state plus current project-owned evidence
 **Goal:** Maintain the durable cross-project locator, version lineage, artifact hashes, and exact next actions without promoting stale copies by timestamp alone.
 
 ## Purpose
@@ -18,7 +18,7 @@ This catalog must preserve same-name different-content artifacts, predecessor/su
 
 ## Current verified catalog state
 
-Project Constellation currently preserves exactly **63 tracked projects**, with Sports Group Hub intentionally absent. The byte-verified v0.5.0 Quick View remains a valid recovery surface, and the standalone machine catalog has now been independently resolved rather than reconstructed from historical data.
+Project Constellation currently preserves exactly **63 tracked projects**, with intentionally absent. The byte-verified v0.5.0 Quick View remains a valid recovery surface, and the standalone machine catalog has now been independently resolved rather than reconstructed from historical data.
 
 The canonical Drive object is:
 
@@ -33,7 +33,7 @@ The exact same catalog bytes were restored to the canonical GitHub tree at:
 - restoration commit: `eb99a193c08b9f2ca370dbcf85c75c2f997eafa6`
 - Git blob SHA: `d417e516449f7c2d4ec9a16accdedfebc5cb590f`
 
-The restored JSON was validated as a 63-record catalog with 63 unique project IDs, `sportsGroupHubExcluded: true`, no Sports Group Hub record, and complete `goal`, `requirements`, and `recoveryHistory` coverage across every project.
+The restored JSON was validated as a 63-record catalog with 63 unique project IDs, `: true`, no record, and complete `goal`, `requirements`, and `recoveryHistory` coverage across every project.
 
 A historical `USER-PROJECTS-DATABASE.md` is also present in Google Drive. That document remains useful for lineage and detailed recovery history, especially for the original 25 project families, but Project Constellation explicitly treats it as historical evidence rather than authority over the current 63-record catalog.
 
@@ -68,8 +68,7 @@ It also records these verified invariants:
 
 - `projectCount: 63`
 - unique project IDs
-- Sports Group Hub excluded
-- Sports Group Hub record absent
+- record absent
 - every project has a goal
 - every project has requirements
 - every project has recovery history
@@ -157,7 +156,7 @@ The catalog is now a dual-published continuity artifact. A future run should tre
 - the Drive object is missing or has unexpected bytes;
 - project count is not 63;
 - project IDs are not unique;
-- Sports Group Hub reappears;
+- reappears;
 - required continuity fields disappear;
 - a catalog is promoted from the historical 25-project database without stronger evidence;
 - `Project-Constellation-Catalog-Integrity.json` no longer describes the promoted catalog bytes.
@@ -186,7 +185,7 @@ If added, the mirror should be reproducible from the canonical JSON and disposab
 The standalone catalog is durable only when:
 
 - exactly 63 current project IDs are present;
-- Sports Group Hub is absent;
+-;
 - every current record retains goal, requirements, stop point, next action, and recovery history;
 - explicit user edits win;
 - same-name different-content lineage is preserved;

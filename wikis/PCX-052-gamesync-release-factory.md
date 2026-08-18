@@ -1,9 +1,9 @@
 # GameSync Release Factory Wiki
 
-**Project ID:** PCX-052  
-**Project Constellation goal:** Create reproducible GameSync application/extension release artifacts from canonical source.  
-**Documentation status:** Current source-grounded release/build contract  
-**Primary shipping repository:** `Herbertofury/Gamesync`  
+**Project ID:** PCX-052
+**Project Constellation goal:** Create reproducible GameSync application/extension release artifacts from canonical source.
+**Documentation status:** Current source-grounded release/build contract
+**Primary shipping repository:** `Herbertofury/Gamesync`
 **Primary migration repository:** `Herbertofury/GameSync-Next`
 
 ## Purpose
@@ -16,8 +16,8 @@ The most important rule is that a successful source edit is not itself a release
 
 ### Shipping JavaScript extension
 
-Repository: `Herbertofury/Gamesync`  
-Current package version: **0.6.3**  
+Repository: `Herbertofury/Gamesync`
+Current package version: **0.6.3**
 Current observed `main` head used for this wiki: `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 
 The repository explicitly separates:
@@ -31,8 +31,8 @@ The repository explicitly separates:
 
 ### GameSync Next / Extension V2
 
-Repository: `Herbertofury/GameSync-Next`  
-Current observed `main` head used for this wiki: `9e337c720f0180cffa577f140b181c699f0a1650`  
+Repository: `Herbertofury/GameSync-Next`
+Current observed `main` head used for this wiki: `9e337c720f0180cffa577f140b181c699f0a1650`
 Extension V2 package version: **0.8.0**
 
 GameSync Next is a workspace-based migration repository. The Extension V2 workspace is `apps/extension-v2`; it uses WXT, TypeScript, React, and shared GameSync packages. The generated Chromium Manifest V3 build is referenced by the repository's verification tools at:

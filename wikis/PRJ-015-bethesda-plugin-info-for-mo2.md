@@ -1,7 +1,7 @@
 # Bethesda Plugin Info for MO2 Wiki
 
-**Project Constellation ID:** `PRJ-015`  
-**Status:** VALIDATED ARTIFACT; current-host live proof pending  
+**Project Constellation ID:** `PRJ-015`
+**Status:** VALIDATED ARTIFACT; current-host live proof pending
 **Latest recovered version:** **1.5.3** compatibility correction
 
 ## Purpose

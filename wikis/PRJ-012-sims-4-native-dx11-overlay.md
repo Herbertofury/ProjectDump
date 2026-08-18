@@ -1,8 +1,8 @@
 # PRJ-012 - Sims 4 Native DX11 Overlay Mod
 
-**Project Constellation ID:** `PRJ-012`  
-**Status:** SPEC / relationship unresolved  
-**Recovered architecture:** native Windows C++ / DirectX 11 / Dear ImGui overlay concept  
+**Project Constellation ID:** `PRJ-012`
+**Status:** SPEC / relationship unresolved
+**Recovered architecture:** native Windows C++ / DirectX 11 / Dear ImGui overlay concept
 **Current source boundary:** no canonical repository or runnable DLL has been resolved in connected GitHub/Drive state.
 
 ## Purpose

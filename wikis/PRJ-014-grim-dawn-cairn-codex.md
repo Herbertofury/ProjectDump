@@ -1,8 +1,8 @@
 # PRJ-014 - Grim Dawn Cairn Codex
 
-**Project Constellation ID:** `PRJ-014`  
-**Historical state:** artifact present, runtime unverified  
-**Historical latest artifact:** `Grim_Dawn_Cairn_Codex_Ultimate_v6_1.html`  
+**Project Constellation ID:** `PRJ-014`
+**Historical state:** artifact present, runtime unverified
+**Historical latest artifact:** `Grim_Dawn_Cairn_Codex_Ultimate_v6_1.html`
 **Current source boundary:** the historical database proves the v6.1 artifact name, but exact current bytes were not recovered from connected GitHub/Drive searches in this pass.
 
 ## Purpose

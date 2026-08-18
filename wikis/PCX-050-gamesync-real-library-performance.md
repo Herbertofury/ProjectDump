@@ -1,8 +1,8 @@
 # GameSync Real Library Performance Wiki
 
-**Project Constellation ID:** `PCX-050`  
-**Status:** ACTIVE / TRACKED  
-**Goal:** Optimize GameSync against the complete real library without culling or hiding off-screen cards.  
+**Project Constellation ID:** `PCX-050`
+**Status:** ACTIVE / TRACKED
+**Goal:** Optimize GameSync against the complete real library without culling or hiding off-screen cards.
 **Current verified line:** GameSync 0.25.9 Real Library Performance Pass 1.
 
 ## Verified current state

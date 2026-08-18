@@ -1,7 +1,7 @@
 # Feature Foundry Living Ecology Wiki
 
-**Project Constellation ID:** `PCX-044`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-044`
+**Status:** ACTIVE / TRACKED
 **Current strongest verified ecology artifact:** `Feature Foundry V33 - Recovered Ecology`
 
 ## Purpose

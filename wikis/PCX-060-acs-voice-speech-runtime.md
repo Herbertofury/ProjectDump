@@ -1,10 +1,10 @@
 # ACS Voice / Speech Runtime Wiki
 
-**Project Constellation ID:** `PCX-060`  
-**Status:** ACTIVE / TRACKED  
-**Current verified host source:** `Herbertofury/Gamesync`  
-**Verified GameSync version:** `0.6.3`  
-**Verified source baseline:** commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
+**Project Constellation ID:** `PCX-060`
+**Status:** ACTIVE / TRACKED
+**Current verified host source:** `Herbertofury/Gamesync`
+**Verified GameSync version:** `0.6.3`
+**Verified source baseline:** commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 **Goal:** Preserve classic agent speech and voice interaction expectations in the modern mascot runtime using real speech/audio services, coordinated animation/state, interruption, cancellation, and truthful fallbacks.
 
 ## Purpose
@@ -77,16 +77,16 @@ The verified source path is:
 
 ```mermaid
 flowchart LR
-    ACS[.acs file] --> Parser[acs-parser.js]
-    Parser --> AudioEntries[parsed audio entries]
-    Parser --> Animations[animation/frame sound references]
-    AudioEntries --> Converter[acs-to-clippy.js]
-    Animations --> Converter
-    Converter --> WAV[WAV/audio blobs]
-    Converter --> AgentData[clippy-compatible agent data]
-    AgentData --> Mascot[Mascot_Engine.js]
-    WAV --> Mascot
-    Voicepacks[app/Voicepacks] --> Mascot
+ ACS[.acs file] --> Parser[acs-parser.js]
+ Parser --> AudioEntries[parsed audio entries]
+ Parser --> Animations[animation/frame sound references]
+ AudioEntries --> Converter[acs-to-clippy.js]
+ Animations --> Converter
+ Converter --> WAV[WAV/audio blobs]
+ Converter --> AgentData[clippy-compatible agent data]
+ AgentData --> Mascot[Mascot_Engine.js]
+ WAV --> Mascot
+ Voicepacks[app/Voicepacks] --> Mascot
 ```
 
 `acs-to-clippy.js` explicitly produces audio entries as WAV data and preserves per-frame sound references while it builds the agent animation data. This means ACS audio is part of the conversion contract rather than an unrelated add-on.

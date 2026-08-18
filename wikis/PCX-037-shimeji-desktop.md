@@ -1,10 +1,10 @@
 # Shimeji Desktop Wiki
 
-**Project Constellation ID:** `PCX-037`  
-**Status:** ACTIVE / TRACKED  
-**Canonical user-owned source:** unresolved in connected GitHub  
-**Current Java compatibility benchmark:** [DalekCraft2/Shimeji-Desktop](https://github.com/DalekCraft2/Shimeji-Desktop)  
-**Current architecture/parity benchmark:** [qingchenyouforcc/NeurolingsCE](https://github.com/qingchenyouforcc/NeurolingsCE)  
+**Project Constellation ID:** `PCX-037`
+**Status:** ACTIVE / TRACKED
+**Canonical user-owned source:** unresolved in connected GitHub
+**Current Java compatibility benchmark:** [DalekCraft2/Shimeji-Desktop](https://github.com/DalekCraft2/Shimeji-Desktop)
+**Current architecture/parity benchmark:** [qingchenyouforcc/NeurolingsCE](https://github.com/qingchenyouforcc/NeurolingsCE)
 **NeurolingsCE commit inspected:** `00adb430efd13b70db8791af3566eae7b4e8aa17`
 
 ## Purpose
@@ -43,16 +43,16 @@ A materially newer ecosystem reference appeared in August 2026: [qingchenyouforc
 The inspected current README and initial rewrite commit document this workspace:
 
 ```text
-manager/                 Flutter fluent_ui manager
+manager/ Flutter fluent_ui manager
 crates/
-  neurolings-engine      Shimeji-ee behavior engine
-  neurolings-pack        .mascot and legacy ZIP handling
-  neurolings-platform    native transparent-window/platform layer
-  neurolings-runtime     runtime daemon, rendering, HTTP/IPC
-  neurolings-cli         command-line runtime control
-  neurolings-store       store/index/download/update surface
-  neurolings-common      shared contracts/constants
-  xtask                  build/run task support
+ neurolings-engine Shimeji-ee behavior engine
+ neurolings-pack.mascot and legacy ZIP handling
+ neurolings-platform native transparent-window/platform layer
+ neurolings-runtime runtime daemon, rendering, HTTP/IPC
+ neurolings-cli command-line runtime control
+ neurolings-store store/index/download/update surface
+ neurolings-common shared contracts/constants
+ xtask build/run task support
 ```
 
 Source-verified architectural capabilities include:

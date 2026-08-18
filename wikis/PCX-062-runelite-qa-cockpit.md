@@ -1,8 +1,8 @@
 # PCX-062 - RuneLite QA Cockpit
 
-**Project Constellation ID:** `PCX-062`  
-**Status:** ACTIVE / TRACKED  
-**Source status:** canonical user-owned plugin repository/ZIP not yet re-resolved  
+**Project Constellation ID:** `PCX-062`
+**Status:** ACTIVE / TRACKED
+**Source status:** canonical user-owned plugin repository/ZIP not yet re-resolved
 **Preserved latest lineage:** `bert-skill-atlas-qa-cockpit.zip` after the Unified Cockpit line
 
 ## Purpose

@@ -1,8 +1,8 @@
 # Master Desktop Pet Research Wiki
 
-**Project Constellation ID:** `PRJ-020`  
-**Status:** RESEARCH BASE  
-**Confidence:** High  
+**Project Constellation ID:** `PRJ-020`
+**Status:** RESEARCH BASE
+**Confidence:** High
 **Latest recovered lineage:** consolidated master containing v10, v14, v9 and v7 material
 
 ## Purpose

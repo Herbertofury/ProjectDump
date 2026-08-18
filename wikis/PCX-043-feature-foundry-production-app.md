@@ -1,10 +1,10 @@
 # Feature Foundry Production App Wiki
 
-**Project Constellation ID:** `PCX-043`  
-**Status:** ACTIVE / TRACKED  
-**Strongest verified runnable artifact lineage:** `V33 FINAL_READY`  
-**Newest remotely byte-verified maintainable source lineage:** `GameSync / Feature Foundry V2-253`  
-**Current recovery ledger:** `Feature Foundry Recovery Checkpoint Ledger - V2 Continuity`, Drive document `1AES2lZ6GFfpdBFZdSX4XXy-FbGQxPKGrXFLJjM67Smg`  
+**Project Constellation ID:** `PCX-043`
+**Status:** ACTIVE / TRACKED
+**Strongest verified runnable artifact lineage:** `V33 FINAL_READY`
+**Newest remotely byte-verified maintainable source lineage:** `GameSync / Feature Foundry V2-253`
+**Current recovery ledger:** `Feature Foundry Recovery Checkpoint Ledger - V2 Continuity`, Drive document `1AES2lZ6GFfpdBFZdSX4XXy-FbGQxPKGrXFLJjM67Smg`
 **Connected placeholder repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)
 
 ## Purpose
@@ -401,28 +401,28 @@ The V2 recovery ledger identifies the following important ownership boundaries:
 GameSync / Feature Foundry source
 |
 +-- apps/feature-foundry
-|   +-- production React authoring/project-operations UI
-|   +-- workspace state, layouts, project views, Radar/Drops/Agents/History/Recovery
+| +-- production React authoring/project-operations UI
+| +-- workspace state, layouts, project views, Radar/Drops/Agents/History/Recovery
 |
 +-- packages/core/src/theme-foundry.ts
-|   +-- production-owned theme/world data contract
-|   +-- complete 16-theme / 80-object registry baseline
+| +-- production-owned theme/world data contract
+| +-- complete 16-theme / 80-object registry baseline
 |
 +-- Feature Foundry daemon / Project Vault services
-|   +-- durable project state and append-only evidence history
-|   +-- monitoring/discovery/health/dependency/release intelligence
-|   +-- scheduler and HTTP API
-|   +-- agent execution, ACP, OpenHands, binary lifecycle
-|   +-- recovery points and source fingerprinting
+| +-- durable project state and append-only evidence history
+| +-- monitoring/discovery/health/dependency/release intelligence
+| +-- scheduler and HTTP API
+| +-- agent execution, ACP, OpenHands, binary lifecycle
+| +-- recovery points and source fingerprinting
 |
 +-- verification tooling
-    +-- Feature Foundry static/runtime gates
-    +-- daemon static/runtime/adversarial fixtures
-    +-- runtime-integrity gate
-    +-- no-culling/UI audit
-    +-- launch-readiness gates
-    +-- production browser smoke
-    +-- production desktop smoke
+ +-- Feature Foundry static/runtime gates
+ +-- daemon static/runtime/adversarial fixtures
+ +-- runtime-integrity gate
+ +-- no-culling/UI audit
+ +-- launch-readiness gates
+ +-- production browser smoke
+ +-- production desktop smoke
 ```
 
 This is a source-evidence map, not permission to rename/reorganize modules before a fresh V2 recovery and source inspection.

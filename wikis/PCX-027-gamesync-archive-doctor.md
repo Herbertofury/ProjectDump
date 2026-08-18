@@ -1,7 +1,7 @@
 # GameSync Archive Doctor Wiki
 
-**Project Constellation ID:** `PCX-027`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-027`
+**Status:** ACTIVE / TRACKED
 **Confidence:** High for recovered artifact lineage; canonical source repository unresolved
 
 ## Purpose

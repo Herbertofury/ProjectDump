@@ -1,7 +1,7 @@
 # Reliable Artifact Publisher Wiki
 
-**Project Constellation ID:** `PCX-030`  
-**Status:** ACTIVE / TRACKED  
+**Project Constellation ID:** `PCX-030`
+**Status:** ACTIVE / TRACKED
 **Confidence:** High for recovered hash evidence and current ProjectDump publication proof; canonical standalone publisher source/toolkit bytes remain unresolved in connected evidence
 
 ## Purpose
@@ -95,7 +95,7 @@ That receipt records a canonical catalog publication with:
 - GitHub state: `RESTORED_AND_FETCH_VERIFIED`;
 - Google Drive state: `SOURCE_REDOWNLOADED_AND_SHA256_VERIFIED`.
 
-It also records semantic invariants separately from byte identity: 63 unique project IDs, required project fields present, and the removed Sports Group Hub absent.
+It also records semantic invariants separately from byte identity: 63 unique project IDs, required project fields present, and the removed
 
 That separation matters. Raw SHA-256 is the exact byte identity. Semantic invariants answer whether the artifact is structurally acceptable. A future publisher should preserve both rather than normalizing bytes and then pretending the original digest still applies.
 

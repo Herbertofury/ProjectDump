@@ -1,8 +1,8 @@
 # Feature Foundry Source Hubs Wiki
 
-**Project Constellation ID:** `PCX-046`  
-**Status:** ACTIVE / TRACKED  
-**Goal:** Manage external media and asset providers through explicit source adapters.  
+**Project Constellation ID:** `PCX-046`
+**Status:** ACTIVE / TRACKED
+**Goal:** Manage external media and asset providers through explicit source adapters.
 **Current evidence authority:** Feature Foundry V33 durable runtime artifact plus current provider documentation.
 
 ## Verified current state

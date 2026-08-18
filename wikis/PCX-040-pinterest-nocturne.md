@@ -1,10 +1,10 @@
 # Pinterest Nocturne Wiki
 
-**Project Constellation ID:** `PCX-040`  
-**Status:** ACTIVE / TRACKED  
-**Current verified source line:** `2.0.0`  
-**Canonical project repository:** [Herbertofury/Pinterest-Nocturne](https://github.com/Herbertofury/Pinterest-Nocturne)  
-**Canonical Drive artifact folder:** `Pinterest Nocturne 2.0.0`, folder ID `1WQ2cHAGxDxqJMTXPW00bLbMksIHiwRvw`  
+**Project Constellation ID:** `PCX-040`
+**Status:** ACTIVE / TRACKED
+**Current verified source line:** `2.0.0`
+**Canonical project repository:** [Herbertofury/Pinterest-Nocturne](https://github.com/Herbertofury/Pinterest-Nocturne)
+**Canonical Drive artifact folder:** `Pinterest Nocturne 2.0.0`, folder ID `1WQ2cHAGxDxqJMTXPW00bLbMksIHiwRvw`
 **Historical lineage:** [Herbertofury/UltraDeck](https://github.com/Herbertofury/UltraDeck) remains useful recovery-era evidence, but it is not the current project repository.
 
 ## Purpose
@@ -85,48 +85,48 @@ README.md
 VERIFICATION.md
 package.json
 research/
-  RESEARCH.md
+ RESEARCH.md
 scripts/
-  build.mjs
-  make_icons.py
-  package.mjs
-  static-test.mjs
+ build.mjs
+ make_icons.py
+ package.mjs
+ static-test.mjs
 src/
-  manifest.json
-  background/
-    background.js
-  content/
-    base.css
-    content.js
-    page-engine.js
-  icons/
-  popup/
-    popup.html
-    popup.css
-    popup.js
-  rules/
-    lean.json
-  sidebar/
-    sidebar.html
-    sidebar.css
-    sidebar.js
+ manifest.json
+ background/
+ background.js
+ content/
+ base.css
+ content.js
+ page-engine.js
+ icons/
+ popup/
+ popup.html
+ popup.css
+ popup.js
+ rules/
+ lean.json
+ sidebar/
+ sidebar.html
+ sidebar.css
+ sidebar.js
 tests/
-  fixtures/
-    pinterest-current.html
-  runtime/
-    deep_horizon.py
-    engine_tamer.py
-    feed_horizon.py
-    feed_turbo.py
-    interaction_latency.py
-    lean_browsing.py
-    lean_perf.py
-    perf_extension.py
-    prepare_browser.py
-    quick_intent.py
-    render_pipeline.py
-    site_acceleration.py
-    test_extension.py
+ fixtures/
+ pinterest-current.html
+ runtime/
+ deep_horizon.py
+ engine_tamer.py
+ feed_horizon.py
+ feed_turbo.py
+ interaction_latency.py
+ lean_browsing.py
+ lean_perf.py
+ perf_extension.py
+ prepare_browser.py
+ quick_intent.py
+ render_pipeline.py
+ site_acceleration.py
+ test_extension.py
 ```
 
 Generated output is written under `dist/` and `artifacts/`.

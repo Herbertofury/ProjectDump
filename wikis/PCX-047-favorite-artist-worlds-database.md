@@ -1,8 +1,8 @@
 # Favorite Artist Worlds Database Wiki
 
-**Project Constellation ID:** `PCX-047`  
-**Status:** ACTIVE / TRACKED  
-**Goal:** Preserve and operationalize favorite-artist worldbuilding data for Feature Foundry.  
+**Project Constellation ID:** `PCX-047`
+**Status:** ACTIVE / TRACKED
+**Goal:** Preserve and operationalize favorite-artist worldbuilding data for Feature Foundry.
 **Current verified lineage:** `feature-foundry-favorite-artist-worlds-v4.0.1` / `feature-foundry-favorite-artist-worlds-CURRENT.xlsx`.
 
 ## Verified current state
