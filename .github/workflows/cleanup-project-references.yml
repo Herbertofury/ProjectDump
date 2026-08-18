@@ -1,0 +1,170 @@
+name: One-shot Project Constellation reference cleanup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-project-references.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scrub retired project references and validate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Project Constellation Cleanup"
+          git config user.email "actions@users.noreply.github.com"
+          git fetch origin main
+          git reset --hard origin/main
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          root = Path('.')
+          workflow = Path('.github/workflows/cleanup-project-references.yml')
+          target = 'Sports Group Hub'
+          drop_keys = {
+              'sportsGroupHubAbsent',
+              'sportsGroupHubExcluded',
+              'sportsGroupHubRecordAbsent',
+              'removedProjectAbsent',
+          }
+
+          clause_patterns = [
+              r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+removed\s+and\s+must\s+never\s+be\s+re-added\.?',
+              r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+(?:removed|excluded|absent)\.?',
+              r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:is\s+)?(?:removed|excluded|absent)\.?',
+              r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:absence|exclusion)\b',
+              r'\s*(?:,|;)?\s*never\s+re-add\s+Sports Group Hub(?:\s+unless\s+[^.;\n]+)?[.;]?',
+              r'\s*(?:,|;)?\s*and\s+never\s+re-add\s+Sports Group Hub\.?',
+              r'\s*(?:,|;)?\s*Sports Group Hub\s*:\s*absent\b',
+              r'\s*(?:,|;)?\s*Sports Group Hub\s+absent\s*:\s*true\b',
+          ]
+
+          def clean_string(value: str) -> str:
+              s = value
+              for pat in clause_patterns:
+                  s = re.sub(pat, '', s, flags=re.IGNORECASE)
+              s = re.sub(r'\bSports Group Hub\b', '', s, flags=re.IGNORECASE)
+              s = re.sub(r'\b(?:forbidden|excluded|removed)-project absence\b', '', s, flags=re.IGNORECASE)
+              s = re.sub(r'\s+,', ',', s)
+              s = re.sub(r',\s*,+', ',', s)
+              s = re.sub(r';\s*;', ';', s)
+              s = re.sub(r'\s+\.', '.', s)
+              s = re.sub(r'\s+;', ';', s)
+              s = re.sub(r'\s{2,}', ' ', s)
+              s = re.sub(r'(?m)^\s*[-*]\s*$\n?', '', s)
+              s = re.sub(r'(?m)^\s*[,;.]\s*$\n?', '', s)
+              return s.strip() if '\n' not in value else s
+
+          def clean_obj(obj):
+              if isinstance(obj, dict):
+                  out = {}
+                  for key, val in obj.items():
+                      if key in drop_keys or key.lower().startswith('sportsgrouphub'):
+                          continue
+                      out[key] = clean_obj(val)
+                  return out
+              if isinstance(obj, list):
+                  out = []
+                  for item in obj:
+                      if isinstance(item, dict) and str(item.get('name', '')).strip().lower() == target.lower():
+                          continue
+                      out.append(clean_obj(item))
+                  return out
+              if isinstance(obj, str):
+                  return clean_string(obj)
+              return obj
+
+          changed = []
+          skipped_binary = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or '.git' in path.parts or path == workflow:
+                  continue
+              try:
+                  raw = path.read_bytes()
+                  text = raw.decode('utf-8')
+              except (UnicodeDecodeError, OSError):
+                  skipped_binary.append(str(path))
+                  continue
+              original = text
+              if path.suffix.lower() == '.json':
+                  try:
+                      obj = json.loads(text)
+                  except json.JSONDecodeError:
+                      continue
+                  obj = clean_obj(obj)
+                  text = json.dumps(obj, ensure_ascii=False, indent=2) + '\n'
+              else:
+                  text = clean_string(text)
+                  text = re.sub(
+                      r'(?m)^\s*["\']?(?:sportsGroupHubAbsent|sportsGroupHubExcluded|sportsGroupHubRecordAbsent|removedProjectAbsent)["\']?\s*:\s*[^,\n}]+,?\s*$',
+                      '',
+                      text,
+                  )
+                  text = re.sub(r'\n{3,}', '\n\n', text)
+              if text != original:
+                  path.write_text(text, encoding='utf-8', newline='')
+                  changed.append(str(path))
+
+          if workflow.exists():
+              workflow.unlink()
+              changed.append(str(workflow))
+
+          # Validate every JSON file after cleanup.
+          for path in sorted(root.rglob('*.json')):
+              if '.git' in path.parts:
+                  continue
+              json.loads(path.read_text(encoding='utf-8'))
+
+          catalog_path = Path('project-constellation/Project-Constellation-Project-Catalog.json')
+          catalog = json.loads(catalog_path.read_text(encoding='utf-8'))
+          projects = catalog.get('projects', [])
+          assert catalog.get('projectCount') == 63, catalog.get('projectCount')
+          assert len(projects) == 63, len(projects)
+          assert len({p.get('id') for p in projects}) == 63
+          assert all(str(p.get('name', '')).strip().lower() != target.lower() for p in projects)
+
+          # Scan all current UTF-8 text after removing the one-shot workflow.
+          forbidden = re.compile(r'Sports Group Hub|sportsGroupHub(?:Absent|Excluded|RecordAbsent)?|removedProjectAbsent', re.I)
+          leftovers = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file() or '.git' in path.parts:
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except (UnicodeDecodeError, OSError):
+                  continue
+              if forbidden.search(text):
+                  leftovers.append(str(path))
+          if leftovers:
+              raise SystemExit('References remain:\n' + '\n'.join(leftovers))
+
+          print(f'Changed {len(changed)} files')
+          for item in changed:
+              print(item)
+          print(f'Skipped {len(skipped_binary)} non-UTF8/binary files')
+          print('Validated 63 unique project records and zero retired-project references in current UTF-8 tree')
+          PY
+
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to clean."
+            exit 0
+          fi
+          git diff --cached --check
+          git commit -m "chore: remove retired project references"
+          git pull --rebase origin main
+          git push origin HEAD:main
