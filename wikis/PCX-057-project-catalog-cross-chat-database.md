@@ -16,17 +16,32 @@ The Project Catalog is the machine-facing cross-project continuity layer behind 
 
 This catalog must preserve same-name different-content artifacts, predecessor/successor relationships, source provenance, validation state, and user corrections. It must never flatten project history into a single filename or modified-time guess.
 
-## Current evidence state
+## Current verified catalog state
 
-Project Constellation currently preserves exactly **63 tracked projects**, with Sports Group Hub intentionally absent. The byte-verified v0.5.0 Quick View contains the active 63-record embedded project dataset and remains a valid recovery surface.
+Project Constellation currently preserves exactly **63 tracked projects**, with Sports Group Hub intentionally absent. The byte-verified v0.5.0 Quick View remains a valid recovery surface, and the standalone machine catalog has now been independently resolved rather than reconstructed from historical data.
 
-A historical `USER-PROJECTS-DATABASE.md` is also present in Google Drive. That document is useful for lineage and detailed recovery history, especially for the original 25 project families, but Project Constellation explicitly treats it as historical evidence rather than authority over the current 63-record catalog.
+The canonical Drive object is:
 
-### Important continuity gap found on 2026-08-17
+- file: `Project-Constellation-Project-Catalog.json`
+- Drive file ID: `1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq`
+- size: **116,771 bytes**
+- SHA-256: `79c8dd524b866ab1fe2dc011820f010d7ab5c8f4b0f42d31ad3e6ca8db82e8be`
 
-The current Project Constellation handoff refers to a standalone `Project-Constellation-Project-Catalog.json`, and prior automation state records that such a catalog was materialized. During this pass, the standalone file was not found in the current `Herbertofury/ProjectDump/project-constellation/` tree and a Drive search for that exact file name returned no result.
+The exact same catalog bytes were restored to the canonical GitHub tree at:
 
-That absence is a **catalog publication/availability gap**, not permission to recreate the project list from the older 25-project database or to start over. The embedded 63-record Project Constellation dataset and current source-controlled project evidence remain the recovery inputs.
+- path: `project-constellation/Project-Constellation-Project-Catalog.json`
+- restoration commit: `eb99a193c08b9f2ca370dbcf85c75c2f997eafa6`
+- Git blob SHA: `d417e516449f7c2d4ec9a16accdedfebc5cb590f`
+
+The restored JSON was validated as a 63-record catalog with 63 unique project IDs, `sportsGroupHubExcluded: true`, no Sports Group Hub record, and complete `goal`, `requirements`, and `recoveryHistory` coverage across every project.
+
+A historical `USER-PROJECTS-DATABASE.md` is also present in Google Drive. That document remains useful for lineage and detailed recovery history, especially for the original 25 project families, but Project Constellation explicitly treats it as historical evidence rather than authority over the current 63-record catalog.
+
+### Publication-gap correction
+
+An earlier 2026-08-17 documentation pass incorrectly concluded that the standalone catalog was absent from both GitHub and Drive. The stronger current evidence proves a narrower failure: the exact canonical catalog remained present and byte-verifiable in Drive, while the GitHub mirror had disappeared from `project-constellation/`.
+
+The repair deliberately reused the existing verified Drive bytes. It did **not** regenerate the catalog, reconstruct the project list, rewrite recovery history, or promote the older 25-project database. This preserves the current catalog lineage while repairing redundant publication.
 
 ## Authority and conflict resolution
 
@@ -65,37 +80,40 @@ Do not collapse `discovered`, `build passed`, `packaged`, `installed`, `real wor
 
 ## Canonicalization and integrity research
 
-Two current standards are especially useful for a future restored standalone machine catalog:
+### JSON Schema published dialect and active forward track
 
-### JSON Schema 2020-12
+The JSON Schema specification site still identifies Draft 2020-12 as the latest published meta-schema. An active IETF draft updated in 2026 is developing the next specification line and introduces a `v1/2026` naming model in work-in-progress source material.
 
-JSON Schema's current published specification is Draft 2020-12. A catalog schema can use it to enforce stable required fields, extension fields, enum/status shapes, and nested artifact/evidence records without relying only on application code.
+For Project Constellation, the correct near-term choice is therefore conservative in format but current in awareness: keep Draft 2020-12 as the validation dialect for a production catalog schema until the next specification line is actually published and supported by the selected validator. Track the 2026 draft as a migration candidate rather than silently changing the durable catalog format.
 
-Primary source: https://json-schema.org/specification
+Primary sources:
+
+- https://json-schema.org/specification
+- https://datatracker.ietf.org/doc/draft-ietf-jsonschema-json-schema/
 
 ### RFC 8785 JSON Canonicalization Scheme
 
-RFC 8785 defines deterministic JSON canonicalization. Applying JCS before SHA-256 hashing would make catalog snapshot and per-record integrity independent of irrelevant whitespace or object-key ordering.
+RFC 8785 defines deterministic JSON canonicalization. Applying JCS before a semantic SHA-256 can make a derived integrity fingerprint independent of irrelevant whitespace or object-key ordering.
 
-Primary source: https://www.rfc-editor.org/rfc/rfc8785.html
+Project Constellation must continue to keep the **raw byte SHA-256** as the publication identity when exact remote-byte equality matters. A JCS-derived semantic digest can be additive, not a replacement for the byte hash.
 
-These mechanisms should improve evidence integrity, not change project semantics.
+Primary source:
 
-## Proposed restoration experiment
+- https://www.rfc-editor.org/rfc/rfc8785.html
 
-Restore the standalone machine catalog only from the newest active 63-record evidence set, then apply current project-owned overlays additively.
+## Publication-integrity contract
 
-Suggested sequence:
+The catalog is now a dual-published continuity artifact. A future run should treat either of these conditions as publication debt:
 
-1. Read the byte-verified v0.5.0 embedded 63-record Quick View dataset.
-2. Read current source-controlled project wikis/evidence queues and explicit user corrections.
-3. Preserve every existing `recoveryHistory` field and project ID.
-4. Apply only evidence-backed field supersessions.
-5. Validate against a versioned JSON Schema 2020-12 schema.
-6. Canonicalize the resulting JSON with RFC 8785 and record SHA-256 for the snapshot and optionally each record.
-7. Verify exactly 63 projects and Sports Group Hub absence.
-8. Publish the exact bytes to both GitHub and the dedicated Project Constellation Drive folder.
-9. Re-fetch/re-download the remote copies and verify the hashes before calling the standalone catalog durable.
+- the GitHub path is missing or does not resolve to the expected catalog lineage;
+- the Drive object is missing or has unexpected bytes;
+- project count is not 63;
+- project IDs are not unique;
+- Sports Group Hub reappears;
+- required continuity fields disappear;
+- a catalog is promoted from the historical 25-project database without stronger evidence.
+
+The minimal integrity receipt for a catalog checkpoint should record both remote destinations, exact byte size, raw SHA-256, Git blob or commit identity, project count, exclusion invariant, and required-field coverage.
 
 ## Optional indexed mirror
 
@@ -109,23 +127,23 @@ If added, the mirror should be reproducible from the canonical JSON and disposab
 - Never drop recovery history to simplify a schema migration.
 - Never merge same-name artifacts solely because names or timestamps match.
 - Never promote an artifact without content/hash/version evidence.
-- Never treat a generated catalog as durable until its remote bytes are verified.
+- Never treat a generated catalog as durable until both remote destinations are verified.
 - Never let a search/index layer mutate canonical project records implicitly.
+- Never substitute a semantic canonicalization digest for the exact-byte digest required by publication verification.
 
 ## Acceptance test
 
-A restored standalone catalog is acceptable only when:
+The standalone catalog is durable only when:
 
 - exactly 63 current project IDs are present;
 - Sports Group Hub is absent;
 - every current record retains goal, requirements, stop point, next action, and recovery history;
 - explicit user edits win;
 - same-name different-content lineage is preserved;
-- schema validation passes;
-- deterministic canonical hashes are reproducible;
-- GitHub and Drive remote bytes match the promoted hashes;
+- schema validation passes when a formal schema is present;
+- GitHub and Drive remote identities match the promoted catalog bytes;
 - Project Constellation can consume the catalog without dropping local user state.
 
 ## Exact current next action
 
-Recover and republish the missing standalone 63-record machine catalog from the active Project Constellation dataset and newer project-owned evidence, with schema validation and deterministic byte/hash verification. Do **not** regenerate it from the historical 25-project database.
+Add a lightweight catalog-integrity receipt/check to the normal Project Constellation checkpoint path so a missing GitHub or Drive mirror is detected immediately, while keeping the restored 116,771-byte catalog unchanged. Then prototype Draft 2020-12 schema validation and optional RFC-8785 semantic hashing as additive verification layers without changing catalog semantics.
