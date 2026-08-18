@@ -1,12 +1,13 @@
 # GameSync Bounty / Rewards Runtime Wiki
 
 **Project Constellation ID:** `PCX-053`
-**Canonical implementation repository:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)
-**Canonical branch:** `main`
-**Verified GameSync extension version:** `0.6.3`
-**Current repository commit observed for this documentation pass:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
-**Architecture / validation evidence repository:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next), `Bounty/`
-**Project state:** active GameSync feature with real shipping source, verified historical Opera GX runtime evidence, and newer source changes that supersede parts of the July 2026 coverage matrix.
+**Canonical shipping implementation repository:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync)
+**Canonical shipping branch:** `main`
+**Verified shipping GameSync extension version:** `0.6.3`
+**Current shipping repository commit observed for this documentation pass:** `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
+**Verified typed next-generation implementation:** [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next) at `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`, Extension V2 `0.8.0`
+**Project-owned architecture / validation lineage:** [`Herbertofury/GameSync-Next/Bounty`](https://github.com/Herbertofury/GameSync-Next/tree/main/Bounty)
+**Project state:** active GameSync feature with a richer shipping implementation, verified historical and current Opera GX evidence, plus a separately verified typed GameSync Next Bounty slice. Provider breadth is not yet identical between the two hosts.
 
 ## Purpose
 
@@ -25,14 +26,15 @@ The core correctness rule from Project Constellation remains binding: **no synth
 
 Use these sources in this order when maintaining Bounty documentation:
 
-1. Current shipping source in [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync).
-2. Current package manifest and build scripts in [`package.json`](https://github.com/Herbertofury/Gamesync/blob/main/package.json).
-3. Project-owned Bounty architecture, validation, performance, migration, and coverage reports in [`GameSync-Next/Bounty`](https://github.com/Herbertofury/GameSync-Next/tree/main/Bounty).
-4. Older Project Constellation catalog summaries only for continuity/history when current source does not answer the question.
+1. Current shipping source in [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync) for the richest production Bounty provider/runtime contract.
+2. Current typed Extension V2 source in [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next), especially `apps/extension-v2/src/features/bounty/`, `apps/extension-v2/src/ui/app/bounty/`, and the background bootstrap, for migration/parity state.
+3. Current package manifests and build scripts in the owning repository for the host being tested.
+4. Project-owned Bounty architecture, validation, performance, migration, and coverage reports in [`GameSync-Next/Bounty`](https://github.com/Herbertofury/GameSync-Next/tree/main/Bounty).
+5. Older Project Constellation catalog summaries only for continuity/history when current source does not answer the question.
 
-The July 24, 2026 `BOUNTY_SOURCE_API_COVERAGE.md` and `BOUNTY_SPEC_COVERAGE.md` are valuable validation snapshots, but current shipping source is newer. In particular, current `Gamesync` source now registers real Twitch viewer, Steam library, and Battle.net adapters that go beyond the older foundation-only descriptions.
+The July 24, 2026 `BOUNTY_SOURCE_API_COVERAGE.md` and `BOUNTY_SPEC_COVERAGE.md` remain valuable validation snapshots, but both active repositories contain newer source. Current shipping `Gamesync` registers Twitch viewer, Steam library, and Battle.net adapters that go beyond the older foundation-only descriptions. Current GameSync Next now contains an independently executable typed Bounty slice instead of only architecture/reference material.
 
-## Repository layout
+## Shipping GameSync repository layout
 
 The canonical shipping extension uses this layout:
 
@@ -69,9 +71,9 @@ Gamesync/
 
 `app/` is the editable source. `dist/` is generated and is the only directory that should be loaded as the unpacked production extension after a build.
 
-## Runtime architecture
+## Shipping runtime architecture
 
-The project-owned architecture report describes the primary production path as:
+The project-owned architecture report describes the primary shipping path as:
 
 ```text
 popup / panel / full-page / interactive preview
@@ -92,9 +94,163 @@ src/features/bounty/bounty-service.js
 
 The feature is intentionally a vertical slice. Host pages should register navigation and mounting, while Bounty behavior stays inside the Bounty feature/service/UI modules instead of leaking reward-specific logic across unrelated GameSync code.
 
+## GameSync Next typed Bounty parity slice
+
+GameSync Next current main now contains a real typed Bounty implementation under:
+
+```text
+apps/extension-v2/src/features/bounty/
+├── contracts.ts
+├── index.ts
+└── service.ts
+
+apps/extension-v2/src/ui/app/bounty/
+├── BountyView.tsx
+├── bounty.css
+└── index.ts
+```
+
+`App.tsx` lazy-loads `BountyView`, recognizes `bounty` as a real top-level tab, accepts `#tab/bounty`, and exposes Bounty on popup/panel and full application surfaces. This closes the old GameSync Next gap where Bounty existed only as parity/reference material.
+
+### Typed current data contract
+
+The current Next slice is deliberately smaller than the shipping multi-provider model. Its primary record types are:
+
+```text
+BountyRecord
+BountyClaim
+BountyHistoryEntry
+BountyPreferences
+BountySourceStatus
+BountyStore
+BountySnapshot
+```
+
+Current typed kinds are:
+
+```text
+free-game
+loot
+beta
+code
+```
+
+Current computed states are:
+
+```text
+available
+upcoming
+claimed
+verified
+expired
+```
+
+The Next slice currently fixes `sourceId` to `gamerpower`. It does not yet model the shipping Twitch/Steam/Battle.net provider breadth as executable typed adapters.
+
+### Next persistence and lifecycle
+
+The current typed service uses `chrome.storage.local` key:
+
+```text
+gs_bounty_v1
+```
+
+rather than the richer shipping Bounty IndexedDB store family. The stored object contains:
+
+- normalized live records;
+- claim state keyed by `recordId`;
+- append-style history entries;
+- active-view/search/platform/kind/hide-claimed/notification preferences;
+- GamerPower source health/count state;
+- schema version and update timestamp.
+
+Current default reminder offsets are 24 hours, 2 hours, and 15 minutes before a published end time. The service owns alarm `gamesync:bounty:next-reminder`. The background bootstrap routes that alarm back to `bountyService.handleReminderAlarm()` and routes all `BOUNTY_*` messages into the feature-owned handler.
+
+### Next background message contract
+
+Current main handles:
+
+```text
+BOUNTY_GET_SNAPSHOT
+BOUNTY_SYNC
+BOUNTY_SET_PREFERENCES
+BOUNTY_SET_CLAIM
+BOUNTY_EXPORT_ICS
+```
+
+Claim state supports `claimed`, `verified`, and `unclaimed` mutations. `BOUNTY_EXPORT_ICS` returns an iCalendar document built from current Bounty records.
+
+### Next live-source behavior
+
+`bountyService.sync()` fetches `https://www.gamerpower.com/api/giveaways`, validates normalized HTTPS claim/source/artwork URLs, converts source rows into stable `gamerpower:<externalId>` records, replaces the current typed record set with the accepted live snapshot, updates source health/history, persists state, and reschedules the next reminder.
+
+This is intentionally not documented as equivalent to the shipping multi-provider merge pipeline. The typed Next slice currently has one live source and a much simpler persistence model.
+
+### Next user surface
+
+The verified React view exposes:
+
+- Today
+- Free Games
+- Drops & Loot
+- Quests & Codes
+- FOMO Radar
+- Calendar
+- Claimed
+- Sources
+- History
+
+It also provides:
+
+- live sync;
+- search;
+- kind filter;
+- platform filter;
+- claim/open-source actions;
+- claim, verify, and undo state;
+- source-health display;
+- ICS export;
+- available/upcoming/claimed/ending-soon statistics.
+
+The typed Next UI currently does **not** expose the shipping Bounty `Vault` and `Automation` surfaces as equivalent first-class views. Do not infer those from the older Bounty information architecture.
+
+### Current GameSync Next runtime evidence
+
+At verified GameSync Next head `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`, the isolated Opera acceptance pass:
+
+- synchronized **107 live GamerPower records**;
+- rejected zero source rows in that run;
+- persisted healthy GamerPower source state;
+- rendered the Bounty calendar;
+- kept the React root mounted exactly once.
+
+That evidence closes the prior GameSync Next Bounty tab/calendar parity gap. It does **not** prove provider-by-provider parity with shipping Twitch, Steam, Battle.net, Amazon/Prime, GW2 capability rows, Twitch mining, shipping artwork provenance, or the richer shipping IndexedDB schema.
+
+## Cross-host parity rule
+
+Treat shipping GameSync and GameSync Next as two verified Bounty hosts with different current breadth:
+
+| Area | Shipping GameSync 0.6.3 | GameSync Next 0.8.0 |
+| --- | --- | --- |
+| GamerPower live source | verified implementation | verified implementation and current isolated Opera runtime |
+| Bounty top-level UI | verified | verified |
+| Claim state | richer production model | typed claimed/verified/unclaimed ledger |
+| Calendar / ICS | richer calendar model | typed calendar view plus ICS export |
+| Twitch viewer | implemented | not present in current typed slice |
+| Twitch miner | implemented | not present in current typed slice |
+| Steam ownership | implemented | not present in current typed slice |
+| Battle.net ownership | implemented | not present in current typed slice |
+| Amazon / Prime | capability row | not present in current typed slice |
+| GW2 | capability row | not present in current typed slice |
+| Persistence | additive IndexedDB Bounty stores | `chrome.storage.local` `gs_bounty_v1` |
+| Artwork provenance | richer provenance/lock/last-known-good model | direct normalized GamerPower artwork URL |
+| Multi-provider partial success | shipping architecture | not applicable to current single-source Next slice |
+
+Do not delete richer shipping Bounty behavior merely because the typed Next slice now exists. Migration is complete only when paired runtime evidence proves the required capability on the intended successor host.
+
 ## Main user surfaces
 
-The verified Bounty information architecture includes:
+The verified shipping Bounty information architecture includes:
 
 - **Today**
 - **Free Games**
@@ -108,11 +264,13 @@ The verified Bounty information architecture includes:
 - **Sources**
 - **History**
 
-The same Bounty slice is designed to work in GameSync's popup, pinned panel/sidebar, and full-page surfaces. The UI uses a compact item-first model with remembered density/layout preferences, a detailed inspector, filters, search, sorting, artwork, source evidence, deadlines, actions, and explicit failure states.
+The same shipping Bounty slice is designed to work in GameSync's popup, pinned panel/sidebar, and full-page surfaces. The UI uses a compact item-first model with remembered density/layout preferences, a detailed inspector, filters, search, sorting, artwork, source evidence, deadlines, actions, and explicit failure states.
 
-## Persistence model
+The current GameSync Next view set is listed separately above because it is not yet identical.
 
-The Bounty architecture introduced an additive IndexedDB migration with dedicated stores. Existing GameSync stores were not supposed to be replaced or rewritten.
+## Shipping persistence model
+
+The shipping Bounty architecture introduced an additive IndexedDB migration with dedicated stores. Existing GameSync stores were not supposed to be replaced or rewritten.
 
 | Store | Key | Purpose |
 |---|---|---|
@@ -135,7 +293,7 @@ The Bounty architecture introduced an additive IndexedDB migration with dedicate
 - External actions use validated HTTPS URLs supplied by source evidence.
 - A failed source does not erase unrelated successful sources.
 
-## Current source adapters
+## Current shipping source adapters
 
 Current shipping `source-registry.js` registers four executable adapters and exposes two additional capability rows.
 
@@ -252,7 +410,7 @@ A user-visible clean stop is part of the expected behavior. A closed/failed mine
 
 ## Calendar and deadline model
 
-Bounty models multiple meaningful dates instead of a single generic expiration:
+Shipping Bounty models multiple meaningful dates instead of a single generic expiration:
 
 - availability;
 - earn deadline;
@@ -261,9 +419,11 @@ Bounty models multiple meaningful dates instead of a single generic expiration:
 
 The feature derives occurrences into the calendar store. The verified July runtime included month and agenda presentations and timezone-safe ICS export. External two-way calendar synchronization and recurrence prediction were still incomplete in the last project-owned coverage report.
 
+The typed Next slice currently uses a simpler `startAt` / `endAt` model and exports the available end/start time as the ICS event start. Preserve this distinction when comparing calendar parity.
+
 ## Artwork behavior
 
-The architecture defines a truthful artwork hierarchy:
+The shipping architecture defines a truthful artwork hierarchy:
 
 1. exact source-provided item artwork;
 2. truthful source-provided parent/event artwork;
@@ -272,9 +432,11 @@ The architecture defines a truthful artwork hierarchy:
 
 Artwork validation is bounded/parallelized. Manual locked artwork is user-authoritative and must not be overwritten by synchronization.
 
-## Sync pipeline
+The typed Next slice currently normalizes an HTTPS GamerPower image or thumbnail and displays it directly. It does not yet reproduce the shipping provenance/lock/last-known-good artwork ledger.
 
-The verified architecture describes the high-level pipeline as:
+## Shipping sync pipeline
+
+The verified shipping architecture describes the high-level pipeline as:
 
 1. start enabled independent adapters concurrently;
 2. normalize and validate at the adapter boundary;
@@ -287,6 +449,8 @@ The verified architecture describes the high-level pipeline as:
 
 Independent adapter failures use partial-success semantics. One broken provider should not make successful providers disappear.
 
+By contrast, the typed Next service currently replaces its single-source `records` array from each accepted GamerPower payload. Do not port that replacement behavior into the shipping multi-provider store.
+
 ## Performance and quantity rules
 
 Bounty follows GameSync's lossless rendering requirement:
@@ -296,15 +460,17 @@ Bounty follows GameSync's lossless rendering requirement:
 - no silent record cap is applied to search/filter results;
 - the root remains mounted and interactions patch content in place;
 - stable record/occurrence IDs are used for DOM identity;
-- source I/O and artwork validation are parallelized with bounded concurrency.
+- source I/O and artwork validation are parallelized with bounded concurrency where the owning host implements them.
 
-The historical performance report includes synthetic scale verification with **zero records dropped**. Synthetic throughput is not proof that every provider has a complete live catalog.
+The historical shipping performance report includes synthetic scale verification with **zero records dropped**. Synthetic throughput is not proof that every provider has a complete live catalog.
 
-## Installation and development setup
+The current Next acceptance also preserved one React root mount during the live Bounty run. Future larger-record Next tests should retain complete matching-record availability and must not introduce viewport culling or hidden record caps as a performance shortcut.
+
+## Shipping installation and development setup
 
 ### Prerequisites
 
-Install current [Node.js](https://nodejs.org/) with npm and [Opera GX](https://www.opera.com/gx) for the canonical extension runtime.
+Install current [Node.js](https://nodejs.org/) with npm and [Opera GX](https://www.opera.com/gx) for the canonical shipping extension runtime.
 
 Clone the canonical GameSync repository and install the locked dependency set:
 
@@ -338,9 +504,23 @@ After the production build, load this directory as the unpacked extension:
 
 Do not load `app/` as the production unpacked extension. `app/` is source; `dist/` is the generated production runtime.
 
-## Bounty-specific verification commands
+## GameSync Next build and verification setup
 
-The current package exposes:
+From a clean GameSync Next checkout:
+
+```text
+npm ci
+npm --workspace apps/extension-v2 run build
+npm run verify:extension-v2:opera
+```
+
+The maintained real Extension V2 Opera verifier is `scripts/verify-extension-v2-opera.js`. The root `test:e2e-opera` command currently points at an absent compatibility file and is not the current acceptance path.
+
+When validating Bounty in Next, prove the loaded source head or an unmistakable descendant. The package version remains `0.8.0` across multiple source changes, so version string alone is not sufficient build identity.
+
+## Shipping Bounty-specific verification commands
+
+The current shipping package exposes:
 
 ```powershell
 npm run test:bounty
@@ -350,7 +530,7 @@ npm run build
 
 `test:bounty` runs the Bounty Node test suite under `app/test/bounty/`. `benchmark:bounty` runs the dedicated Bounty benchmark harness. `npm run build` is still required because test success alone does not prove release-closure correctness.
 
-## Historical real-runtime validation evidence
+## Historical shipping real-runtime validation evidence
 
 The July 24, 2026 Bounty validation pass used an isolated Opera GX profile and verified the then-current feature end to end.
 
@@ -380,11 +560,13 @@ SHA-256 B1251ED001B6C8009E9258DF9E64ECCF8E47354D6553FE610A7CD90F31D91B6B
 
 ### Important freshness boundary
 
-That validation report predates the newer shipping adapter/miner source now present in `Herbertofury/Gamesync`. It proves the July runtime baseline, not a fresh 2026-08-17 real-Opera acceptance pass for every newer Twitch/Steam/Battle.net path. Treat the current source as implemented code, but require a fresh provider-by-provider real-runtime pass before claiming all newer account paths are currently production-qualified.
+That shipping validation report predates the newer shipping adapter/miner source now present in `Herbertofury/Gamesync`. It proves the July runtime baseline, not a fresh current real-Opera acceptance pass for every newer Twitch/Steam/Battle.net path. Treat the current source as implemented code, but require a fresh provider-by-provider real-runtime pass before claiming all newer account paths are currently production-qualified.
+
+The newer GameSync Next isolated Opera Bounty pass is current evidence for the typed GamerPower/claim/calendar slice only. It is not substitute runtime proof for the richer shipping providers.
 
 ## Defects already found and fixed historically
 
-The Bounty validation pass documents several important failure classes that should remain regression cases:
+The shipping Bounty validation pass documents several important failure classes that should remain regression cases:
 
 - service-worker syntax failure in snapshot destructuring;
 - source-diagnostics reference failure that quarantined artwork;
@@ -396,7 +578,7 @@ The release-closure plugin and Bounty stylesheet corrections were added to preve
 
 ## How to modify Bounty safely
 
-### Add or change a source adapter
+### Add or change a shipping source adapter
 
 Adapter work belongs under:
 
@@ -419,7 +601,17 @@ A registered adapter must have a stable `id` plus a `fetch()` or `sync()` functi
 - never invent profile, claim, inventory, or item URLs;
 - avoid deep imports into UI internals.
 
-### Change Bounty data contracts
+### Add or change a GameSync Next source
+
+Current typed Next ownership lives under:
+
+```text
+apps/extension-v2/src/features/bounty/
+```
+
+Before adding a second provider, first redesign the single `BountySourceStatus` and fixed `sourceId: "gamerpower"` contract so provider identity, partial failure, source-specific diagnostics, stable cross-provider record identity, and existing user claim state remain unambiguous. Do not bolt a second source onto the current single-source replacement array and call it shipping parity.
+
+### Change shipping Bounty data contracts
 
 Start with:
 
@@ -430,7 +622,18 @@ app/src/features/bounty/bounty-service.js
 
 Schema changes must preserve the additive-migration model and existing user-authoritative state. Never repurpose a store/key in a way that silently changes the meaning of already-persisted records.
 
-### Change the UI
+### Change GameSync Next data contracts
+
+Start with:
+
+```text
+apps/extension-v2/src/features/bounty/contracts.ts
+apps/extension-v2/src/features/bounty/service.ts
+```
+
+If `gs_bounty_v1` changes meaning, add a migration rather than silently normalizing incompatible stored data into the new contract. Preserve claim/history/preferences state and test restart persistence.
+
+### Change the shipping UI
 
 Use:
 
@@ -440,6 +643,17 @@ app/shared/ui/bounty/bounty.css
 ```
 
 Keep the root mounted, preserve stable DOM identity, and ensure every visible action has a real implementation behind it. Do not add decorative claim/progress controls that are disconnected from source/service state.
+
+### Change the GameSync Next UI
+
+Use:
+
+```text
+apps/extension-v2/src/ui/app/bounty/BountyView.tsx
+apps/extension-v2/src/ui/app/bounty/bounty.css
+```
+
+Keep `#tab/bounty` working in popup/panel/full surfaces, preserve live sync, filters, claim/verify/undo, source status, calendar, history, and ICS download behavior. Verify errors stay visible rather than being converted into silent empty states.
 
 ### Change Twitch mining
 
@@ -464,28 +678,42 @@ Changes to DOM selectors or Twitch page parsing require a fresh real Twitch acce
 
 ### Change calendar behavior
 
-Use:
+Shipping uses:
 
 ```text
 app/src/features/bounty/calendar.js
+```
+
+GameSync Next calendar export is currently implemented in:
+
+```text
+apps/extension-v2/src/features/bounty/service.ts
 ```
 
 Keep date handling explicit and timezone-safe. Verify occurrence identity, deadline type, export folding, and import/export semantics before shipping calendar changes.
 
 ## Troubleshooting
 
-### Bounty tab is blank
+### Bounty tab is blank in shipping GameSync
 
 First confirm the root mounted and inspect current GameSync layout state. A historical defect showed that persisted `view-grid` styling could hide `.gs-detail` even while Bounty had loaded records. Current CSS contains a targeted fix, so a recurrence should be treated as a layout regression rather than "no data" until source state is checked.
 
-### A provider shows authentication required
+### Bounty tab is missing in GameSync Next
+
+Confirm the loaded source is `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` or a verified descendant, rebuild Extension V2, and verify `App.tsx` recognizes `bounty` and `#tab/bounty`. An older build can still report package version `0.8.0`, so verify source/build identity rather than version string alone.
+
+### GameSync Next Bounty is empty on first open
+
+`BountyView` requests `BOUNTY_GET_SNAPSHOT` and automatically requests `BOUNTY_SYNC` when the local snapshot has no records and source status is not already `error`. Inspect the returned source error and background logs before treating an empty view as valid no-data state.
+
+### A shipping provider shows authentication required
 
 Use the provider-specific setup rather than forcing a generic retry:
 
 - **Steam:** configure SteamID64 or vanity identity in GameSync Options; API access may also require the saved Steam API key.
 - **Battle.net:** sign into the Battle.net account site in Opera GX, then rerun Bounty sync.
 - **Twitch:** sign into Twitch in Opera GX and open/sync Bounty again.
-- **GW2:** the current registry advertises credentials-required capability but no executable adapter is registered yet.
+- **GW2:** the current shipping registry advertises credentials-required capability but no executable adapter is registered yet.
 
 ### Twitch miner says the earning window ended
 
@@ -503,26 +731,31 @@ The health check marks mining paused/inactive and records the error. Start the m
 
 The miner attempts automatic playback recovery after the stall threshold. If it remains waiting/buffering, inspect Twitch page/selector changes and current campaign participation rather than lowering correctness checks.
 
-### Source sync is partial
+### Shipping source sync is partial
 
 Inspect the **Sources** surface and source diagnostics. Partial success is intentional: working providers remain usable while failed providers report repair details.
 
-### Artwork disappears or becomes invalid
+### GameSync Next source sync fails
+
+The current typed slice has one live GamerPower source. Its error state persists source detail and the UI exposes it through Sources. Fix the actual fetch/validation failure rather than falling back to stale synthetic records.
+
+### Artwork disappears or becomes invalid in shipping GameSync
 
 Inspect `bountyArtwork` provenance, validation state, manual lock state, and last-known-good data. Do not replace invalid source artwork with unrelated guessed images.
 
-### Build succeeds but the extension is missing runtime files
+### Build succeeds but the shipping extension is missing runtime files
 
 Treat this as a release-closure failure. A historical Bounty pass found that Vite could exit successfully while omitting classic scripts/static runtime directories. Verify the built HTML/manifest entrypoint closure and load the generated `dist/` in Opera GX before calling the build usable.
 
 ## Known open gaps
 
-The latest project-owned coverage evidence still leaves meaningful work:
+Meaningful current work remains:
 
-- complete provider-specific account integration across every desired source;
-- executable Prime Gaming and GW2 adapters in the current source registry;
+- complete provider-specific account integration across every desired shipping source;
+- executable Prime Gaming and GW2 adapters in the current shipping source registry;
 - universal verified item/game catalog coverage;
-- complete GameSync V2 and separate desktop parity for Bounty;
+- provider-by-provider GameSync Next parity beyond the verified typed GamerPower slice;
+- migration of shipping Twitch mining, Steam ownership, Battle.net ownership, artwork provenance, multi-provider partial success, and richer Bounty persistence into Next where successor parity is intended;
 - recurrence prediction and external two-way calendar synchronization;
 - complete Bounty JSON backup/import beyond ICS calendar export;
 - full cross-feature library/wishlist reconciliation;
@@ -532,9 +765,11 @@ The latest project-owned coverage evidence still leaves meaningful work:
 
 ## Recommended next verification checkpoint
 
-The highest-value next documentation/verification pass is a **current-source provider matrix** against the real GameSync 0.6.3 extension:
+The highest-value next Bounty checkpoint is a **paired cross-host provider/parity matrix** rather than another single-host smoke test.
 
-1. build current `main`;
+### Shipping GameSync lane
+
+1. build current `Herbertofury/Gamesync` `main`;
 2. load current `dist/` in an isolated Opera GX profile;
 3. verify GamerPower live sync;
 4. verify Twitch authorized viewer sync, miner start, playback, inventory refresh, recovery, stop, and restart/session behavior;
@@ -545,21 +780,34 @@ The highest-value next documentation/verification pass is a **current-source pro
 9. rerun `npm run test:bounty`, `npm run benchmark:bounty`, and `npm run build`;
 10. record exact commit, Opera version/profile, counts, errors, screenshots, and artifact hash.
 
-Only after that pass should the older July source-coverage matrix be rewritten as fully current runtime evidence.
+### GameSync Next lane
+
+1. build verified current GameSync Next main or a known descendant;
+2. run `npm run verify:extension-v2:opera`;
+3. open `#tab/bounty` in the actual Extension V2 surface;
+4. verify live GamerPower sync, source-health state, Today/filter/FOMO/calendar/history views, claim/verify/undo, ICS export, reminder scheduling, and restart persistence;
+5. confirm all matching records remain available without viewport culling or a hidden record cap;
+6. compare shared GamerPower records and claim/calendar semantics with the shipping lane;
+7. record every missing shipping provider/runtime capability as an explicit migration gap rather than silently treating Bounty parity as complete.
+
+The prior current-main acceptance already proves the typed Next Bounty tab/calendar vertical slice at 107 live GamerPower records. The paired matrix should now focus on migration completeness and behavior equivalence, not re-proving that the tab exists.
 
 ## Maintenance triggers
 
 Update this wiki when any of these change materially:
 
-- GameSync extension version or canonical repository/branch;
-- Bounty adapter registry;
+- GameSync or GameSync Next source heads that own Bounty behavior;
+- GameSync extension or Extension V2 package version;
+- shipping or Next Bounty adapter/source registry;
 - provider authentication/session approach;
 - Twitch miner lifecycle or selectors;
-- IndexedDB Bounty stores/schema;
+- shipping IndexedDB Bounty stores/schema;
+- GameSync Next `gs_bounty_v1` schema or storage ownership;
 - ownership/claim authority rules;
 - calendar/deadline model;
 - source capability statuses;
 - UI information architecture;
 - build/test/benchmark commands;
 - production runtime verification evidence;
+- migration/parity status;
 - known source/provider gaps.
