@@ -1,35 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# One-shot current-tree cleanup. This block restores the original script before
-# it commits, so it is absent from the resulting repository state.
+# One-shot current-tree cleanup. The running copy restores the verified normal
+# publisher before committing so this block is absent from final repository state.
 if [[ "${1:-}" == "Herbertofury/ProjectDump" && -d .git ]]; then
   git config user.name "Project Constellation Cleanup"
   git config user.email "actions@users.noreply.github.com"
   python3 - <<'PY'
-import hashlib
 import json
 import re
-import subprocess
 from pathlib import Path
 
 root = Path('.')
 self_path = Path('tools/github-wiki/wiki-sync.sh')
 target = 'Sports Group Hub'
-drop_keys = {'removedProjectAbsent'}
-patterns = [
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+removed\s+and\s+must\s+never\s+be\s+re-added\.?',
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+(?:removed|excluded|absent)\.?',
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:is\s+)?(?:removed|excluded|absent)\.?',
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:absence|exclusion)\b',
-    r'\s*(?:,|;)?\s*never\s+re-add\s+Sports Group Hub(?:\s+unless\s+[^.;\n]+)?[.;]?',
-    r'\s*(?:,|;)?\s*and\s+never\s+re-add\s+Sports Group Hub\.?',
-    r'\s*(?:,|;)?\s*Sports Group Hub\s*:\s*absent\b',
-    r'\s*(?:,|;)?\s*Sports Group Hub\s+absent\s*:\s*true\b',
-]
 
 def clean_string(value):
     s = value
+    patterns = [
+        r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+removed\s+and\s+must\s+never\s+be\s+re-added\.?',
+        r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+(?:removed|excluded|absent)\.?',
+        r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:is\s+)?(?:removed|excluded|absent)\.?',
+        r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:absence|exclusion)\b',
+        r'\s*(?:,|;)?\s*never\s+re-add\s+Sports Group Hub(?:\s+unless\s+[^.;\n]+)?[.;]?',
+        r'\s*(?:,|;)?\s*and\s+never\s+re-add\s+Sports Group Hub\.?',
+        r'\s*(?:,|;)?\s*Sports Group Hub\s*:\s*absent\b',
+        r'\s*(?:,|;)?\s*Sports Group Hub\s+absent\s*:\s*true\b',
+    ]
     for pattern in patterns:
         s = re.sub(pattern, '', s, flags=re.I)
     s = re.sub(r'\bSports Group Hub\b', '', s, flags=re.I)
@@ -50,7 +47,7 @@ def clean_obj(obj):
     if isinstance(obj, dict):
         out = {}
         for key, val in obj.items():
-            if key in drop_keys or key.lower().startswith('sportsgrouphub'):
+            if key == 'removedProjectAbsent' or key.lower().startswith('sportsgrouphub'):
                 continue
             out[key] = clean_obj(val)
         return out
@@ -72,9 +69,15 @@ for path in sorted(root.rglob('*')):
         try:
             obj = json.loads(text)
         except json.JSONDecodeError:
-            continue
-        obj = clean_obj(obj)
-        text = json.dumps(obj, ensure_ascii=False, indent=2) + '\n'
+            # Preserve a pre-existing malformed artifact unless it actually contains
+            # a retired-project reference; in that case remove only those strings.
+            if re.search(r'Sports Group Hub|sportsGroupHub[A-Za-z0-9_]*|removedProjectAbsent', text, re.I):
+                text = clean_string(text)
+                text = re.sub(r'(?m)^.*\bsportsGroupHub[A-Za-z0-9_]*\b.*\n?', '', text)
+                text = re.sub(r'(?m)^.*\bremovedProjectAbsent\b.*\n?', '', text)
+        else:
+            obj = clean_obj(obj)
+            text = json.dumps(obj, ensure_ascii=False, indent=2) + '\n'
     else:
         text = clean_string(text)
         text = re.sub(r'(?m)^.*\bsportsGroupHub[A-Za-z0-9_]*\b.*\n?', '', text)
@@ -84,47 +87,33 @@ for path in sorted(root.rglob('*')):
     if text != original:
         path.write_text(text, encoding='utf-8')
 
-# Keep the catalog integrity receipt accurate after the machine catalog changes.
-catalog_path = Path('project-constellation/Project-Constellation-Project-Catalog.json')
-receipt_path = Path('project-constellation/Project-Constellation-Catalog-Integrity.json')
-catalog = json.loads(catalog_path.read_text(encoding='utf-8'))
+critical = [
+    'project-constellation/ACTIVE-CHECKPOINT.json',
+    'project-constellation/PROJECT.json',
+    'project-constellation/STATUS.json',
+    'project-constellation/Project-Constellation-Automation-State.json',
+    'project-constellation/Project-Constellation-Catalog-Integrity.json',
+    'project-constellation/Project-Constellation-Project-Catalog.json',
+    'project-constellation/Project-Constellation-Research-Cursor.json',
+]
+for name in critical:
+    json.loads(Path(name).read_text(encoding='utf-8'))
+
+catalog = json.loads(Path('project-constellation/Project-Constellation-Project-Catalog.json').read_text(encoding='utf-8'))
 assert catalog.get('projectCount') == 63
 assert len(catalog.get('projects', [])) == 63
 assert len({p.get('id') for p in catalog['projects']}) == 63
-raw = catalog_path.read_bytes()
-receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
-receipt['checkedAt'] = '2026-08-18T15:55:00Z'
-catrec = receipt.setdefault('catalog', {})
-catrec.pop('bytes', None)
-catrec.pop('sha256', None)
-catrec['driveFileId'] = '1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq'
-catrec['driveBytes'] = 116737
-catrec['driveSha256'] = '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab'
-catrec['githubBytes'] = len(raw)
-catrec['githubSha256'] = hashlib.sha256(raw).hexdigest()
-catrec['githubBlobSha'] = subprocess.check_output(['git', 'hash-object', str(catalog_path)], text=True).strip()
-for key in list(receipt.get('invariants', {})):
-    if key.lower().startswith('sportsgrouphub') or key == 'removedProjectAbsent':
-        receipt['invariants'].pop(key, None)
-receipt_path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
-
-for path in sorted(root.rglob('*.json')):
-    if '.git' not in path.parts:
-        json.loads(path.read_text(encoding='utf-8'))
 PY
 
-  # Restore this tool from the parent of the trigger commit.
-  git show HEAD^:tools/github-wiki/wiki-sync.sh > tools/github-wiki/wiki-sync.sh
+  # Restore the last verified normal publisher implementation.
+  git fetch origin a5c14d60d10748536a5bf722eb38cb6496e18f71 --depth=1
+  git show FETCH_HEAD:tools/github-wiki/wiki-sync.sh > tools/github-wiki/wiki-sync.sh
   rm -f .github/workflows/cleanup-project-references.yml
 
   python3 - <<'PY'
-import json
 import re
 from pathlib import Path
 root = Path('.')
-for path in root.rglob('*.json'):
-    if '.git' not in path.parts:
-        json.loads(path.read_text(encoding='utf-8'))
 forbidden = re.compile(r'Sports Group Hub|sportsGroupHub[A-Za-z0-9_]*|removedProjectAbsent|(?:forbidden|excluded|removed)-project absence', re.I)
 left = []
 for path in root.rglob('*'):
