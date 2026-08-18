@@ -1,59 +1,103 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-if [[ "${1:-}" == "Herbertofury/ProjectDump" && -d .git ]]; then
-  git config user.name "Project Constellation Cleanup"
-  git config user.email "actions@users.noreply.github.com"
-  python3 - <<'PY'
-import hashlib
-import json
-import re
-import subprocess
-from pathlib import Path
+usage() {
+  cat <<'EOF'
+Usage: wiki-sync.sh OWNER/REPO SOURCE_DIR [GITHUB_SERVER_URL]
 
-catalog_path = Path('project-constellation/Project-Constellation-Project-Catalog.json')
-receipt_path = Path('project-constellation/Project-Constellation-Catalog-Integrity.json')
-text = catalog_path.read_text(encoding='utf-8')
-text = re.sub(r'(?m)^\s*""\s*:\s*true\s*,?\s*\n?', '', text, count=1)
-catalog_path.write_text(text, encoding='utf-8')
+Required environment:
+  GH_TOKEN   Token with write access to the target repository.
 
-parse_ok = True
-project_count = 63
-try:
-    catalog = json.loads(text)
-    project_count = len(catalog.get('projects', []))
-    if catalog.get('projectCount') != 63 or project_count != 63:
-        raise SystemExit(f'catalog project count changed: field={catalog.get("projectCount")} actual={project_count}')
-except json.JSONDecodeError:
-    parse_ok = False
+Behavior:
+  - clones OWNER/REPO.wiki.git when it already exists;
+  - falls back to an empty Git repository for first-push bootstrap;
+  - mirrors SOURCE_DIR exactly into the wiki Git repository;
+  - commits only when content changed;
+  - pushes the wiki master branch;
+  - fresh-clones the published wiki and byte-compares it to SOURCE_DIR.
 
-raw = catalog_path.read_bytes()
-receipt = json.loads(receipt_path.read_text(encoding='utf-8'))
-receipt['checkedAt'] = '2026-08-18T16:20:00Z'
-cat = receipt.setdefault('catalog', {})
-cat.pop('bytes', None)
-cat.pop('sha256', None)
-cat['driveFileId'] = '1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq'
-cat['driveBytes'] = 116737
-cat['driveSha256'] = '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab'
-cat['githubBytes'] = len(raw)
-cat['githubSha256'] = hashlib.sha256(raw).hexdigest()
-cat['githubBlobSha'] = subprocess.check_output(['git','hash-object',str(catalog_path)], text=True).strip()
-cat['githubJsonParse'] = 'pass' if parse_ok else 'pre-existing malformed catalog preserved; retired references removed'
-receipt.setdefault('invariants', {})['projectCount'] = 63
-receipt_path.write_text(json.dumps(receipt, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+Creating a source file creates a wiki page, replacing it edits that page, and
+removing it deletes that page on the next sync.
+EOF
+}
 
-forbidden = re.compile(r'Sports Group Hub|sportsGroupHub[A-Za-z0-9_]*|removedProjectAbsent', re.I)
-for path in (catalog_path, receipt_path):
-    if forbidden.search(path.read_text(encoding='utf-8')):
-        raise SystemExit(f'reference remains in {path}')
-print(f'catalog cleanup receipt refreshed; parse_ok={parse_ok}; project_count={project_count}')
-PY
-  git add project-constellation/Project-Constellation-Project-Catalog.json project-constellation/Project-Constellation-Catalog-Integrity.json
-  git diff --cached --check
-  git commit -m "state: finalize retired project catalog cleanup"
-  git pull --rebase origin main
-  git push origin HEAD:main
-  exit 0
+if [[ $# -lt 2 || $# -gt 3 ]]; then
+  usage >&2
+  exit 64
 fi
-exit 71
+
+repo="$1"
+source_dir="$2"
+server_url="${3:-${GITHUB_SERVER_URL:-https://github.com}}"
+token="${GH_TOKEN:-}"
+
+if [[ -z "$token" ]]; then
+  echo "GH_TOKEN is required" >&2
+  exit 65
+fi
+if [[ ! "$repo" =~ ^[^/[:space:]]+/[^/[:space:]]+$ ]]; then
+  echo "Repository must be OWNER/REPO" >&2
+  exit 64
+fi
+if [[ ! -d "$source_dir" ]]; then
+  echo "Source directory does not exist: $source_dir" >&2
+  exit 66
+fi
+if [[ ! -f "$source_dir/Home.md" ]]; then
+  echo "Source directory must contain Home.md so the wiki has a homepage" >&2
+  exit 66
+fi
+
+source_dir="$(cd "$source_dir" && pwd)"
+server_url="${server_url%/}"
+remote_url="$server_url/$repo.wiki.git"
+work_dir="$(mktemp -d)"
+wiki_dir="$work_dir/wiki"
+verify_dir="$work_dir/verify"
+trap 'rm -rf "$work_dir"' EXIT
+
+auth_b64="$(printf 'x-access-token:%s' "$token" | base64 | tr -d '\r\n')"
+git_auth() {
+  git -c "http.extraHeader=AUTHORIZATION: basic $auth_b64" "$@"
+}
+
+existing=1
+if ! git_auth clone --depth 1 "$remote_url" "$wiki_dir"; then
+  existing=0
+  mkdir -p "$wiki_dir"
+  git -C "$wiki_dir" init -b master
+  git -C "$wiki_dir" remote add origin "$remote_url"
+fi
+
+find "$wiki_dir" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+cp -a "$source_dir"/. "$wiki_dir"/
+rm -rf "$wiki_dir/.github"
+
+git -C "$wiki_dir" config user.name 'github-actions[bot]'
+git -C "$wiki_dir" config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+git -C "$wiki_dir" add -A
+
+if git -C "$wiki_dir" diff --cached --quiet; then
+  echo "Wiki already matches source; nothing to publish."
+else
+  git -C "$wiki_dir" commit -m "Sync wiki from $repo"
+  if ! git_auth -C "$wiki_dir" push --set-upstream origin HEAD:master; then
+    if [[ $existing -eq 0 ]]; then
+      echo "Initial wiki push failed. GitHub requires one initial page to exist before cloning/pushing the wiki Git repository." >&2
+      exit 69
+    fi
+    exit 69
+  fi
+fi
+
+git_auth clone --depth 1 "$remote_url" "$verify_dir"
+rm -rf "$verify_dir/.git"
+
+if ! diff -qr "$source_dir" "$verify_dir"; then
+  echo "Remote wiki verification failed: published bytes differ from source." >&2
+  exit 70
+fi
+
+published_commit="$(git_auth ls-remote "$remote_url" refs/heads/master | awk '{print $1}')"
+echo "Wiki sync verified: $server_url/$repo/wiki"
+echo "Wiki master commit: $published_commit"
