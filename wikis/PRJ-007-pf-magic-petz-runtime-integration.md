@@ -5,6 +5,7 @@
 **Goal:** keep one PF Magic Petz behavior/runtime core and integrate it through GameSync hosts without flattening Petz into ordinary mascot animation.  
 **Historical rollout intent:** GameSync shipping extension -> GameSync Next Extension V2 -> desktop host.  
 **Current strongest source evidence:** `Herbertofury/GameSync-Next` contains a typed, platform-agnostic Petz core plus compatibility, format and mascot-bridge packages; `Herbertofury/Gamesync` remains the current shipping JavaScript extension and parity baseline.  
+**Current integration blocker:** [GameSync Next issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9) records a source-proven persistence defect in `packages/petz-bridge/src/mascot-bridge.ts`: spawn-time loading uses `breedId`, shutdown saving uses generated `pet.id`, and the loaded value is ignored. Cross-restart Petz persistence through the typed bridge is therefore not complete.  
 **Important boundary:** source now proves a real cross-host Petz architecture exists in GameSync Next, but this documentation pass does not claim complete original PF Magic behavioral parity or a freshly exercised end-to-end Petz flow in every host.
 
 ## 1. What this project owns
@@ -259,6 +260,33 @@ The mascot-facing state includes instance ID/name, pack identity, sprite URL, x/
 
 The bridge currently calls `loadPetData()` when spawning, but restoring that returned save is marked `TODO`. On `destroy()`, it serializes and saves engine data. Therefore **save plumbing exists, but the bridge's load/restore path is not yet complete**. Do not claim cross-restart Petz persistence in GameSync Next until this TODO is implemented and runtime-tested.
 
+### Source-proven persistence identity defect
+
+The current source contains a second persistence problem beyond the unfinished restore branch. `spawnPet()` calls `loadPetData(breedId)`, while `destroy()` iterates the current pets and calls `savePetData(pet.id, data)`. Those are different identities: a breed identifier is used for the read path and a generated pet instance identifier is used for the write path.
+
+The same shutdown loop calls `this.engine.serialize()` for every pet before saving, so the data handed to each per-pet key is currently the whole engine snapshot rather than an explicitly scoped single-pet snapshot.
+
+This is tracked in [GameSync Next issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9). The source-proven defects are:
+
+1. a later spawn cannot discover a save written under a generated `pet.id` by reading under `breedId`;
+2. even when `loadPetData()` returns an object, that returned state is ignored because the restore branch is still a TODO;
+3. the current API shape does not by itself provide a stable persistence identity for two pets of the same breed across restarts.
+
+The preservation-first repair contract is to introduce an explicit stable persistence identity at the bridge/host boundary and add a non-destructive single-pet restore path to `PetzEngine`. Whole-engine restore for each spawn would be unsafe because restoring one pet must not clear or replace already-running pets.
+
+Minimum acceptance for the repair:
+
+- spawn a pet, mutate motives/position/action, save/destroy, construct a new bridge, and restore the same state;
+- persist two pets of the same breed independently;
+- restoring a second pet does not clear the first;
+- missing or corrupt saves fall back to a fresh spawn with a visible/traceable host error path where appropriate;
+- drag, petting and simulation continue after restore;
+- Extension V2 and every shipping host consuming the bridge perform restart proof against the changed build;
+- `petz-engine`, `petz-bridge`, and affected host build/typecheck gates pass;
+- the runtime proves the loaded artifact is the changed build rather than stale output.
+
+Do not add a second host-only persistence system as a workaround. The shared bridge contract should become internally consistent so every consuming host receives the same persistence semantics.
+
 ### Current environment limitation
 
 The bridge currently constructs tick-environment cursor fields with `cursorX = 0`, `cursorY = 0`, `cursorNear = false`, and `nearbyToyId = null`. Host integration for live cursor proximity and nearby-toy detection therefore needs verification before those AI behaviors can be considered fully connected through this bridge.
@@ -276,7 +304,7 @@ Migration should therefore be treated as a ledger:
 | AI/actions | Petz-specific runtime | typed action/state machine | representative Catz/Dogz/Oddballz traces |
 | physics | browser runtime | platform-agnostic physics | drag/throw/fall/edge parity |
 | formats | preserved resources/packs | dedicated parser package | fixture corpus |
-| persistence | browser mascot infrastructure | serialize plus incomplete bridge restore | restart proof |
+| persistence | browser mascot infrastructure | serialize plus load/save identity mismatch and ignored restore | stable-key multi-pet restart proof |
 | rendering | sprite/GIF and Ballz paths | renderer-neutral state | host renderer parity |
 | audio | packaged resources | event/callback contract | actual host playback |
 | custom content | pack/resource paths | typed custom bundle support | import and reload proof |
@@ -409,7 +437,10 @@ A serious Petz regression suite should cover:
 - sound event forwarding;
 - state mapping to the mascot contract;
 - drag and pet forwarding;
-- save/restore after the TODO path is completed;
+- stable-key save/restore round trip through the bridge;
+- two same-breed pets persisting independently;
+- non-destructive restoration that does not clear already-running pets;
+- missing/corrupt save fallback behavior;
 - live cursor/toy environment integration once wired;
 - Extension V2 and desktop host parity.
 
@@ -429,7 +460,11 @@ The current typed bridge uses placeholder cursor/toy environment values. Confirm
 
 ### Pet is saved but not restored after restart
 
-The current bridge's spawn path contains a restore TODO. Confirm the host persistence callback wrote the data, then implement and test bridge restoration rather than adding a second persistence system around it.
+Inspect both the persistence key and restore implementation. Current source reads with `loadPetData(breedId)`, writes with `savePetData(pet.id, data)`, and ignores a returned loaded object. A host can therefore have successfully stored data that a later spawn cannot locate through the current key path. Fix the shared bridge identity contract and the non-destructive single-pet restore path described in issue #9 rather than adding another persistence layer around the defect.
+
+### Two same-breed pets overwrite, disappear, or restore incorrectly
+
+Do not key persistence only by breed. Each persistent pet needs a stable identity that survives restart and remains distinct from another pet of the same breed. Regression-test two same-breed pets and verify restoring the second does not clear the first.
 
 ### Correct breed exists but wrong game behavior is used
 
@@ -454,7 +489,8 @@ The root `build:packages` script currently omits the Petz packages. Run their ex
 - dedicated Petz format readers/parsers/scanners exist;
 - a typed mascot bridge exists and states it is consumed by shipping Opera GameSync and Extension V2;
 - GameSync Next contains Extension V2 and desktop hosts in the same monorepo;
-- the shipping JavaScript extension remains the parity baseline.
+- the shipping JavaScript extension remains the parity baseline;
+- the current typed bridge persistence failure is source-proven: load and save identities differ, and returned loaded state is ignored.
 
 ### Still unresolved or incomplete
 
@@ -462,7 +498,7 @@ The root `build:packages` script currently omits the Petz packages. Run their ex
 - byte-level reconciliation against the historical local `PF Magic` source tree;
 - dedicated automated Petz test suites in the current Petz package manifests;
 - automatic inclusion of Petz workspaces in the current root `build:packages` command;
-- bridge restore on spawn, which is currently TODO;
+- [GameSync Next issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9): stable persistence identity plus non-destructive single-pet restore across restart;
 - live cursor/toy environment data in the inspected bridge implementation;
 - fresh real-browser qualification of the typed bridge;
 - fresh desktop runtime qualification;
@@ -470,14 +506,16 @@ The root `build:packages` script currently omits the Petz packages. Run their ex
 
 ## 16. Current next checkpoint
 
-The highest-value next engineering/documentation checkpoint is to turn the typed Petz packages into a **provable cross-host parity lane**:
+The highest-value next engineering/documentation checkpoint is to turn the typed Petz packages into a **provable cross-host parity lane**, starting with the source-proven persistence blocker:
 
-1. add dedicated engine/compat/formats/bridge tests;
-2. wire and prove bridge restore from saved state;
-3. feed real cursor/toy environment data through the bridge;
-4. make the intended root build/test pipeline include the Petz packages or add a documented Petz aggregate command;
-5. run representative Catz, Dogz and Oddballz scenarios in shipping GameSync, Extension V2 and desktop;
-6. record a behavior/parity ledger with exact build identities;
-7. reconcile the historical `PF Magic` source tree when it becomes accessible and preserve hashes/provenance.
+1. resolve issue #9 by defining a stable bridge/host persistence identity and implementing non-destructive single-pet restore;
+2. prove spawn -> mutate -> save/destroy -> new bridge -> restore with the same pet state;
+3. prove two same-breed pets persist independently and restoring one never clears the other;
+4. add dedicated engine/compat/formats/bridge tests, including corrupt/missing save fallback;
+5. feed real cursor/toy environment data through the bridge;
+6. make the intended root build/test pipeline include the Petz packages or add a documented Petz aggregate command;
+7. run representative Catz, Dogz and Oddballz scenarios in shipping GameSync, Extension V2 and desktop;
+8. record a behavior/parity ledger with exact build identities;
+9. reconcile the historical `PF Magic` source tree when it becomes accessible and preserve hashes/provenance.
 
-Do not declare the rollout complete until the same Petz identities, core state and user interactions survive real host use and restart rather than merely compiling.
+Do not declare the rollout complete until the same stable Petz identities, core state and user interactions survive real host use and restart rather than merely compiling.
