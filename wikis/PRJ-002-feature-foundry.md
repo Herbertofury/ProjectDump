@@ -1,9 +1,9 @@
 # Feature Foundry Wiki
 
 **Project Constellation ID:** `PRJ-002`  
-**Status:** ACTIVE, major production rebuild; V24 executable reference verified  
+**Status:** ACTIVE, major production rebuild; V33 FINAL_READY executable lineage verified  
 **Connected repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)  
-**Production-source boundary:** the connected repository still does not prove the complete production application source. The newest verified standalone lineage is V24, but it remains an executable reference rather than the canonical production app.
+**Production-source boundary:** the connected repository still does not prove the complete production application source. The newest verified standalone lineage is V33, but it remains a verified runnable/executable reference rather than the canonical maintainable production app.
 
 ## Mission
 
@@ -13,7 +13,33 @@ The continuity rule is strict: database validation, standalone HTML demonstratio
 
 ## Current verified lineage
 
-Project Constellation previously stopped at V11. Newer project-owned evidence now supersedes that latest-version claim while preserving all earlier history.
+Project Constellation previously stopped at V11, then V23/V24. Project-owned Drive evidence now supersedes V24 as the latest verified runnable lineage with **Feature Foundry V33 FINAL_READY**, while preserving all earlier evidence as history.
+
+### V33 FINAL_READY runnable lineage
+
+The project-owned Drive checkpoint `Feature Foundry V33 FINAL_READY Checkpoint`, created 2026-08-12, records status **FINAL_READY** and the strongest currently verified standalone runnable lineage.
+
+Verified V33 evidence:
+
+- **101/101 V33 runtime assertions passed**;
+- **117/117 legacy runtime assertions passed**;
+- **22/22 V33 static assertions passed**;
+- **59 legacy audited controls, 0 missing handlers**;
+- **0 console errors and 0 page errors**;
+- fresh extraction pass;
+- non-regression guarantee preserved;
+- no-artificial-caps guarantee preserved;
+- verified ZIP SHA-256: `680978a3aa8f16b47e767720ebfdc3b89fda5c148c5f3d4d3f308390b09385d9`;
+- verified HTML SHA-256: `83aac630afa4e6522d28452bb6a7c0ebe183eee6812b89b6d742662876af06ec`;
+- verified Drive artifact size: **2,471,022 bytes**, with remote SHA-256 match recorded true.
+
+The V33 checkpoint also preserves real Feature Foundry capability lineage rather than replacing it with a cosmetic rebuild. Its verified feature set includes Theme-aware Library Ecology Lab, Ecology Director world modes and transition depth 0-5, Efficient/Balanced/High/Ultra/Cinematic presentation tiers with content parity, a causal world-signal bus and replay history, chronological/interaction/authored-world memory channels, advanced optical and spatial depth composition, six soundtrack/provider mappings, five host adapters, and persistent-state plus reduced-motion/performance equivalence.
+
+### V33 truth boundary
+
+V33 is the newest verified runnable/executable lineage, but it is **not automatically the canonical maintainable production source**. The complete source/worktree boundary remains unresolved. The current `GameSync-Next/apps/feature-foundry` host implementation is real current source for specific Feature Foundry workspaces, but it must not be relabeled as the complete standalone production application without a source-to-runtime reconciliation.
+
+The next production gate is therefore to resolve a maintainable V33-equivalent source/worktree, identify its exact commit/tree, and prove the full build/runtime/workspace/persistence/export matrix against the verified V33 behavior before migration or replacement work.
 
 ### V23 verified baseline
 
@@ -52,9 +78,9 @@ The V24 validation records:
 
 V24 centralizes scene lifecycle ownership in a Runtime Governor rather than allowing independent heavy loops to run indefinitely. Clock, ambient/environment/cinematic work, selection-HUD tracking, mascot autonomy, physics, quality monitoring, and long-animation-frame observation are released in suspended modes and restored when appropriate.
 
-### V24 truth boundary
+### V24 historical truth boundary
 
-The V24 validation explicitly records that the **canonical production repository was not modified**. Treat V24 as the newest verified self-contained executable continuation of the recovered V23 reference, not as the final production app or final authored-art ceiling.
+The V24 validation explicitly records that the **canonical production repository was not modified**. V24 remains a verified historical executable continuation of the recovered V23 reference, now superseded as latest-runnable evidence by V33. Its Runtime Governor and interaction evidence remain requirements to preserve or improve.
 
 ## Historical V11 state preserved
 
@@ -120,7 +146,7 @@ Each top-level workspace must be a real functional workspace rather than a tab t
 
 ## Professional workspace contract
 
-Feature Foundry should behave like a serious authoring application. Where implemented, workspaces and panels should support docking, resizing, moving, hiding, tabs, floating panels, saved layouts, task-specific workspaces, multi-monitor use, customizable toolbars/shortcuts/density/inspectors, and safe layout reset/restore.
+Feature Foundry should behave like a serious authoring application. Where implemented, workspaces and panels should support docking, resizing, moving, hiding, tabs, floating panels, saved layouts, task-specific workspaces, multi-monitor use, customizable toolbars, shortcuts, density, inspectors, and safe layout reset/restore.
 
 This is a product requirement, not proof that the unresolved production runtime already provides all of it.
 
@@ -137,7 +163,7 @@ Feature Foundry's living environments are interactive systems rather than decora
 - performance modes that suspend work rather than deleting content;
 - no hidden quantity/fidelity reduction as a speed shortcut.
 
-The verified V24 Runtime Governor is now evidence for how lifecycle release/resume and measured adaptive quality can work without degrading content. Production should preserve or improve those contracts rather than reintroducing permanent idle loops.
+V24 established verified Runtime Governor evidence for lifecycle release/resume and measured adaptive quality without deleting content. V33 is now the stronger runnable lineage and must preserve or improve those contracts rather than reintroducing permanent idle loops or artificial caps.
 
 ## Object intelligence contract
 
@@ -160,7 +186,7 @@ Generated or transformed assets should remain traceable to originals.
 
 The Asset Vault is intended to be a real asset operating system, not an empty drawer. Preserve persistent assets, source provenance, visual DNA, hot-drop/capture flows, search, organization, selected-asset context, placement modes, and reversible operations.
 
-V23/V24 provide useful executable interaction evidence, but the production Asset Vault still needs proof in the actual app and persistence layer.
+V23/V24/V33 provide useful executable interaction evidence, but the production Asset Vault still needs proof in the actual maintainable app and persistence layer.
 
 ## Aesthetic Explorer / Mixer contract
 
@@ -172,7 +198,7 @@ The history also warns that the best Explorer/media base may be an earlier branc
 
 Room Studio remains a major production verification target. A valid implementation needs real authoring operations, persistent scene state, object placement/manipulation, environment controls, semantic room intelligence, and proof that saved content can be reopened and modified.
 
-V23/V24 executable references include room/object interaction evidence, but that does not close the production-runtime gap.
+V23/V24/V33 executable references include room/object interaction evidence, but that does not close the production-runtime gap.
 
 ## Source Hubs and external providers
 
@@ -195,17 +221,19 @@ Feature Foundry is a source/authoring system for content that may be consumed by
 
 ## Current production-source problem
 
-The connected [Feature-Foundry repository](https://github.com/Herbertofury/Feature-Foundry) still does not expose enough verified production source to establish complete install/build/run instructions for the real app.
+The connected [Feature-Foundry repository](https://github.com/Herbertofury/Feature-Foundry) still does not expose enough verified production source to establish complete install/build/run instructions for the real standalone app.
 
-Do not initialize a new replacement project or treat V24 HTML as that repository.
+The current `GameSync-Next/apps/feature-foundry` host implementation is a real current source surface for specific Feature Foundry functionality, but it is not automatically the complete standalone production application.
+
+Do not initialize a new replacement project or treat V33 HTML as that repository.
 
 ## Required source reconciliation before production implementation
 
-1. Locate the canonical production app repository/worktree/branch.
-2. Record commit/tree identity and compare it to the V24 executable reference plus V23/V11 data contracts.
+1. Locate the canonical maintainable V33-equivalent production app repository/worktree/branch.
+2. Record commit/tree identity and compare it to the V33 executable reference plus V24/V23/V11 contracts.
 3. Preserve newer user work rather than replacing it with a numerically newer reference artifact.
 4. Reproduce current Room Studio, Explorer, Vault, provider, persistence, package/export, and host-integration behavior in the real runtime.
-5. Build a migration ledger from current production implementation to the verified contracts.
+5. Build a migration ledger from current production implementation to the verified V33 contracts.
 6. Port only changes whose behavior can be proved in the real production application.
 7. Run the actual application through save/reopen, reload/restart, provider/authenticated flows, packaging/export, and GameSync host import where applicable.
 
@@ -236,8 +264,8 @@ Do not collapse these into one `validated` label.
 
 ## Exact current next action
 
-**Locate and verify the canonical production application source, then reconcile it against the verified V24 executable reference and V23 data contracts before porting any further implementation.** Preserve the V24 Runtime Governor and interaction evidence as requirements to match or improve, not as a substitute for the real app.
+**Locate and verify the canonical maintainable V33-equivalent production application source/worktree, then reconcile it against the verified V33 runnable reference and preserved V24/V23 data/runtime contracts before porting further implementation.** Preserve the V33 non-regression/no-artificial-caps guarantees and the V24 Runtime Governor/interaction evidence as requirements to match or improve, not as substitutes for the real app.
 
 ## Wiki maintenance
 
-Update this page whenever the production repository is resolved, V24 is superseded by newer verified evidence, a workspace becomes production-runtime verified, data schema/artifact hashes change, host/export contracts change, or a previously documented gap is closed. Preserve historical V11/V23 evidence and the distinction between executable-reference proof and production-app proof.
+Update this page whenever the production repository is resolved, V33 is superseded by newer verified evidence, a workspace becomes production-runtime verified, data schema/artifact hashes change, host/export contracts change, or a previously documented gap is closed. Preserve historical V11/V23/V24 evidence and the distinction between executable-reference proof and production-app proof.
