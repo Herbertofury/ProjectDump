@@ -21,14 +21,14 @@ self_path = Path('tools/github-wiki/wiki-sync.sh')
 target = 'Sports Group Hub'
 
 patterns = [
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+removed\s+and\s+must\s+never\s+be\s+re-added\.?',
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+remains\s+(?:removed|excluded|absent)\.?',
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:is\s+)?(?:removed|excluded|absent)\.?',
-    r'\s*(?:,|;)?\s*(?:and|with)?\s*Sports Group Hub\s+(?:absence|exclusion)\b',
-    r'\s*(?:,|;)?\s*never\s+re-add\s+Sports Group Hub(?:\s+unless\s+[^.;\n]+)?[.;]?',
-    r'\s*(?:,|;)?\s*and\s+never\s+re-add\s+Sports Group Hub\.?',
-    r'\s*(?:,|;)?\s*Sports Group Hub\s*:\s*absent\b',
-    r'\s*(?:,|;)?\s*Sports Group Hub\s+absent\s*:\s*true\b',
+    r'[ \t]*(?:,|;)?[ \t]*(?:and|with)?[ \t]*Sports Group Hub[ \t]+remains[ \t]+removed[ \t]+and[ \t]+must[ \t]+never[ \t]+be[ \t]+re-added\.?',
+    r'[ \t]*(?:,|;)?[ \t]*(?:and|with)?[ \t]*Sports Group Hub[ \t]+remains[ \t]+(?:removed|excluded|absent)\.?',
+    r'[ \t]*(?:,|;)?[ \t]*(?:and|with)?[ \t]*Sports Group Hub[ \t]+(?:is[ \t]+)?(?:removed|excluded|absent)\.?',
+    r'[ \t]*(?:,|;)?[ \t]*(?:and|with)?[ \t]*Sports Group Hub[ \t]+(?:absence|exclusion)\b',
+    r'[ \t]*(?:,|;)?[ \t]*never[ \t]+re-add[ \t]+Sports Group Hub(?:[ \t]+unless[ \t]+[^.;\n]+)?[.;]?',
+    r'[ \t]*(?:,|;)?[ \t]*and[ \t]+never[ \t]+re-add[ \t]+Sports Group Hub\.?',
+    r'[ \t]*(?:,|;)?[ \t]*Sports Group Hub[ \t]*:[ \t]*absent\b',
+    r'[ \t]*(?:,|;)?[ \t]*Sports Group Hub[ \t]+absent[ \t]*:[ \t]*true\b',
 ]
 
 def clean_string(value):
@@ -39,12 +39,13 @@ def clean_string(value):
     s = re.sub(r'\bsportsGroupHub[A-Za-z0-9_]*\b', '', s)
     s = s.replace('removedProjectAbsent', '')
     s = re.sub(r'\b(?:forbidden|excluded|removed)-project absence\b', '', s, flags=re.I)
-    s = re.sub(r'\s+,', ',', s)
-    s = re.sub(r',\s*,+', ',', s)
-    s = re.sub(r';\s*;', ';', s)
-    s = re.sub(r'\s+\.', '.', s)
-    s = re.sub(r'\s+;', ';', s)
-    s = re.sub(r'\s{2,}', ' ', s)
+    s = re.sub(r'[ \t]+,', ',', s)
+    s = re.sub(r',[ \t]*,+', ',', s)
+    s = re.sub(r';[ \t]*;', ';', s)
+    s = re.sub(r'[ \t]+\.', '.', s)
+    s = re.sub(r'[ \t]+;', ';', s)
+    s = re.sub(r'[ \t]{2,}', ' ', s)
+    s = re.sub(r'(?m)[ \t]+$', '', s)
     s = re.sub(r'(?m)^\s*[-*]\s*$\n?', '', s)
     s = re.sub(r'(?m)^\s*[,;.]\s*$\n?', '', s)
     return s.strip() if '\n' not in value else s
@@ -87,6 +88,7 @@ for path in sorted(root.rglob('*')):
         text = re.sub(r'(?m)^.*\bremovedProjectAbsent\b.*\n?', '', text)
         text = text.replace('<!-- repository-cleanup-trigger -->\n', '')
         text = re.sub(r'\n{3,}', '\n\n', text)
+        text = re.sub(r'(?m)[ \t]+$', '', text)
     if text != original:
         path.write_text(text, encoding='utf-8')
 
