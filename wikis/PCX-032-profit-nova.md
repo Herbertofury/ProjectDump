@@ -2,7 +2,7 @@
 
 **Project Constellation ID:** `PCX-032`  
 **Status:** ACTIVE / TRACKED  
-**Current source boundary:** direct strict master-plan artifacts are present in the durable File Library; no canonical production GitHub application repository has yet been resolved.
+**Current source boundary:** direct strict master-plan artifacts are present in the durable project evidence; no canonical production GitHub application repository has yet been resolved.
 
 ## Purpose
 
@@ -14,7 +14,7 @@ The project is not a generic chatbot wrapper or idea generator. Its core contrac
 
 The newest directly recovered plan is:
 
-- `money_app_plan_v39_strict_master_spec.md`
+- `money_app_plan_v39_strict_master_spec.md`.
 
 Important predecessor evidence remains relevant:
 
@@ -106,19 +106,23 @@ Hermes must **not** replace Profit Nova's:
 - economic/money control-plane rules;
 - project-owned event/service/permission contracts.
 
-### Hermes freshness, checked 2026-08-17
+### Hermes freshness, checked 2026-08-18
 
-The current official Hermes release is **v0.20.2 / v2026.8.16**, published August 16, 2026. That is materially newer than the Hermes state available when the v36 plan was written.
+The current verified Hermes release checkpoint is **v0.20.3 / v2026.8.16.2**, published by release commit `7339f5f160db5c96657a3bab60151227cc61f66c`. This supersedes the prior wiki statement that v0.20.2 was current.
 
-The release includes continuing work in multi-gateway connections, profile-scoped refresh, MCP health/deep-link behavior, persisted model routes, loop completion, cron hardening, auth/profile resolution, Windows installer robustness, and related agent infrastructure.
+Upstream main is already moving beyond that release. Commit `22f0f22298cc322c095b6c93a648e809e80443b6` fixes cron/manual-run media-delivery parity by surfacing attachment failures and applying the same media-policy bridge outside the gateway process, with eight new regression tests. That is useful donor evidence, but it is also a strong reason **not** to bind Profit Nova directly to moving Hermes main.
 
-**Decision:** before adapting Hermes code or APIs, re-diff Profit Nova's donor assumptions against current Hermes v0.20.2. Preserve the Profit Nova contract and use an adapter layer so future Hermes churn does not become product-state churn.
+### Hermes donor decision
 
-## Current stack freshness, checked 2026-08-17
+Use **v0.20.3 as the current donor comparison baseline**, and keep all Hermes integration behind Profit Nova-owned adapters. Evaluate post-release commits individually when they solve a demonstrated Profit Nova problem, then pin the adopted commit/release with its exact behavior and tests.
+
+Do not silently follow Hermes main. A donor update is accepted only when Profit Nova's room, review, memory, permission, economic, and recovery contracts remain intact.
+
+## Current stack freshness, checked 2026-08-18
 
 ### Bevy
 
-The plan family references Bevy 0.18, but [Bevy 0.19](https://bevy.org/news/bevy-0-19/) was released June 19, 2026.
+The plan family references Bevy 0.18, while [Bevy 0.19](https://bevy.org/news/bevy-0-19/) was released June 19, 2026.
 
 Relevant 0.19 additions include:
 
@@ -133,13 +137,11 @@ These are directly relevant to a room/facility authoring runtime, but Bevy 0.19 
 
 ### Tauri
 
-The official Tauri repository's current latest stable core release is **Tauri 2.11.5** (July 1, 2026).
-
-If the recovered implementation still targets an older Tauri 2 line, migration should be done only after reading current migration/release notes and verifying windowing, IPC, storage, updater, packaging, and restart behavior.
+The later plan family targets Tauri 2. Current 2.11-line evidence should be treated as a migration input rather than a blind upgrade target. Once the real source is recovered, read the exact manifests/lockfile and current Tauri release notes before changing windowing, IPC, storage, updater, packaging, or restart behavior.
 
 ### Temporal as an optional durable-workflow experiment
 
-[Temporal TypeScript SDK v1.21.1](https://github.com/temporalio/sdk-typescript/releases/tag/v1.21.1) is current and has increasingly agent-oriented integration work.
+[Temporal TypeScript SDK v1.21.1](https://github.com/temporalio/sdk-typescript/releases/tag/v1.21.1) remains the current release line identified in this pass. v1.21.0 also added experimental agent-oriented integrations and stricter payload-limit handling.
 
 Profit Nova should **not** replace its room manifests, event bus, review ladder, or project-owned state machine with Temporal simply because durable workflows are attractive.
 
@@ -224,7 +226,7 @@ A successful automation must never be inferred merely from a visual room animati
 
 ## Current source problem
 
-No production Profit Nova GitHub repository has been resolved from the connected repository set in this pass. The durable File Library contains a substantial v39 strict spec and supporting lineage, but that is not runtime proof.
+No production Profit Nova GitHub repository has been resolved from the connected repository set in this pass. Durable project evidence contains a substantial v39 strict spec and supporting lineage, but that is not runtime proof.
 
 Do not initialize a new replacement app or treat a prototype as canonical merely because the production source path is unresolved.
 
@@ -236,12 +238,13 @@ After resolving the canonical source:
 2. launch the current build and record its loaded identity;
 3. exercise one existing money mission end to end;
 4. compare actual implementation to the v39 room/event/memory/review contract;
-5. separately evaluate Bevy 0.19 and current Hermes v0.20.2 behind adapters;
-6. run one bounded durable-workflow experiment only if the existing orchestration path has a demonstrated resume/retry gap.
+5. separately evaluate Bevy 0.19 and Hermes v0.20.3 behind adapters;
+6. inspect post-v0.20.3 Hermes fixes only when they map to a demonstrated Profit Nova failure;
+7. run one bounded Temporal durable-workflow experiment only if the existing orchestration path has a demonstrated resume/retry gap.
 
 ## Exact current next action
 
-Locate the canonical Profit Nova repository/worktree and reconcile it against `money_app_plan_v39_strict_master_spec.md` plus the Hermes integration lineage. Establish the real Tauri/Bevy/agent baseline before adopting Bevy 0.19, Tauri 2.11.5, Hermes v0.20.2 APIs, Temporal, or any other stack migration.
+Locate the canonical Profit Nova repository/worktree and reconcile it against `money_app_plan_v39_strict_master_spec.md` plus the Hermes integration lineage. Establish the real Tauri/Bevy/agent baseline before adopting Bevy 0.19, Hermes v0.20.3 APIs, Temporal, or any other stack migration. Keep Hermes behind a release-pinned adapter boundary so upstream churn cannot silently mutate Profit Nova state.
 
 ## Wiki maintenance
 
