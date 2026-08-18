@@ -3,8 +3,9 @@
 **Project Constellation ID:** `PCX-037`  
 **Status:** ACTIVE / TRACKED  
 **Canonical user-owned source:** unresolved in connected GitHub  
-**Current external compatibility benchmark:** [DalekCraft2/Shimeji-Desktop](https://github.com/DalekCraft2/Shimeji-Desktop)  
-**Benchmark main inspected:** `dea89528c10c066626a09609f0e742cbe6405a8d`
+**Current Java compatibility benchmark:** [DalekCraft2/Shimeji-Desktop](https://github.com/DalekCraft2/Shimeji-Desktop)  
+**Current architecture/parity benchmark:** [qingchenyouforcc/NeurolingsCE](https://github.com/qingchenyouforcc/NeurolingsCE)  
+**NeurolingsCE commit inspected:** `00adb430efd13b70db8791af3566eae7b4e8aa17`
 
 ## Purpose
 
@@ -12,38 +13,112 @@ Shimeji Desktop is the desktop mascot runtime track. Its defining requirement is
 
 ## Current source boundary
 
-The current connected GitHub environment does not expose a verified user-owned standalone Shimeji Desktop repository. Therefore this page does not claim that any public upstream fork is the canonical project source.
+The current connected GitHub environment does not expose a verified user-owned standalone Shimeji Desktop repository. Therefore this page does not claim that any public upstream implementation is the canonical project source.
 
 The current GameSync Shimeji parser and browser-runtime documentation still reference a preserved `Reference/shimejieesrc` lineage, which is useful compatibility evidence, but it is not proof of the current standalone desktop build.
 
 The first implementation step remains source identity resolution, not starting a replacement application.
 
-## Current strongest upstream benchmark
+## Current Java compatibility benchmark
 
-Checked 2026-08-17. [DalekCraft2/Shimeji-Desktop](https://github.com/DalekCraft2/Shimeji-Desktop) is active and explicitly attempts backward compatibility while modernizing Shimeji-ee.
+Checked 2026-08-17. [DalekCraft2/Shimeji-Desktop](https://github.com/DalekCraft2/Shimeji-Desktop) remains a useful active compatibility reference. It explicitly attempts backward compatibility while modernizing Shimeji-ee.
 
-Its current README records:
+Its current documentation records:
 
 - JRE 6 to JDK 25 migration;
 - Maven instead of Ant;
 - Launch4j Maven packaging;
-- proper DPI scaling;
+- DPI scaling work;
 - Windows, macOS, and Linux support;
 - fixes to default action/behavior XML;
 - updated dependencies and logging/documentation improvements;
 - continued use of configurable XML action and behavior files.
 
-Recent July 2026 commits include settings reload work and dependency maintenance, so this is a useful current compatibility benchmark rather than only a historical fork.
+This remains valuable for Java-era pack behavior, XML semantics, DPI, packaging, and cross-platform regression comparison.
 
-### Why it is a benchmark, not an automatic replacement
+## New architecture/parity benchmark: NeurolingsCE Rust + Flutter
 
-The user-owned project may contain custom behavior, patches, pack handling, or integrations absent from the upstream fork. Replacing it wholesale before resolving the canonical source would violate the anti-degradation contract.
+A materially newer ecosystem reference appeared in August 2026: [qingchenyouforcc/NeurolingsCE](https://github.com/qingchenyouforcc/NeurolingsCE). Its current repository was created as a Rust + Flutter rewrite of the maintainer's earlier C++/Qt desktop-pet application, [NeurolingsCE-Qt](https://github.com/qingchenyouforcc/NeurolingsCE-Qt).
 
-Use the upstream project to build differential tests and selectively transplant improvements only after the user-owned baseline is known.
+The inspected current README and initial rewrite commit document this workspace:
+
+```text
+manager/                 Flutter fluent_ui manager
+crates/
+  neurolings-engine      Shimeji-ee behavior engine
+  neurolings-pack        .mascot and legacy ZIP handling
+  neurolings-platform    native transparent-window/platform layer
+  neurolings-runtime     runtime daemon, rendering, HTTP/IPC
+  neurolings-cli         command-line runtime control
+  neurolings-store       store/index/download/update surface
+  neurolings-common      shared contracts/constants
+  xtask                  build/run task support
+```
+
+Source-verified architectural capabilities include:
+
+- a Shimeji-ee behavior engine with QuickJS condition scripts and 22 action types;
+- `.mascot` packages plus legacy ZIP import and path validation;
+- Windows transparent windows using `UpdateLayeredWindow` with input hit-through behavior;
+- Linux X11 ARGB/XFixes window/input handling;
+- macOS AppKit/NSView hit-testing;
+- a Rust runtime daemon with tick/render, gestures, bubbles, audio, tray behavior, HTTP and local IPC;
+- a separate CLI intended to preserve the earlier external command/output contract;
+- a Flutter `fluent_ui` manager;
+- cargo workspace tests;
+- a headless smoke mode;
+- deterministic Windows packaging with SHA-256 output.
+
+### Verified benchmark build and run commands
+
+The current NeurolingsCE README documents:
+
+```powershell
+cargo build --release
+cargo test --workspace
+```
+
+For the Flutter manager:
+
+```powershell
+cd manager
+flutter pub get
+flutter build windows --release
+```
+
+Runtime and CLI examples include:
+
+```powershell
+.\target\release\NeurolingsCE.exe
+.\target\release\NeurolingsCE-cli.exe --json --mascot list
+.\target\release\NeurolingsCE-cli.exe --json --summon mascot --name Default 1
+.\target\release\NeurolingsCE-cli.exe --json --list
+.\target\release\NeurolingsCE-cli.exe --json --stop
+.\target\release\NeurolingsCE.exe --smoke 300
+```
+
+The HTTP API is opt-in through `NEUROLINGSCE_HTTP=1`; the README's ping example uses `http://127.0.0.1:32456/shijima/api/v1/ping`.
+
+The benchmark README also states that Linux/macOS window backends have cross-compilation coverage but still need real-machine visual validation, while store/submission server and GitHub App deployment require maintainer-side infrastructure. Those boundaries must remain visible when comparing implementations.
+
+### Why NeurolingsCE is a benchmark, not a replacement
+
+The user-owned Shimeji Desktop source remains unresolved. The Rust rewrite is also very new. Replacing the project wholesale before resolving the user's canonical source would risk losing custom behavior, pack handling, integrations, or already-working desktop semantics.
+
+Use NeurolingsCE as an architecture and parity benchmark for:
+
+- engine/runtime separation;
+- native transparent-window backends;
+- pack validation/import boundaries;
+- CLI and local service contracts;
+- deterministic smoke/build/package workflows;
+- manager/runtime process separation.
+
+Adopt or transplant an idea only after differential proof against the real Shimeji Desktop baseline.
 
 ## Archived alternative: Shijima-Qt
 
-[pixelomer/Shijima-Qt](https://github.com/pixelomer/Shijima-Qt) is now archived/discontinued. It remains useful research for cross-platform desktop-pet architecture and libshijima behavior, but it should not become the new canonical modernization base.
+[pixelomer/Shijima-Qt](https://github.com/pixelomer/Shijima-Qt) is archived/discontinued. It remains useful research for cross-platform desktop-pet architecture and libshijima behavior, but it should not become the new canonical modernization base.
 
 This is an important change from earlier research where Shijima-Qt could appear to be the more modern C++/Qt choice. Current maintenance state now outweighs that architectural attraction.
 
@@ -64,35 +139,45 @@ A desktop modernization must preserve or explicitly test at least:
 - tray/context controls;
 - existing pack compatibility and deterministic fixture behavior.
 
-## Proposed modernization experiment
+## Differential compatibility corpus
 
-After canonical source resolution, create one compatibility corpus containing representative old and new packs. Run the same corpus against the existing user runtime and the current JDK 25 benchmark.
+After canonical source resolution, use one representative corpus across the user runtime, the active Java benchmark, and the newer NeurolingsCE architecture benchmark.
 
-Record per pack:
+Record per pack/runtime:
 
-- parse success/failure;
-- chosen config files;
-- actions and behaviors resolved;
-- missing references;
-- animation/frame identity;
-- drag/throw/fall result;
-- edge/window interaction;
-- DPI and multi-monitor result;
-- startup time and memory;
-- settings/restart persistence.
+| Area | Evidence to capture |
+| --- | --- |
+| Parse/config | chosen config files, parse errors, missing references, aliases |
+| Action/behavior | selected actions, weighted behavior decisions, conditions, Sequence/Select/reference semantics |
+| Media/poses | image/frame identity, anchors, durations, velocity, gravity/resistance |
+| Interaction | drag, throw, fall, get-up, pet/click behavior |
+| Desktop geometry | edges, windows, work area, multi-monitor, DPI |
+| Packaging | directory pack, `.mascot`, legacy ZIP behavior where supported |
+| Runtime control | tray, CLI/API/IPC commands where applicable |
+| Persistence | selected packs, settings, composition state after restart |
+| Failure behavior | malformed packs, missing files, unsafe paths, invalid conditions |
+| Performance | startup time, steady-state memory/CPU, input/render responsiveness |
 
-Only port a newer implementation detail when it solves a measured problem and the corpus proves no regression.
+### Minimum parity rule
+
+Do not promote a newer architecture merely because its language or UI stack is newer. The accepted candidate must preserve the user's existing pack and behavior semantics and show a measured advantage in one or more relevant dimensions without regressing compatibility, user-visible behavior, quantity, fidelity, or recovery paths.
 
 ## Current Java direction
 
-JDK 25 is the current long-term-support generation used by the active compatibility benchmark. There is no evidence-backed reason to move the user project to a newer feature release merely because it exists. Preserve the JDK 25 compatibility target until the real source is resolved and a newer runtime demonstrates a concrete benefit without breaking packaging or behavior.
+JDK 25 remains the current long-term-support generation used by the active Java compatibility benchmark. There is no evidence-backed reason to move the user project to a newer Java feature release merely because one exists. Preserve JDK 25 as the Java comparison target until the canonical source is resolved and a newer runtime demonstrates a concrete benefit without breaking packaging or behavior.
 
 Official JDK 25 reference: https://openjdk.org/projects/jdk/25/
 
 ## Exact current next action
 
-Resolve the canonical user-owned Shimeji Desktop repository/worktree and establish a runnable baseline. Then run a pack/XML/window/DPI differential compatibility pass against DalekCraft2/Shimeji-Desktop before selecting any modernization path.
+Resolve the canonical user-owned Shimeji Desktop repository/worktree and establish a runnable baseline. Then run the same pack/XML/window/DPI/persistence compatibility corpus against:
+
+1. the user-owned runtime;
+2. [DalekCraft2/Shimeji-Desktop](https://github.com/DalekCraft2/Shimeji-Desktop) for current Java/Shimeji-ee compatibility behavior;
+3. [qingchenyouforcc/NeurolingsCE](https://github.com/qingchenyouforcc/NeurolingsCE) for the Rust/native-window/runtime-service architecture.
+
+Only after that differential pass should a modernization path be selected.
 
 ## Maintenance
 
-Update this wiki when the canonical user source is resolved, when the desktop runtime or packaging changes, when a pack-compatibility fixture catches a regression, or when the external benchmark's maintenance state materially changes.
+Update this wiki when the canonical user source is resolved, when the desktop runtime or packaging changes, when a pack-compatibility fixture catches a regression, or when either current benchmark materially changes its maintenance state or architecture.
