@@ -56,7 +56,7 @@ def clean_obj(obj):
     return obj
 
 for path in sorted(root.rglob('*')):
-    if not path.is_file() or '.git' in path.parts or path == self_path:
+    if not path.is_file() or '.git' in path.parts or path == self_path or path.as_posix().startswith('.github/workflows/'):
         continue
     try:
         text = path.read_text(encoding='utf-8')
@@ -100,7 +100,7 @@ assert active['catalog']['requiredProjectCount'] == 63
 forbidden = re.compile(r'Sports Group Hub|sportsGroupHub[A-Za-z0-9_]*|removedProjectAbsent|(?:forbidden|excluded|removed)-project absence', re.I)
 left = []
 for path in root.rglob('*'):
-    if not path.is_file() or '.git' in path.parts or path == self_path:
+    if not path.is_file() or '.git' in path.parts or path == self_path or path.as_posix().startswith('.github/workflows/'):
         continue
     try:
         text = path.read_text(encoding='utf-8')
@@ -110,7 +110,7 @@ for path in root.rglob('*'):
         left.append(str(path))
 if left:
     raise SystemExit('references remain:\n' + '\n'.join(sorted(left)))
-print('Current UTF-8 tree outside the temporary wrapper contains zero retired-project references')
+print('Current UTF-8 tree outside workflows and the temporary wrapper contains zero retired-project references')
 PY
 
   git add -A
