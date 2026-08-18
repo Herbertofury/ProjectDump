@@ -77,6 +77,27 @@ If the Alarms API is unavailable, the scheduler returns a truthful failure resul
 
 `stopScheduledPolls()` clears the named alarm, removes the scheduler's alarm listener when present, clears its in-memory running flag, and returns `{ ok: true }`.
 
+### Current source-level re-arm defect
+
+At the verified `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` source head, the stop/start lifecycle has a concrete listener re-arm defect that was not documented in the earlier wiki pass.
+
+The sequence is:
+
+1. the singleton constructor calls `setupAlarms()` and installs `alarmListener`;
+2. `SCRIPT_STOP_SCHEDULER` calls `stopScheduledPolls()`, which clears the alarm, removes that listener from `chrome.alarms.onAlarm`, and sets `alarmListener = null`;
+3. `SCRIPT_SCHEDULE_POLLS` calls `schedulePolls()`, which recreates the named alarm but does **not** call `setupAlarms()` or otherwise re-add the listener.
+
+Therefore, if a user stops and then restarts recurring polling while the same service-worker instance remains alive, source inspection shows that the alarm can exist again while the scheduler instance has no registered alarm callback. A later service-worker reconstruction would run the singleton constructor again and reinstall the listener, but relying on worker teardown/recreation is not an acceptable start/stop contract.
+
+This is a source-proven lifecycle defect, not a claim that a live Opera reproduction was executed during this documentation pass.
+
+The narrow repair should preserve one of these invariants:
+
+- `stopScheduledPolls()` clears only scheduling state and leaves the long-lived alarm listener registered for the lifetime of the scheduler singleton; or
+- `schedulePolls()` explicitly calls the idempotent `setupAlarms()` before or after creating the recurring alarm.
+
+Whichever repair is chosen should have a focused regression test that drives the real `SCRIPT_STOP_SCHEDULER -> SCRIPT_SCHEDULE_POLLS -> alarm fire` sequence and proves `runScheduledPolls()` is invoked without requiring a service-worker restart.
+
 ### Preventing overlapping poll loops
 
 The runtime has a single-process overlap guard:
@@ -407,18 +428,25 @@ A meaningful runtime qualification should exercise all of the following:
 9. Start two poll runs close together and confirm the overlap guard prevents a concurrent scheduler pass.
 10. Exercise hourly, daily, weekly, and manual source intervals.
 11. Verify a deliberately overdue source is polled when the due-source loop next runs.
-12. Restart the browser/service worker after missing at least one expected polling window and prove the intended startup catch-up behavior.
-13. Import CSV and JSON catalogs, including quoted CSV fields and duplicate rows.
-14. Export Script Tracker data and import it into a clean test profile.
-15. Verify mod-status precedence using conflicting multi-source evidence.
-16. Verify source enable/disable and removal cascades.
-17. Inspect extension/service-worker console errors after each failure case.
+12. Exercise `SCRIPT_STOP_SCHEDULER`, then `SCRIPT_SCHEDULE_POLLS` in the same live service-worker instance, fire the named alarm, and prove the listener was re-armed and `runScheduledPolls()` executes.
+13. Restart the browser/service worker after missing at least one expected polling window and prove the intended startup catch-up behavior.
+14. Import CSV and JSON catalogs, including quoted CSV fields and duplicate rows.
+15. Export Script Tracker data and import it into a clean test profile.
+16. Verify mod-status precedence using conflicting multi-source evidence.
+17. Verify source enable/disable and removal cascades.
+18. Inspect extension/service-worker console errors after each failure case.
 
 ## Troubleshooting
 
 ### Scheduling reports that the Alarms API is unavailable
 
 Confirm the code is running inside the built GameSync extension context and that the loaded manifest is the current Manifest V3 manifest with the `alarms` permission. A plain webpage execution context will not provide the extension Alarms API.
+
+### Polling was stopped and then restarted, but recurring polls no longer fire
+
+At the current verified source head, inspect the listener lifecycle first. `SCRIPT_STOP_SCHEDULER` removes the singleton's `chrome.alarms.onAlarm` listener, while `SCRIPT_SCHEDULE_POLLS` recreates only the alarm. Until the listener is explicitly reinstalled or the service worker is reconstructed, the same live scheduler instance can be left with an alarm and no callback.
+
+Do not work around this by forcing a browser restart as the normal start path. Repair the listener lifecycle and add a stop/start regression test.
 
 ### A source never polls automatically
 
@@ -428,10 +456,11 @@ Check:
 2. the source's `pollInterval` is not `manual`;
 3. `lastPollAt` is not newer than expected;
 4. the recurring scheduler was actually started;
-5. the configured adapter exists;
-6. the adapter is configured and its connection test succeeds;
-7. the service-worker console for scheduler or adapter errors;
-8. `scriptPollLog` for durable failure history.
+5. the scheduler's alarm listener is currently installed, especially after a prior stop/start cycle;
+6. the configured adapter exists;
+7. the adapter is configured and its connection test succeeds;
+8. the service-worker console for scheduler or adapter errors;
+9. `scriptPollLog` for durable failure history.
 
 ### A scheduled pass says a poll is already in progress
 
@@ -453,11 +482,11 @@ Inspect every `scriptModSources` row for that mod and recompute the precedence m
 
 This documentation pass inspected the current canonical GameSync source at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`. It verifies that the scheduler, IndexedDB layer, adapter registry, Scarlet's Realm adapter, Custom List adapter, message API, manifest permissions, and build scripts exist in current source.
 
-It does **not** claim a fresh live-browser scheduler qualification during this documentation pass.
+It also verifies a source-level lifecycle defect in the current scheduler: `stopScheduledPolls()` removes the alarm listener, while `schedulePolls()` recreates the alarm without reinstalling that listener. This documentation pass did not execute a live Opera stop/start reproduction, so the defect is recorded as source-proven and still requires an exact runtime regression test after repair.
 
-Project Constellation specifically requires reliable startup catch-up. Current source proves an important part of that behavior: every due-source pass uses persisted `lastPollAt` timestamps, so an overdue source can be recognized and polled the next time `runScheduledPolls()` executes. This pass did not establish a proven browser/service-worker startup path that always invokes that due-source catch-up after a restart or missed alarm window. That remains the highest-value runtime verification item for PCX-055.
+Project Constellation specifically requires reliable startup catch-up. Current source proves an important part of that behavior: every due-source pass uses persisted `lastPollAt` timestamps, so an overdue source can be recognized and polled the next time `runScheduledPolls()` executes. Within `ScriptPollScheduler.js` itself, the singleton constructor installs the alarm listener but does not invoke `runScheduledPolls()` as an explicit startup catch-up step. This pass did not establish a separate background startup caller that guarantees due-source catch-up after a browser restart or missed alarm window.
 
-The next project-specific checkpoint should therefore prove restart/missed-window catch-up in the real built extension, then update this wiki with the exact observed startup path and regression test evidence.
+The next project-specific checkpoint should therefore first repair and prove the same-worker stop/start listener re-arm path, then prove restart/missed-window catch-up in the real built extension. Only after both paths pass should the recurring polling lifecycle be described as fully qualified.
 
 ## Maintenance triggers
 
@@ -467,6 +496,7 @@ Update this wiki when any of the following materially changes:
 - scheduling API or alarm name;
 - supported poll intervals;
 - overlap/cancellation behavior;
+- stop/start listener lifecycle;
 - startup catch-up semantics;
 - IndexedDB Script Tracker tables or database version;
 - status aggregation precedence;
