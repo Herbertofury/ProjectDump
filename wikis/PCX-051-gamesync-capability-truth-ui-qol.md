@@ -14,19 +14,26 @@ The core rule is simple: **every visible capability status must be derived from 
 
 The strongest current machine-readable authority is GameSync Next's [`docs/gamesync-parity-matrix.json`](https://github.com/Herbertofury/GameSync-Next/blob/main/docs/gamesync-parity-matrix.json), validated by [`scripts/audit-gamesync-parity.mjs`](https://github.com/Herbertofury/GameSync-Next/blob/main/scripts/audit-gamesync-parity.mjs).
 
-The parity matrix already distinguishes three important states:
+The current parity matrix defines **four** canonical states:
 
-- `verified` - implementation plus evidence/test gates support the parity claim;
-- `implemented-unverified` - implementation exists but the verification contract is not complete;
-- `gap` - required behavior is still absent or materially incomplete.
+- `verified` - both implementations exist and current runtime evidence supports the parity claim;
+- `implemented-unverified` - both implementations exist but equivalent end-to-end proof is incomplete;
+- `gap` - a JavaScript-baseline capability is missing or materially incomplete in Next;
+- `implementation-specific` - a platform-specific capability has an explicit reason not to be identical.
+
+The fourth state is important. `implementation-specific` must not be collapsed into `verified`, `gap`, or a generic exception bucket because the canonical matrix intentionally represents legitimate platform-specific divergence separately from incomplete parity.
 
 The audit script does substantially more than validate JSON syntax. It checks matrix semantics, requires source/evidence/test-gate fields where appropriate, rebuilds Extension V2 before inspecting generated output, and audits concrete invariants across shipping GameSync and GameSync Next. That makes it a better source of capability truth than a manually maintained checklist or UI toggle.
 
 ## Current examples from the parity contract
 
-Current GameSync Next evidence marks several areas as verified, including settings/shared-storage parity, the Mods release-table/Updates path, AutoNotes, and source-discovery/storage-durability work. The same matrix explicitly records **Bounty & Twitch reward runtime** as a `gap` in Extension V2 because the production entitlement/reward integration has not been reproduced there.
+Current GameSync Next evidence marks examples such as extension identity/in-place upgrade, the main library shell, web-page overlay injection, source discovery/Found Mods, Living Room, the universal page mascot shim, the command center, and the offscreen transformer runtime as `verified`.
 
-That distinction must remain visible. A page rendering a Bounty button, a TypeScript type existing, or a local build passing does not transform a parity gap into a verified capability.
+The same matrix deliberately keeps a substantial set as `implemented-unverified`, including collections/wishlist/playing, Nexus integration, the mods organizer, mod authors, News/NewsForge, achievements, the card game, mascot runtime/core games, Shimeji Browser, GX Corner, the AI assistant, themes/effects, and storage/settings.
+
+Explicit `gap` examples include the complete JavaScript mascot arcade catalog, expanded Petz/ACS content, Bounty, and Animation Tracker.
+
+These distinctions must remain visible. A rendered tab, a TypeScript type, a copied legacy asset, or a successful build does not transform an unverified or missing capability into a verified one.
 
 ## Capability Truth surface
 
@@ -37,11 +44,11 @@ A useful row should expose:
 - capability ID/name;
 - shipping GameSync baseline owner/source;
 - GameSync Next implementation owner/source;
-- current status (`verified`, `implemented-unverified`, or `gap`);
+- current canonical status (`verified`, `implemented-unverified`, `gap`, or `implementation-specific`);
 - evidence files;
 - test/runtime gate;
 - latest source commit or verification watermark when available;
-- stale-evidence warning when the implementation changed after the last proof;
+- stale-evidence warning when a load-bearing implementation changed after the last proof;
 - exact blocker/next proof step;
 - direct links to the relevant source, test, matrix entry, or runtime evidence.
 
@@ -52,6 +59,7 @@ The surface should support fast read-only views such as:
 - gaps;
 - implemented but unverified;
 - verified;
+- implementation-specific;
 - stale evidence;
 - changed since last verification;
 - shipping-only;
@@ -94,6 +102,7 @@ Capability-truth work must never improve a score by shrinking the product. In pa
 - remove a failing control instead of fixing the promised workflow unless the product requirement itself is explicitly retired;
 - reduce supported sites/providers/hosts to make parity easier;
 - hide unverified capabilities from the data model;
+- collapse `implementation-specific` into another state merely to simplify reporting;
 - weaken audit/test gates;
 - replace real runtime verification with a rendered UI badge;
 - use stale generated output as evidence for current source;
@@ -112,22 +121,24 @@ A practical staleness watermark should compare at least:
 - relevant test/runtime evidence revision;
 - last successful verification timestamp/receipt.
 
-A stale verified record should remain historically verified but be visually marked as **verification stale** until the affected gates are rerun. Do not silently demote historical evidence or silently present old evidence as current.
+A stale verified record should remain historically verified but be visibly marked as **verification stale** until the affected gates are rerun. Do not silently demote historical evidence or silently present old evidence as current.
+
+A repository head change is not automatically a capability change. For example, the current shipping GameSync head moved to a secret-scan workflow fix, which changes the source watermark but does not by itself invalidate every capability proof. Staleness should therefore be dependency-aware: only records whose load-bearing source/evidence set changed should require re-verification.
 
 ## Relationship to Project Constellation
 
-Project Constellation should mirror capability truth, not invent it. A useful Project Constellation lens can summarize per-project counts of gaps, implemented-unverified capabilities, stale verifications, and verified capabilities, with direct links into the canonical GameSync evidence.
+Project Constellation should mirror capability truth, not invent it. A useful Project Constellation lens can summarize per-project counts of gaps, implemented-unverified capabilities, implementation-specific capabilities, stale verifications, and verified capabilities, with direct links into the canonical GameSync evidence.
 
 This should remain read-only from the Project Constellation presentation layer. Editing the second-brain view must not bypass GameSync's source/test/runtime verification authority.
 
-## Current repository baselines checked 2026-08-17
+## Current repository baselines checked 2026-08-18
 
 At this evolution pass:
 
-- shipping GameSync `main` resolved to `d84c2389b9e01dc47b7ba094c2d23a7b4cbbf9f4`;
-- GameSync Next `main` resolved to `9e337c720f0180cffa577f140b181c699f0a1650`.
+- shipping GameSync `main` resolves to `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`;
+- GameSync Next `main` resolves to `9e337c720f0180cffa577f140b181c699f0a1650`.
 
-Treat these as this pass's evidence watermarks, not permanent latest-version claims.
+The shipping-head delta is release/secret-scan plumbing rather than a known parity-semantic change, so it refreshes the repository watermark without automatically invalidating unrelated runtime proofs. Treat both commit IDs as this pass's evidence watermarks, not permanent latest-version claims.
 
 ## Implementation experiment
 
@@ -139,17 +150,18 @@ The experiment passes only if:
 
 1. the parity audit succeeds on the exact source commits under test;
 2. every rendered capability corresponds one-to-one with a canonical matrix record;
-3. status counts exactly match the matrix/audit result;
-4. each nontrivial status exposes its source/evidence/test gate;
-5. the UI cannot promote a capability to verified by itself;
-6. changing a matrix status/evidence source changes the generated surface without manual duplication;
-7. stale-source detection flags changed implementation after the last verification watermark;
-8. filters never delete or mutate canonical records;
-9. real contextual controls used from the surface land on the exact evidence/destination they promise.
+3. all four status classes are represented without lossy remapping;
+4. status counts exactly match the matrix/audit result;
+5. each nontrivial status exposes its source/evidence/test gate or explicit implementation-specific rationale;
+6. the UI cannot promote a capability to verified by itself;
+7. changing a matrix status/evidence source changes the generated surface without manual duplication;
+8. stale-source detection flags only records whose load-bearing implementation/evidence changed after the last verification watermark;
+9. filters never delete or mutate canonical records;
+10. real contextual controls used from the surface land on the exact evidence/destination they promise.
 
 ## Exact current next action
 
-Implement or prototype the read-only Capability Truth generator/view against the current parity matrix and audit output, then verify exact record/status parity. Keep the feature advisory until its own stale-evidence and exact-destination tests pass in the real GameSync workflow.
+Implement or prototype the read-only Capability Truth generator/view against the current parity matrix and audit output, including the `implementation-specific` state and dependency-aware stale-evidence logic, then verify exact record/status parity. Keep the feature advisory until its own stale-evidence and exact-destination tests pass in the real GameSync workflow.
 
 ## Wiki maintenance
 
