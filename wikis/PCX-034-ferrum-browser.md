@@ -4,12 +4,13 @@
 **Canonical repository:** [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser)  
 **Canonical branch:** `main`  
 **Verified project version:** `0.2.0`  
-**Verified merged Playwright-stack commit:** `1217144c626fade0a52596e16d78f995f827652b`  
-**Verified MV3 recovery product commit:** `7360184f154f9182f9d754126a0348d2b10b1738`  
-**Latest observed main checkpoint:** `0cf32f0471ecb0b143ceb51dd29ee7e90b4c75c2`  
-**Verified stack workflow:** `32084212634`  
-**Verified MV3 recovery workflow:** `32088206572`  
-**Project state:** verified complete product checkpoint on main, with later verified additive MV3 worker-recovery capability
+**Current verified product commit:** `71f85c8c7e10f6098dc5d49a501b07e9c4c4d21f`  
+**Current verified product workflow:** `32134811799`  
+**Latest verified additive service-acceptance commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`  
+**Service-acceptance workflows:** Ferrum CI `32139957979`, disposable-service workflow `32139957988`  
+**Latest observed main commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`  
+**Earlier important verified product commits:** Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`  
+**Project state:** verified complete product checkpoint on main with later verified additive service-fixture acceptance
 
 ## Purpose
 
@@ -30,20 +31,29 @@ Ferrum orchestrates real runtimes. A successful tool handshake, mock, rendered d
 
 ## Current verified status, refreshed 2026-08-18
 
-The previous Project Constellation wiki checkpoint was stale. It still described Playwright 1.62.1, Electron 43.2.0, and Appium as unqualified. Current project-owned evidence supersedes those statements.
+Project-owned `.agents-memory/STATUS.json` now records a verified complete product checkpoint on `main` at commit `71f85c8c7e10f6098dc5d49a501b07e9c4c4d21f`, verified by Ferrum CI run `32134811799`.
 
-Project-owned `.agents-memory/STATUS.json` records a verified complete product checkpoint on `main` with merged product commit `1217144c626fade0a52596e16d78f995f827652b` and workflow `32084212634`. The current verified toolchain is:
+The currently verified toolchain is:
 
-- Playwright **1.63.0-alpha-2026-08-01**;
+- Playwright **1.63.0-alpha-2026-08-17**;
 - Electron **43.4.0**;
 - `@electron/packager` **20.3.0**;
 - Node.js **24+**.
 
-The Playwright alpha was not adopted merely because it was newer. The exact proposal head passed Ferrum's complete severe acceptance surface before merge, then the verified state was promoted in project memory.
+The Playwright alpha is verified current project state, not an unqualified freshness experiment. The exact proposal tree passed Ferrum's complete acceptance surface before merge and project memory promotion.
 
-A later product change, commit `7360184f154f9182f9d754126a0348d2b10b1738`, adds **CDP-confirmed Manifest V3 service-worker forced termination and on-demand recovery**. Its commit records exact-proposal verification by Ferrum CI run `32088206572` across unit/MCP Inspector/evidence integrity, Linux, Windows, browser/MV3/workload paths, Selenium Grid, packaged desktop, Lightpanda, and real Android/Appium.
+The earlier MV3 product change at commit `7360184f154f9182f9d754126a0348d2b10b1738` remains an important verified milestone because it added CDP-confirmed Manifest V3 service-worker forced termination and on-demand recovery. Ferrum CI run `32088206572` verified that capability across unit/MCP Inspector/evidence integrity, Linux, Windows, browser/MV3/workload paths, Selenium Grid, packaged desktop, Lightpanda, and real Android/Appium.
 
-The latest observed `main` commit in this pass is `0cf32f0471ecb0b143ceb51dd29ee7e90b4c75c2`, a run checkpoint after that verified product work.
+Since the previous wiki checkpoint, Ferrum materially evolved again. The current verified product includes:
+
+- bounded-parallel evidence-history scans with no result cap;
+- monotonic run-relative evidence timing and direct compact-result duration;
+- no implicit 400-element snapshot ceiling;
+- stable agent snapshot refs across DOM mutation and replacement;
+- prompt process readiness/log failure when the child has already terminated;
+- direct HTTP interaction for process/service targets with retained response artifacts and authoritative child-exit attribution.
+
+A subsequent additive commit, `09c8334ef5b744afd8ca94732cd9c458744058fb`, adds a zero-dependency disposable real-service parity smoke. It was verified by Ferrum CI `32139957979` and the dedicated disposable-service workflow `32139957988`. That acceptance path compares a local Node service with a real Docker `node:24-alpine` service through the same Ferrum process HTTP assertions, records exact image/runtime identity, and proves explicit container cleanup without adding a Node dependency.
 
 ## Verified target matrix
 
@@ -101,7 +111,7 @@ Lightpanda remains a fast web-only lane. It is not proof for Chromium-specific e
 
 ### Appium Android lane
 
-Appium is now **runtime-qualified**, superseding the older wiki statement that it remained unqualified.
+Appium is runtime-qualified.
 
 Verified target:
 
@@ -114,11 +124,11 @@ Verified target:
 - screenshot evidence for home/detail/return states;
 - separate 60,000 ms startup budget for server readiness/session creation.
 
-`implementedButNotRuntimeQualifiedYet` is currently empty in project-owned status.
+`implementedButNotRuntimeQualifiedYet` is empty in current project-owned status.
 
 ## Manifest V3 service-worker recovery
 
-Ferrum now goes beyond discovering a service worker or proving recovery only through a full browser restart.
+Ferrum goes beyond discovering a service worker or proving recovery only through a full browser restart.
 
 The `terminate-service-worker` step uses Chromium CDP to:
 
@@ -131,7 +141,7 @@ The `terminate-service-worker` step uses Chromium CDP to:
 7. trigger the extension again and verify on-demand worker recovery;
 8. continue to a full browser-restart proof as an independent persistence/restart gate.
 
-The extension self-test now proves behavior before forced termination, after forced recovery, and after full restart. Service-worker diagnostics require fresh console/request/response evidence after recovery rather than accepting a stale worker handle.
+The extension self-test proves behavior before forced termination, after forced recovery, and after full restart. Service-worker diagnostics require fresh console/request/response evidence after recovery rather than accepting a stale worker handle.
 
 This capability is directly valuable for MV3 extensions such as GameSync because background workers can be killed by the browser independently of a full browser restart.
 
@@ -141,12 +151,12 @@ Current `package.json` pins:
 
 ```text
 Node >= 24.0.0
-playwright 1.63.0-alpha-2026-08-01
+playwright 1.63.0-alpha-2026-08-17
 electron 43.4.0
 @electron/packager 20.3.0
 ```
 
-Electron 43.4.0 has already passed the required real Linux + Windows Electron and packaged-desktop lanes. The prior “43.4.0 candidate” language is historical and must not be used as the current status.
+Electron 43.4.0 has passed the required real Linux + Windows Electron and packaged-desktop lanes.
 
 Any future stack change must repeat the exact affected real-runtime matrix. Never promote a dependency by package freshness alone.
 
@@ -200,6 +210,12 @@ Expose MCP stdio:
 npx ferrum mcp
 ```
 
+Run the disposable local/container service parity smoke:
+
+```bash
+npm run smoke:service-fixture
+```
+
 Current package scripts include:
 
 ```bash
@@ -207,6 +223,7 @@ npm test
 npm run smoke:web
 npm run smoke:extension
 npm run smoke:network
+npm run smoke:service-fixture
 npm run smoke:webdriver
 npm run smoke:github-wiki
 npm run smoke:mcp-inspector
@@ -257,7 +274,7 @@ Ferrum supports persistent authenticated Spaces plus safe cloned isolation and l
 
 A cloned Space must preserve required authenticated state while preventing concurrent jobs from corrupting the canonical profile. Runtime/evidence identity remains explicit.
 
-## Locator and asynchronous-state behavior
+## Locator, snapshot, and asynchronous-state behavior
 
 Ferrum keeps deterministic selectors first and uses semantic recovery only as an explicit additive fallback. Verified regression coverage includes:
 
@@ -267,6 +284,32 @@ Ferrum keeps deterministic selectors first and uses semantic recovery only as an
 - last-observed-text diagnostics on failure.
 
 Semantic recovery must never hide a broken deterministic selector or silently interact with the wrong control.
+
+### Complete snapshots by default
+
+Ferrum previously imposed an implicit 400-element ceiling on browser snapshots. That was removed at commit `c43c3d6be08ccf58253a56904289d0ee490b880d`.
+
+Current behavior:
+
+- generic browser snapshots return every qualifying element by default;
+- Lightpanda snapshots return every qualifying element by default;
+- StepEngine passes no implicit maximum;
+- an explicit positive `max` remains supported when the caller deliberately requests a limit.
+
+Failure-first coverage reproduced the old cap. Ferrum CI run `32124761222` then verified the uncapped behavior, including a real Lightpanda fixture with **451** qualifying elements and a separate explicit `max: 123` proof, while preserving the complete Windows browser matrix, MV3/workloads/restart, packaged desktop, WebDriver Grid, and Android/Appium acceptance surface.
+
+This matters for agent use because a hidden snapshot ceiling can silently remove valid actionable controls from the agent-visible page model.
+
+### Snapshot ref lifetime and DOM mutation
+
+Snapshot refs are now page-session identities rather than recyclable positional labels.
+
+Commit `dfa3712b4b03aa8b58c396f7caf3694e4639941c` fixed two failure modes:
+
+- a retired ref could previously be reassigned to a different element after DOM replacement;
+- Lightpanda could duplicate live refs after DOM insertion.
+
+Current behavior preserves existing ref ownership, advances new refs above reserved/live values, rejects forged unsafe numeric refs, and prevents a retired ref from silently targeting another element later in the same page session. Ferrum CI run `32126705729` verified this across the full matrix, and the Lightpanda smoke inserts a new button after an initial snapshot and then proves the original `e1` still activates the original control.
 
 ## Network recovery
 
@@ -291,11 +334,81 @@ Verified evidence includes:
 - bounded shutdown;
 - packaged-desktop acceptance.
 
-Treat reappearance of an “implementation-only Electron” state as a regression unless newer project-owned evidence proves an actual failure.
+Treat reappearance of an implementation-only Electron state as a regression unless newer project-owned evidence proves an actual failure.
 
-## Process lane
+## Process and service lane
 
 Ferrum can launch arbitrary CLI tools, services, or desktop processes and retain stdout, stderr, health/exit evidence, related artifacts, and interactive stdin write/close controls.
+
+Current process lifecycle behavior includes:
+
+- startup health polling bounded by the remaining startup deadline;
+- immediate readiness failure when the child terminates before health becomes ready;
+- prompt `assert-log` failure after child exit while still checking final unterminated output;
+- optional secret-safe structured Node diagnostic reports for real uncaught process failures;
+- direct HTTP requests from the process target after readiness.
+
+### `http-request` step
+
+A process spec can now exercise the running service directly:
+
+```json
+{
+  "action": "http-request",
+  "method": "POST",
+  "url": "http://127.0.0.1:8080/echo",
+  "json": { "source": "local" },
+  "status": 200,
+  "text": "\"source\":\"local\""
+}
+```
+
+Verified semantics:
+
+- `method` defaults to `GET`;
+- `headers` are supported;
+- `json` automatically uses JSON serialization and adds `content-type: application/json` unless already supplied;
+- raw `body` is supported instead of `json`;
+- defining both `body` and `json` is rejected;
+- each request has a positive bounded timeout;
+- request transport is raced against the authoritative child lifecycle;
+- a child that exits during the request is reported as a process exit with code/signal instead of a generic fetch failure;
+- response bodies are retained under the run evidence directory before status/text assertions are evaluated;
+- `process-http-response` evidence records method, URL, status, request bytes, response bytes, content type, and retained artifact path;
+- optional `status` and substring `text` assertions fail only after the complete response artifact is preserved.
+
+This closes the gap where Ferrum could previously prove a service became healthy but could not exercise its API through the same process target.
+
+### Disposable real-service parity fixture
+
+`scripts/disposable-service-smoke.mjs` is a zero-additional-dependency acceptance fixture for the process/service lane.
+
+It runs the same small HTTP service in two modes:
+
+1. a local Node child process;
+2. a real Docker container based on `node:24-alpine`.
+
+Both modes are exercised through the same Ferrum process specification:
+
+- health request to `/health`;
+- `POST /echo` with JSON body and status/text assertions;
+- `GET /state` with status/text assertions;
+- two retained `process-http-response` events and non-empty response artifacts.
+
+The container lane additionally verifies:
+
+- Docker server availability;
+- real 64-character container ID;
+- mapped host port;
+- exact image ID in `sha256:<64 hex>` form;
+- image repository digests;
+- container Node runtime version;
+- explicit `docker rm -f` cleanup;
+- proof that the container is absent after cleanup.
+
+The final summary records local/container durations, response sizes/statuses, provision time, cleanup time, image/runtime identity, and `additionalNodeDependencyCount: 0`.
+
+Dedicated workflow `.github/workflows/service-fixture.yml` runs this smoke on Ubuntu with Node 24 and retains `artifacts/service-fixture/` even when the job fails. The additive current-main acceptance was verified by Ferrum CI `32139957979` and dedicated service-fixture run `32139957988`.
 
 ## Test specification format
 
@@ -317,6 +430,8 @@ Supported target types include:
 
 Common browser steps include open, wait, click, fill, press, snapshot, screenshot, text/visibility/url assertions, evaluate, vitals, console-clean assertions, network-state control, and extension/service-worker actions.
 
+Process steps additionally include stdin write/close, log assertions, HTTP request, waiting for exit, and exit-code assertions as supported by the current runner.
+
 Every step must preserve timing and failure context. Browser failures retain trace/evidence output.
 
 ## Evidence model
@@ -336,10 +451,23 @@ Evidence may include:
 - resolved extension ID and discovery path;
 - restart proof;
 - process/Appium output;
+- process HTTP response artifacts;
 - benchmark machine/workload/reliability metadata;
 - `evidence-manifest.json` with SHA-256 integrity information.
 
 Failed runs preserve evidence. Compact agent output does not mean evidence was discarded.
+
+### Evidence timing
+
+Current finalized events preserve the original wall-clock timestamp and also expose monotonic run-relative `elapsedMs`. Finalized and compact results expose direct `durationMs` so agents do not have to derive runtime duration from wall-clock timestamps.
+
+This timing path was verified as additive. It does not replace raw timestamps or discard full evidence.
+
+### Evidence history completeness and speed
+
+Evidence-history summary scans now use bounded parallel I/O while retaining every finalized run. The implementation intentionally avoids hidden caps, pagination shortcuts, or cache staleness. Incomplete and malformed entries remain skippable without truncating valid finalized history.
+
+This matters to long-lived Ferrum installations where evidence history can grow large but still has to remain complete.
 
 ## Evidence integrity
 
@@ -352,6 +480,8 @@ Project-owned status records content-addressed evidence verification with:
 - tamper detection;
 - legacy bundles reported as unverifiable instead of receiving false success.
 
+Evidence run IDs reject dot and dot-dot traversal aliases before path resolution.
+
 Credentials and remote-provider secrets must remain outside published evidence.
 
 ## Compact CLI and MCP contract
@@ -362,11 +492,13 @@ This is an efficiency improvement with **no evidence reduction**.
 
 Verified agent-facing surfaces include CLI commands for test, suite, matrix, pack, Spaces, evidence, bench, dashboard, and GitHub Wiki operations, plus MCP surfaces for doctor, run, suite, browser matrix, benchmark, workload packs, Spaces, durable evidence, and GitHub Wiki probe/bootstrap.
 
+Current compact results include monotonic event timing and direct run duration, and process targets now expose HTTP request capability through the same runner/evidence model.
+
 MCP Inspector compatibility is independently smoke-tested.
 
 ## GitHub Wiki automation
 
-Ferrum now includes verified GitHub Wiki Git-remote probe and first-page browser bootstrap capabilities.
+Ferrum includes verified GitHub Wiki Git-remote probe and first-page browser bootstrap capabilities.
 
 Verified behavior includes:
 
@@ -461,7 +593,17 @@ Project-owned status preserves regression coverage for incidents including:
 - Appium existing without real runtime qualification;
 - benchmarks missing machine/workload/reliability context;
 - stale stack-verification markers surviving promotion;
-- secret leakage risk at recursive evidence boundaries.
+- secret leakage risk at recursive evidence boundaries;
+- evidence IDs accepting unsafe dot-only aliases;
+- evidence-history scans serializing unnecessary I/O;
+- compact evidence lacking direct run-relative timing;
+- snapshots silently stopping at 400 qualifying elements;
+- snapshot refs being duplicated or silently retargeted after DOM mutation/replacement;
+- process log assertions consuming the remaining timeout after the child had already exited;
+- process health checks consuming the startup deadline after a terminal child state;
+- process targets proving health without being able to exercise the service API;
+- HTTP transport errors hiding an authoritative child-process exit;
+- container/service acceptance lacking exact image/runtime identity and cleanup proof.
 
 Do not remove regression coverage for these just because they are currently fixed.
 
@@ -482,28 +624,34 @@ npm test
 npm run smoke:web
 npm run smoke:extension
 npm run smoke:network
+npm run smoke:service-fixture
 npm run smoke:electron
 npm run smoke:dashboard
 ```
 
-Run Selenium Grid when remote WebDriver changes, the browser matrix when browser/runtime behavior changes, Lightpanda when that lane changes, real Linux/Windows Electron and package acceptance when desktop/Electron changes, and real Appium when native/mobile behavior changes.
+Run Selenium Grid when remote WebDriver changes, the browser matrix when browser/runtime behavior changes, Lightpanda when that lane changes, the service fixture when process HTTP/service behavior changes, real Linux/Windows Electron and package acceptance when desktop/Electron changes, and real Appium when native/mobile behavior changes.
+
+A process/service change that claims container parity should retain explicit runtime/image identity and cleanup proof rather than treating container startup alone as acceptance.
 
 ## Current next actions
 
-Current project-owned direction now includes:
+Current project-owned direction includes:
 
 - use Ferrum as the acceptance layer for applicable GameSync changes;
 - extend grounded GameSync workload packs with exact changed workflows;
-- keep forced MV3 worker termination/recovery in the extension regression surface now that it is implemented and verified;
+- keep forced MV3 worker termination/recovery in the extension regression surface;
+- keep complete uncapped snapshots and page-session ref identity as agent-facing correctness guarantees;
 - preserve exact-head severe CI promotion discipline for future stack changes;
-- investigate optional transport-level latency/reset fault injection only if it adds useful capability beyond deterministic Chromium offline control;
+- use the local/container service fixture as a baseline before adopting heavier service-test dependencies;
+- evaluate fixed-seed stateful API testing only if it produces a minimized repeatable defect reproducer without weakening current evidence;
+- evaluate deterministic transport-fault injection only if exact fault configuration and recovery are preserved;
 - continue improving evidence replay/inspection, target breadth, reliability, and speed only when coverage and fidelity remain unchanged or improve.
 
 ## Source-of-truth hierarchy
 
 For Ferrum facts, prefer:
 
-1. current `Herbertofury/Ferrum-Browser` source and real evidence;
+1. current [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser) source and real evidence;
 2. `.agents-memory/STATUS.json` and current project memory;
 3. repository docs/manifests;
 4. Project Constellation summaries.
@@ -512,4 +660,4 @@ Project-owned evidence supersedes stale Project Constellation wording.
 
 ## Wiki maintenance triggers
 
-Update this page whenever the verified commit/workflow, supported target matrix, service-worker recovery/diagnostics, evidence schema, CLI/MCP contract, Workbench behavior, GameSync acceptance contract, Electron/Appium qualification, dependency pins, packaging status, GitHub Wiki automation, or project-owned next actions materially change.
+Update this page whenever the verified commit/workflow, supported target matrix, service-worker recovery/diagnostics, process/service HTTP capability, disposable service acceptance, snapshot completeness/ref semantics, evidence schema/history/timing, CLI/MCP contract, Workbench behavior, GameSync acceptance contract, Electron/Appium qualification, dependency pins, packaging status, GitHub Wiki automation, or project-owned next actions materially change.
