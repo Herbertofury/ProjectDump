@@ -39,6 +39,7 @@ A Source Hub adapter should own provider-specific behavior instead of spreading 
 - authenticated/user-library capabilities;
 - playback or launch capabilities;
 - authorization mode and required scopes;
+- stable account-linking identifier when the provider exposes one;
 - secret/token ownership and storage boundary;
 - redirect requirements;
 - rate-limit behavior;
@@ -50,13 +51,19 @@ A Source Hub adapter should own provider-specific behavior instead of spreading 
 - last review date;
 - known degraded or unavailable capabilities.
 
-The UI must derive promises from this capability record. A provider button must not imply playback, editing, library access, or upload if its adapter only supports external navigation.
+The UI must derive promises from this capability record. A provider button must not imply playback, editing, library access, upload, or bulk-catalog access if its adapter only supports external navigation.
 
-## Current authorization research
+## Current authorization and provider research
 
 ### Spotify
 
-Spotify currently recommends **Authorization Code with PKCE** for mobile apps, single-page apps, desktop-like public clients, and other clients where a secret cannot be safely stored. Spotify has deprecated the Implicit Grant flow. Its February 2026 Development Mode migration also changed endpoint and app-limit behavior, so a Source Hub cannot assume an older Web API surface remains unchanged.
+Spotify currently recommends **Authorization Code with PKCE** for mobile apps, single-page apps, desktop-like public clients, and other clients where a secret cannot be safely stored. Spotify has deprecated the Implicit Grant flow.
+
+Spotify's February 2026 Development Mode migration also changed the practical API contract. Development Mode now requires the app owner to have Premium, newly created apps are limited to one client ID per developer and five authorized users per app, multiple batch/browse/other-user endpoints were removed or replaced, search result limits were reduced, and applications need to tolerate missing/renamed response fields.
+
+A further May 2026 identity change is important for durable Source Hub account linking: `GET /me` now returns `account_id`, which Spotify documents as a public, immutable, pseudoanonymous account identifier. Spotify explicitly recommends using `account_id` rather than the older user `id` when linking an account to an external service because `account_id` is stable for the lifetime of the account.
+
+Source Hub consequence: store provider linkage against a provider-scoped stable account identifier such as Spotify `account_id`, while treating display names and older user IDs as profile data rather than durable internal identity.
 
 Primary documentation:
 
@@ -64,15 +71,24 @@ Primary documentation:
 - https://developer.spotify.com/documentation/web-api/tutorials/code-pkce-flow
 - https://developer.spotify.com/documentation/web-api/tutorials/february-2026-migration-guide
 - https://developer.spotify.com/documentation/web-api/references/changes/february-2026
+- https://developer.spotify.com/documentation/web-api/references/changes/may-2026
+- https://developer.spotify.com/documentation/web-api/reference/get-current-users-profile
 
 ### Apple Music
 
-Apple Music API requests require a signed developer token. MusicKit on the Web automatically manages the Music User Token for subscriber-specific requests. Directly managed developer-token requests are rate-limited and can return HTTP 429 responses.
+Apple Music API requests require a signed developer token. Subscriber-specific requests also require a Music User Token. MusicKit automatically manages the Music User Token on Apple platforms and in web apps, which makes that path materially different from embedding signing credentials or manually persisting a browser-visible developer private key.
+
+Apple now also exposes **Apple Music Feed** for bulk offline catalog metadata. The feed covers album, song, artist, and popularity-chart metadata, refreshes fully every 24 hours, and is delivered through Apple Media Feed API exports in Parquet format. It is a separate capability lane from MusicKit user-library/playback authorization and uses developer-token authentication.
+
+The feed carries a strict usage boundary in Apple's current documentation: feed content is for publicly promoting Apple Music content in the app, not for powering general internal systems, third-party data sharing, or unrelated music/artist analysis. Source Hubs should therefore model Apple Music Feed as an optional, purpose-restricted catalog-promotion adapter rather than silently treating it as a general-purpose metadata warehouse.
 
 Primary documentation:
 
 - https://developer.apple.com/documentation/applemusicapi/generating-developer-tokens
 - https://developer.apple.com/documentation/applemusicapi/user-authentication-for-musickit
+- https://developer.apple.com/documentation/applemusicfeed
+- https://developer.apple.com/documentation/applemusicfeed/requesting-a-feed-export
+- https://developer.apple.com/documentation/applemusicfeed/generating-developer-tokens
 
 ### General OAuth boundary
 
@@ -90,35 +106,40 @@ Primary source:
 - Preserve theme-level provider and soundtrack mappings across schema migrations.
 - Preserve V33's truthful remote-playback boundary until a real provider session has been exercised.
 - Provider failure must be visible and isolated. One provider outage or authorization failure must not break the full Source Hub.
+- Durable provider identity must use the strongest current stable provider-scoped identifier available instead of mutable display/profile fields.
+- Purpose-restricted bulk feeds must remain isolated from general-purpose internal indexing and analytics unless the provider contract explicitly allows that use.
 
 ## Proposed capability and auth matrix
 
 The next architecture increment should add a provider capability/auth matrix behind the adapter interface. Suggested fields:
 
-`provider -> capability -> auth mode -> scopes -> token owner -> rate limit -> cache rule -> fallback -> verified runtime -> reviewed date`
+`provider -> capability -> auth mode -> scopes -> account identity -> token owner -> rate limit -> cache rule -> usage boundary -> fallback -> verified runtime -> reviewed date`
 
-For Spotify, the first authenticated experiment should use PKCE and the current Development Mode constraints. For Apple Music web integration, the experiment should use MusicKit's managed user-token path and an appropriately protected developer-token service boundary rather than embedding a signing key in the browser.
+For Spotify, the first authenticated experiment should use PKCE, current Development Mode constraints, and `account_id` for durable account linkage. For Apple Music web integration, the experiment should use MusicKit's managed user-token path and an appropriately protected developer-token service boundary rather than embedding a signing key in the browser.
+
+If Apple Music Feed is evaluated, keep it a separate catalog-promotion capability with explicit 24-hour export freshness, Parquet ingestion, developer-token ownership, and usage-boundary metadata. It must not replace MusicKit's user-authorized library/playback path.
 
 Other current V33 providers should remain external-navigation adapters until their API/auth/runtime paths are separately sourced and exercised.
 
 ## Smallest useful experiment
 
-Implement the capability matrix without changing V33's existing provider UX. Add one feature-detected authenticated test lane for Spotify and one for Apple Music. Keep current external navigation as the fallback.
+Implement the capability matrix without changing V33's existing provider UX. Add one feature-detected authenticated test lane for Spotify and one for Apple Music. Keep current external navigation as the fallback. Add schema support for a stable provider account identifier and for a purpose-restricted bulk-catalog capability, but do not activate either path in the UI until its real runtime flow is verified.
 
 ### Acceptance test
 
 - all six current V33 providers still open correctly;
 - existing per-theme provider and URL mappings survive migration and restart;
 - capability UI never advertises an unsupported action;
-- Spotify PKCE authorization succeeds, refresh behavior is exercised, and failures are visible;
+- Spotify PKCE authorization succeeds, refresh behavior is exercised, `account_id` is captured for durable provider linkage, and failures are visible;
 - Apple Music user authorization is exercised through MusicKit on the Web;
 - no client secret or signing private key is present in browser-exportable state;
+- Apple Music Feed, if enabled, remains a separate purpose-restricted bulk-catalog lane and its 24-hour export identity is recorded;
 - provider-specific errors do not corrupt theme state;
 - fallback external navigation still works when authenticated functionality is unavailable.
 
 ## Exact next action
 
-Materialize the provider capability/auth matrix around the existing V33 soundtrack hub, then exercise the first authenticated provider lanes without changing or removing the verified V33 fallback behavior.
+Materialize the provider capability/auth matrix around the existing V33 soundtrack hub, adding a stable provider-account identity field and a separate purpose-restricted bulk-catalog capability. Then exercise Spotify PKCE plus `account_id` linkage and Apple Music/MusicKit authorization without changing or removing the verified V33 fallback behavior.
 
 ## Evidence
 
@@ -127,4 +148,4 @@ Materialize the provider capability/auth matrix around the existing V33 soundtra
 
 ## Wiki maintenance
 
-Update this page when provider capabilities, authorization models, rate limits, API versions, credential boundaries, cache rules, fallback behavior, or verified runtime coverage change. Preserve old provider evidence as lineage rather than rewriting history.
+Update this page when provider capabilities, authorization models, stable account identifiers, rate limits, API versions, credential boundaries, bulk-feed usage boundaries, cache rules, fallback behavior, or verified runtime coverage change. Preserve old provider evidence as lineage rather than rewriting history.
