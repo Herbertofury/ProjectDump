@@ -15,7 +15,7 @@ Resolve current canonical state from GitHub and Drive before mutating ongoing wo
 
 ## Project Constellation
 
-Project Constellation is **ACTIVE** and runs in **NORMAL_OPERATION**. Its durable control state lives under `project-constellation/` in this repository plus current artifacts in Google Drive. Missing sandbox files never trigger recovery or restoration mode. Recovery/restoration is fallback-only after an actual verified integrity failure. Preserve exactly **63 tracked projects** unless the user explicitly changes the list. **Sports Group Hub remains removed and must never be re-added.** The older 25-project database is historical source detail only and cannot replace the current 63-project catalogue. Future passes read `project-constellation/HANDOFF.md` and machine-readable state first, compare artifact hashes against `lastAutomationHash`, preserve newer user edits, then continue normal research and product improvement.
+Project Constellation is **ACTIVE** and runs in **NORMAL_OPERATION**. Its durable control state lives under `project-constellation/` in this repository plus current artifacts in Google Drive. Missing sandbox files never trigger recovery or restoration mode. Recovery/restoration is fallback-only after an actual verified integrity failure. Preserve exactly **63 tracked projects** unless the user explicitly changes the list. The older 25-project database is historical source detail only and cannot replace the current 63-project catalogue. Future passes read `project-constellation/HANDOFF.md` and machine-readable state first, compare artifact hashes against `lastAutomationHash`, preserve newer user edits, then continue normal research and product improvement.
 
 ## Skills
 
