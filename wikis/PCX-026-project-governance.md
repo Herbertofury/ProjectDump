@@ -18,7 +18,6 @@ The current `Herbertofury/ProjectDump` root `AGENTS.md` is the strongest connect
 - Canonical state must be resolved before mutating ongoing work.
 - User edits and version lineage must be preserved.
 - Project Constellation remains ACTIVE / NORMAL_OPERATION with exactly 63 tracked projects.
-- Sports Group Hub remains excluded.
 - Missing sandbox files are not a recovery trigger.
 
 Canonical evidence: [ProjectDump AGENTS.md](https://github.com/Herbertofury/ProjectDump/blob/main/AGENTS.md)
@@ -37,7 +36,7 @@ Create a machine-checkable, non-destructive governance validation layer that aud
 
 The official [Open Policy Agent](https://github.com/open-policy-agent/opa) project published **v1.19.0** on 2026-07-30. OPA provides policy-as-code evaluation and is a strong candidate for validating structured project invariants when those invariants can be represented as data.
 
-**Proposal:** test OPA only as an optional audit engine behind Project Governance. Start with read-only checks for invariants such as canonical repository identity, required verification evidence, forbidden scope reductions, exactly-63 Project Constellation count, and excluded-project absence. Human-readable AGENTS rules and explicit user corrections remain authoritative.
+**Proposal:** test OPA only as an optional audit engine behind Project Governance. Start with read-only checks for invariants such as canonical repository identity, required verification evidence, forbidden scope reductions, and the exactly-63 Project Constellation count. Human-readable AGENTS rules and explicit user corrections remain authoritative.
 
 **Why it fits:** the governance problem is not a lack of prose. It is the gap between prose requirements and repeatable machine checks.
 
@@ -45,7 +44,7 @@ The official [Open Policy Agent](https://github.com/open-policy-agent/opa) proje
 
 **Risks:** policy engines can create false confidence or over-constrain projects if prose is translated mechanically. Never auto-rewrite user policy from OPA results.
 
-**Small experiment:** define five read-only invariants from the existing ProjectDump contract and run them against synthetic pass/fail fixtures plus the real Project Constellation state.
+**Small experiment:** define four read-only invariants from the existing ProjectDump contract and run them against synthetic pass/fail fixtures plus the real Project Constellation state.
 
 **Acceptance test:** every fixture produces the expected result, current valid state passes, intentionally broken state fails with an actionable explanation, and disabling the policy engine does not alter project data or execution behavior.
 
