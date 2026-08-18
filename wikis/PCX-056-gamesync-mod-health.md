@@ -43,7 +43,9 @@ Nexus mod page
   -> Mod Health overlay OR background scan
   -> Nexus Posts + optional Bugs acquisition
   -> offscreen parsing
-  -> evidence dedupe/cache
+  -> evidence dedupe
+       -> overlay path: evidence cache + delayed cache-based AutoNotes sync
+       -> background path: direct ModHealthEngine analysis/job result
   -> ModHealthEngine
        -> classify comments
        -> apply time window
@@ -244,6 +246,8 @@ Cache rows are stored under keys prefixed with:
 modhealth:evidence:
 ```
 
+The overlay creates a logical cache key containing the game, mod ID, and normalized Nexus URL, then uses the `MODHEALTH_EVIDENCE_APPEND`, `MODHEALTH_EVIDENCE_GET`, and `MODHEALTH_EVIDENCE_CLEAR` message paths. The evidence helper itself adds the storage prefix when it persists that logical key to `cacheEntries`.
+
 ### Background jobs
 
 Background scan jobs are stored in an in-memory `Map` and carry status, progress, phase, message, input, result, and timestamps.
@@ -255,6 +259,41 @@ Current background-job TTL:
 ```
 
 This matters operationally: background job status is not a durable long-term task log. After cleanup or a service-worker lifecycle change, a previously returned job ID may no longer resolve.
+
+### Verified background-scan evidence-cache divergence
+
+A source-level completeness pass found an important distinction between the interactive overlay path and `MODHEALTH_RUN_BACKGROUND`.
+
+In the current `mod-health-evidence-bg.js` background job implementation:
+
+1. Posts and optional Bugs evidence are fetched and deduplicated into `allCollected`.
+2. A local `evidenceCacheKey` is built as `modhealth:evidence:<normalized source URL>`.
+3. That key is passed to `modHealthEvidenceClear()`.
+4. The same `evidenceCacheKey` symbol has no later append/read use in the background-job path.
+5. `allCollected` is passed directly to `intel.modHealth.analyzeRun(...)`.
+6. The resulting analysis is stored on the transient background job and may be ingested by the analysis engine into AutoNotes.
+
+This means a successful background scan is **not currently proven to populate the overlay evidence cache** that `MODHEALTH_EVIDENCE_GET` rehydrates. It also uses a different logical key shape from the overlay's game/mod/URL key. The direct analysis result is still real and the analysis engine's direct AutoNotes handoff can still occur; the gap is specifically continuity between background-collected evidence and the overlay/cache surface.
+
+This is source-proven behavior, not a claim that evidence disappears from every user workflow. It matters because a user can complete a background scan, later open the overlay for the same mod, and reasonably expect the previously collected evidence rows to be available through the same two-hour cache. Current source does not establish that guarantee.
+
+#### Repair/acceptance contract
+
+If background and overlay evidence are intended to share one continuity surface, the repair should use one canonical logical cache-key builder and one append path rather than introducing another store or hidden compatibility layer.
+
+At minimum, regression verification should prove:
+
+1. start `MODHEALTH_RUN_BACKGROUND` for a known Nexus mod;
+2. wait until `MODHEALTH_BACKGROUND_STATUS` reports `done`;
+3. capture the exact evidence rows used by the completed analysis;
+4. open the Mod Health overlay for the same game/mod/URL;
+5. verify `MODHEALTH_EVIDENCE_GET` returns the same deduplicated evidence set under the canonical key;
+6. reload the extension/service worker while the two-hour TTL remains valid and verify persisted evidence rehydrates from IndexedDB;
+7. clear the evidence and prove both memory and IndexedDB copies for that canonical key are removed;
+8. verify direct analysis AutoNotes ingestion and cache-triggered delayed AutoNotes synchronization do not duplicate the same finding;
+9. verify a different mod, game, or Nexus URL cannot collide with the first mod's evidence key.
+
+Until that is implemented and exercised, treat background-job `result`/AutoNotes output and overlay evidence-cache continuity as separate verified behaviors.
 
 ## Core analysis engine
 
@@ -397,7 +436,9 @@ Username redaction is enabled by default unless explicitly disabled by the calle
 
 ### Evidence-cache sync
 
-The overlay/background evidence layer can queue a short delayed AutoNotes synchronization after evidence is appended. This prevents each individual evidence row from requiring an immediate full note rebuild while still keeping AutoNotes aligned with the evidence cache.
+The interactive evidence path can queue a short delayed AutoNotes synchronization after evidence is appended. This prevents each individual evidence row from requiring an immediate full note rebuild while still keeping AutoNotes aligned with the evidence cache.
+
+The current background-job path should be considered separate: it passes collected comments directly to `analyzeRun()` and does not currently prove an append into the overlay evidence cache described above.
 
 ## Report templates
 
@@ -480,7 +521,7 @@ The shipping `package.json` currently exposes:
 - Bounty-specific tests/benchmark
 - preview and legacy WASM build support
 
-It does **not** currently expose a dedicated `test:modhealth` npm script in this repository.
+It does **not** currently expose a dedicated `test:modhealth` npm script in this repository. The current `app/test/` tree contains the dedicated Bounty suite plus WASM performance fixtures, but no Mod Health test directory.
 
 Therefore a Mod Health change should not be declared verified merely because the extension builds. The minimum practical qualification should include the real affected paths below.
 
@@ -500,14 +541,15 @@ Therefore a Mod Health change should not be declared verified merely because the
 12. Verify duplicate evidence does not multiply findings.
 13. Verify a background scan transitions queued -> running -> done/error truthfully.
 14. Verify `MODHEALTH_BACKGROUND_STATUS` reports the same job while it remains live.
-15. Verify source-fetch failure is surfaced in returned errors rather than converted into a false success finding.
-16. Verify CSV and text health-source import with malformed/partial rows.
-17. Verify severe existing entries are not silently downgraded by a weaker duplicate.
-18. Verify AutoNotes receives the intended Mod Health finding and preserves evidence.
-19. Verify username redaction default behavior.
-20. Verify evidence cache reload and expiration behavior.
-21. Verify extension reload/restart does not corrupt `gsModHealthDb`.
-22. Inspect extension/page console logs for Mod Health errors.
+15. Verify background-collected evidence can be rehydrated through the intended overlay/cache path if shared continuity is part of the product contract; current source does not prove this.
+16. Verify source-fetch failure is surfaced in returned errors rather than converted into a false success finding.
+17. Verify CSV and text health-source import with malformed/partial rows.
+18. Verify severe existing entries are not silently downgraded by a weaker duplicate.
+19. Verify AutoNotes receives the intended Mod Health finding and preserves evidence without duplicate ingestion between direct analysis and delayed cache sync.
+20. Verify username redaction default behavior.
+21. Verify evidence cache reload and expiration behavior, including service-worker restart while the TTL remains valid.
+22. Verify extension reload/restart does not corrupt `gsModHealthDb`.
+23. Inspect extension/page console logs for Mod Health errors.
 
 ## How to modify the subsystem
 
@@ -567,7 +609,7 @@ app/content/mod-health.js
 Preserve:
 
 - one-instance behavior;
-- existing evidence cache key semantics;
+- canonical evidence cache key semantics;
 - truthfully displayed progress;
 - source links;
 - pause/abort state;
@@ -583,6 +625,8 @@ app/modules/mods-intel-suite/background/mod-health-evidence-bg.js
 ```
 
 Preserve bounded pagination, explicit Bugs inclusion, per-phase progress, job errors, and evidence dedupe. Avoid unbounded crawling or hidden background loops.
+
+If the background path is made cache-aware, reuse the same logical cache-key contract and evidence append helpers as the overlay. Do not create a third evidence identity model.
 
 ## Troubleshooting
 
@@ -603,6 +647,12 @@ Check:
 
 The job registry is in memory and has a 30-minute inactivity TTL. A service-worker restart or cleanup can make an old job ID unavailable. Treat the returned analysis/AutoNotes record as the durable result surface, not the transient job map.
 
+### Background scan completed but the overlay has no cached notes
+
+First distinguish the background analysis result from the overlay cache. Current source proves that `MODHEALTH_RUN_BACKGROUND` can collect comments and pass them directly to `analyzeRun()`, but the background-job path does not currently prove a matching `MODHEALTH_EVIDENCE_APPEND` into the overlay cache. Opening the overlay later can therefore legitimately expose an empty cache even though the earlier job completed.
+
+Check the background job's `result`, direct AutoNotes output, and the overlay's logical cache key separately. If shared continuity is expected, fix the source to reuse one canonical cache-key builder and append path, then run the background-to-overlay regression contract above.
+
 ### Evidence appears empty
 
 Check:
@@ -613,6 +663,7 @@ Check:
 - scan-profile terms;
 - offscreen extraction output;
 - cache-key consistency;
+- whether the evidence came from the interactive overlay path or only a background job;
 - whether evidence expired after its two-hour TTL.
 
 ### Health-source sync finds nothing
@@ -662,7 +713,7 @@ When changing Mod Health:
 
 This documentation pass verified the current source structure and behavior from the canonical GameSync repository at version `0.6.3` and observed `main` commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`.
 
-It did not execute a fresh live Opera Mod Health scan, external Nexus fetch, source-sheet fetch, or end-to-end AutoNotes round trip during this wiki update. Those remain runtime qualification steps rather than inferred successes.
+The pass additionally verified from source that the interactive overlay and background scan do not currently share a proven evidence-cache append lifecycle: the background job builds and clears its own local cache key, then analyzes `allCollected` directly, while the overlay owns the append/get path. No fresh live Opera Mod Health scan, external Nexus fetch, source-sheet fetch, or end-to-end AutoNotes round trip was executed during this wiki update, so the user-visible impact of that continuity gap remains a required runtime qualification item rather than an inferred failure count.
 
 The previous Project Constellation summary for PCX-056 was intentionally generic. This wiki supersedes that summary with current project-owned implementation evidence while preserving the original project goal: evidence-backed detection without destructive automation.
 
@@ -675,6 +726,7 @@ Update this wiki when any of the following materially changes:
 - keyword/signature packs;
 - scan profiles;
 - evidence TTL or background-job lifecycle;
+- evidence-cache keying or background/overlay continuity;
 - database schema/storage keys;
 - source formats or default sources;
 - Nexus acquisition/parsing behavior;
