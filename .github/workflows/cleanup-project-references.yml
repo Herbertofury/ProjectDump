@@ -1,3 +1,4 @@
+# one-shot trigger after workflow registration
 name: One-shot Project Constellation reference cleanup
 
 on:
@@ -123,7 +124,6 @@ jobs:
               workflow.unlink()
               changed.append(str(workflow))
 
-          # Validate every JSON file after cleanup.
           for path in sorted(root.rglob('*.json')):
               if '.git' in path.parts:
                   continue
@@ -137,7 +137,6 @@ jobs:
           assert len({p.get('id') for p in projects}) == 63
           assert all(str(p.get('name', '')).strip().lower() != target.lower() for p in projects)
 
-          # Scan all current UTF-8 text after removing the one-shot workflow.
           forbidden = re.compile(r'Sports Group Hub|sportsGroupHub(?:Absent|Excluded|RecordAbsent)?|removedProjectAbsent', re.I)
           leftovers = []
           for path in sorted(root.rglob('*')):
