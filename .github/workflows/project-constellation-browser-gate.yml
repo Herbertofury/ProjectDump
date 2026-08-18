@@ -4,11 +4,12 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'project-constellation/browser-gate/**'
+      - 'project-constellation/browser-gate/qv.b64.part*'
+      - 'project-constellation/browser-gate/verify-quick-view.mjs'
       - '.github/workflows/project-constellation-browser-gate.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   quick-view-browser-gate:
@@ -40,15 +41,40 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/pcx-browser-gate"
-          cd "$RUNNER_TEMP/pcx-browser-gate"
+          cd project-constellation/browser-gate
           npm init -y >/dev/null
           npm install --no-save playwright@1.63.0-alpha-2026-08-17
           npx playwright install --with-deps chromium
-          echo "NODE_PATH=$RUNNER_TEMP/pcx-browser-gate/node_modules" >> "$GITHUB_ENV"
 
       - name: Exercise Quick View end-to-end
         shell: bash
         run: |
           set -euo pipefail
           node project-constellation/browser-gate/verify-quick-view.mjs project-constellation/browser-gate/quick-view.html
+
+      - name: Publish gate result
+        if: always()
+        shell: bash
+        env:
+          GATE_STATUS: ${{ job.status }}
+        run: |
+          set -euo pipefail
+          mkdir -p project-constellation/browser-gate
+          cat > project-constellation/browser-gate/result.json <<EOF
+          {
+            "schema": "project-constellation.browser-gate/1",
+            "workflowSha": "${GITHUB_SHA}",
+            "candidateVersion": "0.5.1",
+            "candidateSha256": "8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1",
+            "status": "${GATE_STATUS}",
+            "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add project-constellation/browser-gate/result.json
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "state: record Project Constellation browser gate [skip ci]"
+          git push
