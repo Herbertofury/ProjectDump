@@ -1,6 +1,6 @@
 # GitHub Wiki Automation
 
-ProjectDump now has a verified two-layer GitHub Wiki automation path that covers both the one-time first-page bootstrap and ongoing page creation, editing, deletion, and full synchronization.
+ProjectDump now has a verified two-layer GitHub Wiki automation path that covers both the one-time first-page bootstrap and ongoing page creation, editing, deletion, full synchronization, and machine-readable publication proof.
 
 ## Architecture
 
@@ -35,6 +35,40 @@ A source file maps to a real GitHub Wiki page. Therefore:
 
 After every publish, the script fresh-clones the real `.wiki.git` repository and byte-compares it to the source directory. A workflow success therefore proves that the remote wiki matches the intended source, including deletions.
 
+## Machine-verifiable publication proof
+
+The workflow now persists a traditional GitHub commit status named:
+
+`wiki-publication`
+
+It is written **only after** `wiki-sync.sh` completes successfully, which means the publisher has already:
+
+1. mirrored the complete `wikis/` tree into `ProjectDump.wiki.git`;
+2. pushed any changed Wiki commit;
+3. fresh-cloned the remote Wiki after publication;
+4. run the complete byte comparison against the source tree;
+5. resolved the remote Wiki `master` commit.
+
+The success status is attached to the exact source commit that triggered the workflow. Its description records the full 40-character published Wiki master commit, and its target URL points to the exact GitHub Actions run. If publication or fresh-clone verification fails, the workflow records a failure status when possible.
+
+This closes an important verification gap for automated maintainers: a later run can query the triggering source commit, read `wiki-publication`, follow its exact Actions run, and inspect the job logs without relying on a manually copied run ID.
+
+### Verified proof checkpoint
+
+The proof mechanism itself was first verified on source commit:
+
+`60bb4e8bee1afdc20369432bc0e0b8231d1cb240`
+
+The `Sync GitHub Wiki` run was:
+
+`32083124479`
+
+The run concluded successfully. Its publisher reported that the Wiki already matched the source, fresh-cloned the remote Wiki, completed the byte comparison, and resolved published Wiki master commit:
+
+`912305b14458ea5ac5340ed0ed1f3432fd9b97d3`
+
+The workflow then wrote `wiki-publication=success` back to source commit `60bb4e8bee1afdc20369432bc0e0b8231d1cb240` with the run URL as the status target.
+
 ## Ferrum first-page bootstrap
 
 Ferrum repository:
@@ -64,6 +98,8 @@ Ferrum Spaces preserve authenticated browser state. The default wiki Space is `g
 If GitHub requires login and the Space is not yet authenticated, run bootstrap headed once and complete GitHub authentication in that browser. Later bootstrap operations can reuse the same persistent Space.
 
 Git probing automatically uses `GH_TOKEN` or `GITHUB_TOKEN` when one is available. The token is used only for Git transport authentication and is not written into Ferrum evidence.
+
+The ProjectDump sync workflow uses the repository-scoped Actions token. Its required permissions are `contents: write` for Wiki Git publication and `statuses: write` for the `wiki-publication` proof status.
 
 ## Private-repository safety
 
@@ -110,7 +146,8 @@ For another repository:
 3. if the wiki is uninitialized, run `ferrum github-wiki bootstrap OWNER/REPO --space github`;
 4. establish a source wiki directory in the normal repository;
 5. install or reuse the verified wiki-sync publisher workflow with a write-capable GitHub token;
-6. manage wiki pages by creating, editing, renaming, or deleting source files;
-7. require a fresh-clone comparison after publication before treating the wiki update as complete.
+6. if automated verification needs to be queryable later, grant `statuses: write` and record a success status only after the fresh-clone byte comparison passes;
+7. manage wiki pages by creating, editing, renaming, or deleting source files;
+8. require the exact source commit's `wiki-publication` status, Actions run, published Wiki master commit, and fresh-clone comparison before treating the wiki update as complete.
 
-This makes the browser-only first-page operation a one-time bootstrap detail while keeping normal wiki maintenance source-controlled, reviewable, repeatable, and verifiable.
+This makes the browser-only first-page operation a one-time bootstrap detail while keeping normal wiki maintenance source-controlled, reviewable, repeatable, and independently verifiable.
