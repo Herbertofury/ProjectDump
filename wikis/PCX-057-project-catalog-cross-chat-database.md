@@ -43,6 +43,54 @@ An earlier 2026-08-17 documentation pass incorrectly concluded that the standalo
 
 The repair deliberately reused the existing verified Drive bytes. It did **not** regenerate the catalog, reconstruct the project list, rewrite recovery history, or promote the older 25-project database. This preserves the current catalog lineage while repairing redundant publication.
 
+## Machine-readable catalog integrity receipt
+
+The previously documented next step to create a catalog-integrity receipt has now been completed.
+
+`project-constellation/Project-Constellation-Catalog-Integrity.json` was added at commit `ab071e23eecb9c658ad6b50f62c9c2b73b3a4c68` with schema:
+
+```text
+project-constellation.catalog-integrity/1
+```
+
+The receipt records the exact promoted catalog identity:
+
+```text
+path: project-constellation/Project-Constellation-Project-Catalog.json
+driveFileId: 1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq
+bytes: 116771
+sha256: 79c8dd524b866ab1fe2dc011820f010d7ab5c8f4b0f42d31ad3e6ca8db82e8be
+githubBlobSha: d417e516449f7c2d4ec9a16accdedfebc5cb590f
+githubRestoreCommit: eb99a193c08b9f2ca370dbcf85c75c2f997eafa6
+```
+
+It also records these verified invariants:
+
+- `projectCount: 63`
+- unique project IDs
+- Sports Group Hub excluded
+- Sports Group Hub record absent
+- every project has a goal
+- every project has requirements
+- every project has recovery history
+
+The publication status is explicitly recorded as:
+
+```text
+github: RESTORED_AND_FETCH_VERIFIED
+googleDrive: SOURCE_REDOWNLOADED_AND_SHA256_VERIFIED
+```
+
+The receipt preserves the stronger publication rule already used by Project Constellation: a missing, stale, partial, or unverifiable GitHub or Drive copy is publication debt. Raw byte SHA-256 remains the exact publication identity. Any semantic/canonicalized digest is additive evidence only.
+
+### What the receipt does and does not prove
+
+The receipt is a durable snapshot of one verified catalog checkpoint. It proves the recorded catalog identity and invariants for that checkpoint.
+
+It does **not** yet prove that every future catalog checkpoint automatically regenerates and verifies the receipt. A later catalog mutation can still create drift unless the normal checkpoint path compares the live GitHub and Drive copies, recomputes the receipt, and rejects or flags divergence.
+
+That distinction matters because a stale integrity receipt is evidence about an older checkpoint, not evidence that the current catalog is still synchronized.
+
 ## Authority and conflict resolution
 
 Use this order when catalog records conflict:
@@ -111,9 +159,10 @@ The catalog is now a dual-published continuity artifact. A future run should tre
 - project IDs are not unique;
 - Sports Group Hub reappears;
 - required continuity fields disappear;
-- a catalog is promoted from the historical 25-project database without stronger evidence.
+- a catalog is promoted from the historical 25-project database without stronger evidence;
+- `Project-Constellation-Catalog-Integrity.json` no longer describes the promoted catalog bytes.
 
-The minimal integrity receipt for a catalog checkpoint should record both remote destinations, exact byte size, raw SHA-256, Git blob or commit identity, project count, exclusion invariant, and required-field coverage.
+The minimal integrity receipt for a catalog checkpoint should record both remote destinations, exact byte size, raw SHA-256, Git blob or commit identity, project count, exclusion invariant, required-field coverage, and the checkpoint at which the comparison was performed.
 
 ## Optional indexed mirror
 
@@ -128,6 +177,7 @@ If added, the mirror should be reproducible from the canonical JSON and disposab
 - Never merge same-name artifacts solely because names or timestamps match.
 - Never promote an artifact without content/hash/version evidence.
 - Never treat a generated catalog as durable until both remote destinations are verified.
+- Never treat an old integrity receipt as proof of a newer catalog checkpoint.
 - Never let a search/index layer mutate canonical project records implicitly.
 - Never substitute a semantic canonicalization digest for the exact-byte digest required by publication verification.
 
@@ -142,8 +192,9 @@ The standalone catalog is durable only when:
 - same-name different-content lineage is preserved;
 - schema validation passes when a formal schema is present;
 - GitHub and Drive remote identities match the promoted catalog bytes;
+- the machine integrity receipt matches those promoted bytes and invariants;
 - Project Constellation can consume the catalog without dropping local user state.
 
 ## Exact current next action
 
-Add a lightweight catalog-integrity receipt/check to the normal Project Constellation checkpoint path so a missing GitHub or Drive mirror is detected immediately, while keeping the restored 116,771-byte catalog unchanged. Then prototype Draft 2020-12 schema validation and optional RFC-8785 semantic hashing as additive verification layers without changing catalog semantics.
+Wire `Project-Constellation-Catalog-Integrity.json` into the normal catalog/checkpoint workflow so every material catalog mutation automatically revalidates the 63-project invariants, rechecks both GitHub and Drive identities, and refreshes the receipt only after both copies agree. Then prototype Draft 2020-12 schema validation and optional RFC-8785 semantic hashing as additive verification layers without changing catalog semantics.
