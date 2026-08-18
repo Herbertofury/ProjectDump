@@ -238,6 +238,33 @@ The public manifest `key` is extension identity material, not a private signing 
 
 Before publication, inspect the exact candidate archive/directory rather than assuming `.gitignore` or CI alone guarantees that no local material was packaged.
 
+## Signed build provenance and artifact attestations
+
+GitHub's current artifact-attestation path can add cryptographically signed build provenance to GameSync release artifacts without replacing any existing release gate. GitHub Actions can generate attestations using `actions/attest@v4` with `id-token: write`, `contents: read`, and `attestations: write`; the final publishable ZIP or binary is supplied as the attestation subject. GitHub also supports signed SPDX or CycloneDX SBOM attestations for the same artifact.
+
+For public repositories, GitHub-backed attestations use Sigstore-backed signing and are intended to let consumers verify where and how the artifact was built. The corresponding verification command is:
+
+```text
+gh attestation verify PATH/TO/ARTIFACT -R OWNER/REPOSITORY
+```
+
+This should be an **additive provenance layer**, not a substitute for SHA-256, exact source revision, reproducible build identity, same-ID upgrade verification, parity audit, Opera/runtime tests, remote Drive/GitHub byte verification, or regression suites. An attested artifact can still be functionally broken if the workflow built broken source, so runtime acceptance remains mandatory.
+
+### Proposed attested-release experiment
+
+For one Extension V2 release candidate after all existing build/runtime gates pass:
+
+1. produce the final ZIP in GitHub Actions from the exact source commit under test;
+2. compute and record its SHA-256 and byte size;
+3. generate build provenance for that exact ZIP with `actions/attest@v4`;
+4. optionally generate an SPDX or CycloneDX SBOM and attest it against the same ZIP;
+5. download the workflow artifact into a fresh environment and run `gh attestation verify` against the owning repository;
+6. compare the verified attestation subject digest to the release ledger SHA-256;
+7. publish the exact same bytes to the intended GitHub release and Google Drive destination;
+8. re-download both remote copies and verify their SHA-256/size still match the attested subject.
+
+This ties source commit, workflow identity, final bytes, remote publication, and consumer verification together without weakening any existing GameSync acceptance gate.
+
 ## Recommended release ledger
 
 For every candidate, record at least:
@@ -257,11 +284,14 @@ For every candidate, record at least:
 | Packaging command | exact command used |
 | Artifact digest | SHA-256 of the final publishable file when a file artifact exists |
 | Artifact size | final byte size |
+| Attestation subject | exact subject path/name and SHA-256 digest when provenance is generated |
+| Attestation verification | observed `gh attestation verify` result and owning repository |
+| SBOM attestation | predicate/type and verification result when produced |
 | Publication destination | exact release/Drive/repository object |
 | Remote verification | remote size/digest or complete re-download/hash |
 | Known exclusions | tests/workspaces not exercised |
 
-This prevents a source commit, generated folder, ZIP, and remotely published artifact from being conflated as though they were the same thing.
+This prevents a source commit, generated folder, ZIP, attestation, and remotely published artifact from being conflated as though they were the same thing.
 
 ## Release procedure: shipping GameSync extension
 
@@ -274,7 +304,8 @@ This prevents a source commit, generated folder, ZIP, and remotely published art
 7. Inspect console/service-worker/runtime errors relevant to the changed feature.
 8. Package the tested generated output using the project's actual chosen release packaging procedure. Do not substitute an untested source archive for the tested runtime.
 9. Hash the final publishable file when packaging produces one.
-10. Publish to the intended durable destination and verify the remote object before recording the release complete.
+10. When the candidate is built in GitHub Actions, generate and verify an artifact attestation for the exact final publishable file without replacing the existing runtime gates.
+11. Publish the intended bytes to the durable destinations and verify each remote object before recording the release complete.
 
 ## Release procedure: Extension V2
 
@@ -288,7 +319,8 @@ This prevents a source commit, generated folder, ZIP, and remotely published art
 8. Run `npm run verify:extension-v2:opera` for the real Opera build/runtime lane when available.
 9. Run relevant Playwright and extension regression suites.
 10. If packaging a release ZIP, run `npm --workspace apps/extension-v2 run zip` only after the candidate build and checks correspond to the source revision being released.
-11. Record the final artifact hash/size and verify the remote publication before declaring the release durable.
+11. Record the final ZIP hash/size, generate and verify build provenance for those exact bytes when using the GitHub Actions release lane, and keep the attestation subject digest in the release ledger.
+12. Publish the same verified bytes to the intended GitHub and Drive destinations and re-download/hash both before declaring the release durable.
 
 ## Modifying the release factory
 
@@ -342,15 +374,19 @@ Treat that as a build-dependency defect rather than preserving generated output 
 
 Inspect the finding and remove the sensitive material from the candidate/history as appropriate. Do not disable the Gitleaks release guard merely to publish.
 
+### Attestation verification fails
+
+Treat this as a release-provenance blocker for any release that claims attested provenance. Confirm the artifact bytes match the recorded subject digest, the expected repository owns the attestation, and the tested/downloaded artifact is the same object that the workflow attested. Do not regenerate an attestation over different bytes and present it as proof for the original candidate.
+
 ### A ZIP exists but no tested generated directory can be tied to it
 
 The ZIP is not sufficient release proof. Rebuild from a known source revision, test that exact candidate, then regenerate/package and hash the final artifact.
 
 ## Verification boundary for this wiki
 
-This page documents the **current repository-declared release and verification mechanisms**. During this documentation pass, the repositories were inspected remotely; this pass did not execute npm builds, launch Opera GX, generate a new ZIP, or publish a GameSync product release. Commands above are included only when present in current project-owned source.
+This page documents the **current repository-declared release and verification mechanisms** plus a sourced GitHub artifact-attestation proposal. During this documentation pass, the repositories were inspected remotely; this pass did not execute npm builds, launch Opera GX, generate a new ZIP, create a GameSync artifact attestation, or publish a GameSync product release. Commands above are included only when present in current project-owned source or current GitHub documentation.
 
-The two most recent source baselines inspected were shipping GameSync 0.6.3 at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` and GameSync Next at `9e337c720f0180cffa577f140b181c699f0a1650`, with Extension V2 declaring version 0.8.0.
+The two source baselines inspected were shipping GameSync 0.6.3 at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` and GameSync Next at `9e337c720f0180cffa577f140b181c699f0a1650`, with Extension V2 declaring version 0.8.0.
 
 ## Wiki maintenance triggers
 
@@ -360,6 +396,7 @@ Update this page when any of the following materially changes:
 - Extension V2 version, WXT layout, or output directory;
 - extension identity or same-ID migration logic;
 - build, ZIP, parity, lint, regression, Playwright, or Opera verification commands;
+- artifact-attestation action/version, provenance policy, SBOM predicate, or verification workflow;
 - release/publishing destination;
 - generated artifact naming/layout;
 - secret scanning or credential boundaries;
