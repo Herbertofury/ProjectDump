@@ -1,0 +1,54 @@
+name: Project Constellation Browser Gate
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'project-constellation/browser-gate/**'
+      - '.github/workflows/project-constellation-browser-gate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  quick-view-browser-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Reconstruct exact v0.5.1 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd project-constellation/browser-gate
+          cat qv.b64.part01 qv.b64.part02 qv.b64.part03 qv.b64.part04 qv.b64.part05 qv.b64.part06 > qv.b64
+          base64 --decode qv.b64 | gzip --decompress > quick-view.html
+          actual="$(sha256sum quick-view.html | awk '{print $1}')"
+          expected="8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1"
+          echo "candidate_sha256=$actual"
+          test "$actual" = "$expected"
+          test "$(wc -c < quick-view.html)" -eq 128283
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Playwright browser runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pcx-browser-gate"
+          cd "$RUNNER_TEMP/pcx-browser-gate"
+          npm init -y >/dev/null
+          npm install --no-save playwright@1.63.0-alpha-2026-08-17
+          npx playwright install --with-deps chromium
+          echo "NODE_PATH=$RUNNER_TEMP/pcx-browser-gate/node_modules" >> "$GITHUB_ENV"
+
+      - name: Exercise Quick View end-to-end
+        shell: bash
+        run: |
+          set -euo pipefail
+          node project-constellation/browser-gate/verify-quick-view.mjs project-constellation/browser-gate/quick-view.html
