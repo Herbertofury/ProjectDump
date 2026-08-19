@@ -1,5 +1,5 @@
 name: Recover v0.5.1 durable payload
-# recovery rerun after exact master restoration
+# recovery rerun with exact Quick View and Master payloads present
 
 on:
   push:
