@@ -59,7 +59,7 @@ def merge_jars(paths, output_name):
                 if info.is_dir():
                     continue
                 upper = name.upper()
-                if name == 'META-INF/MANIFEST.MF' or name.endswith('module-info.class'):
+                if upper in {'META-INF/MANIFEST.MF', 'META-INF/INDEX.LIST'} or name.endswith('module-info.class'):
                     continue
                 if upper.startswith('META-INF/') and upper.endswith(('.SF', '.RSA', '.DSA')):
                     continue
