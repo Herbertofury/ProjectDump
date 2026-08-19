@@ -3,6 +3,7 @@
 **Project Constellation ID:** `PCX-051`
 **Status:** ACTIVE / TRACKED
 **Current source authorities:** [Herbertofury/Gamesync](https://github.com/Herbertofury/Gamesync) and [Herbertofury/GameSync-Next](https://github.com/Herbertofury/GameSync-Next)
+**Current GameSync Next evidence watermark:** `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`
 
 ## Purpose
 
@@ -25,13 +26,65 @@ The fourth state is important. `implementation-specific` must not be collapsed i
 
 The audit script does substantially more than validate JSON syntax. It checks matrix semantics, requires source/evidence/test-gate fields where appropriate, rebuilds Extension V2 before inspecting generated output, and audits concrete invariants across shipping GameSync and GameSync Next. That makes it a better source of capability truth than a manually maintained checklist or UI toggle.
 
+## Material current-main status change
+
+GameSync Next `main` advanced from the older `9e337c720f0180cffa577f140b181c699f0a1650` watermark to merge commit `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`, **Merge universal Game Tracker, Bounty, and Animation Tracker recovery**.
+
+That merge materially changes capability truth. The prior wiki described Bounty and Animation Tracker as explicit parity gaps. The current parity matrix now marks:
+
+- `bounty` as `verified`;
+- `animation-tracker` as `verified`;
+- `universal-game-tracker` as `verified`.
+
+These are evidence-backed status transitions, not documentation-only promotions.
+
+### Bounty verification now represented in the canonical matrix
+
+The current parity record points to:
+
+- JavaScript baseline: `src/features/bounty`;
+- GameSync Next implementation: `apps/extension-v2/src/features/bounty`, `apps/extension-v2/src/ui/app/bounty`, and background routing;
+- runtime gate: `scripts/verify-extension-v2-opera.js`.
+
+The matrix records a clean isolated Opera run that synchronized **107 live GamerPower records** with zero rejected rows, persisted a healthy source snapshot, rendered the calendar, and kept the React root mounted once.
+
+### Animation Tracker verification now represented in the canonical matrix
+
+The current parity record points to:
+
+- JavaScript baseline: `src/animation-tracker`;
+- GameSync Next implementation: `apps/extension-v2/src/features/animation-tracker`, `apps/extension-v2/src/ui/app/animation-tracker`, and the universal Game Tracker view;
+- runtime gate: `scripts/verify-extension-v2-opera.js`.
+
+The matrix records isolated Opera proof for exact HTTPS source persistence, semantic-version detection, polling, an installed-pack update, and a single React root mount.
+
+### Universal Game Tracker is now a verified capability
+
+The merged Game Tracker is materially broader than a simple tab replacement. Current project-owned evidence records:
+
+- public feature entrypoint under `apps/extension-v2/src/features/game-tracker`;
+- UI entrypoint under `apps/extension-v2/src/ui/app/game-tracker`;
+- Dexie database `gamesync-game-tracker-v1` for workspaces, records, relationships, binary assets, activity, and preferences;
+- archive/restore behavior without a permanent-delete action;
+- first-class Sims 4 collections for households, Sims, missing households, worlds, lots, and CC/mod dependencies;
+- universal template workspaces for animations, quests, collectibles, mods, and custom tracking;
+- typed user-defined fields and collections;
+- `.docx`, `.xlsx`, `.xls`, `.csv`, `.tsv`, GameSync JSON, Google Docs, and Google Sheets import paths;
+- lossless GameSync JSON, multi-sheet XLSX, editable image-aware DOCX, and active-collection CSV export paths;
+- native DOCX dropdown parsing with selected value, full option list, alias, and source shading preserved as tracker field schema;
+- worker-owned heavy parsing, relation resolution, persistence, and document generation so large binary/document work does not become a UI-thread shortcut.
+
+The current parity record states that clean isolated Opera runs imported both a supplied **43 MB local DOCX** and its live Google Docs source. The verified result was **181 active records** consisting of 75 households, 4 populated Sims, 67 lots, and 35 worlds, plus 75 relationships and 124 schema-bound images. Opera rendered **836 inline pills**, preserved the complete source wardrobe option set, persisted an inline `Cleaned` to `Dirty` edit, kept root mount count at one, and recorded zero extension console/page/request errors. JSON, XLSX, DOCX, and CSV downloads were retained as test artifacts and passed content-level checks.
+
+Capability Truth must preserve these exact evidence boundaries. A future source change affecting tracker import, schema mapping, relation resolution, image ownership, export generation, or browser mounting can make the verification stale even if the visible tab still renders.
+
 ## Current examples from the parity contract
 
-Current GameSync Next evidence marks examples such as extension identity/in-place upgrade, the main library shell, web-page overlay injection, source discovery/Found Mods, Living Room, the universal page mascot shim, the command center, and the offscreen transformer runtime as `verified`.
+Current GameSync Next evidence marks examples such as extension identity/in-place upgrade, the main library shell, web-page overlay injection, source discovery/Found Mods, Living Room, the universal page mascot shim, Bounty, Animation Tracker, Universal Game Tracker, the command center, and the offscreen transformer runtime as `verified`.
 
 The same matrix deliberately keeps a substantial set as `implemented-unverified`, including collections/wishlist/playing, Nexus integration, the mods organizer, mod authors, News/NewsForge, achievements, the card game, mascot runtime/core games, Shimeji Browser, GX Corner, the AI assistant, themes/effects, and storage/settings.
 
-Explicit `gap` examples include the complete JavaScript mascot arcade catalog, expanded Petz/ACS content, Bounty, and Animation Tracker.
+Explicit `gap` examples still include the complete JavaScript mascot arcade catalog and expanded Petz/ACS content. These unresolved gaps must remain visible even as other features graduate to verified.
 
 These distinctions must remain visible. A rendered tab, a TypeScript type, a copied legacy asset, or a successful build does not transform an unverified or missing capability into a verified one.
 
@@ -48,6 +101,7 @@ A useful row should expose:
 - evidence files;
 - test/runtime gate;
 - latest source commit or verification watermark when available;
+- **status-transition provenance** when a capability changes class;
 - stale-evidence warning when a load-bearing implementation changed after the last proof;
 - exact blocker/next proof step;
 - direct links to the relevant source, test, matrix entry, or runtime evidence.
@@ -62,6 +116,7 @@ The surface should support fast read-only views such as:
 - implementation-specific;
 - stale evidence;
 - changed since last verification;
+- newly verified since a selected watermark;
 - shipping-only;
 - Next-only;
 - cross-host parity work.
@@ -107,11 +162,13 @@ Capability-truth work must never improve a score by shrinking the product. In pa
 - replace real runtime verification with a rendered UI badge;
 - use stale generated output as evidence for current source;
 - convert a `gap` into `implemented-unverified` without actual implementation evidence;
-- convert `implemented-unverified` into `verified` without the required proof.
+- convert `implemented-unverified` into `verified` without the required proof;
+- erase the historical status transition when a capability becomes verified;
+- treat one verified subworkflow as proof for a broader capability record than the matrix actually defines.
 
 ## Staleness model
 
-Capability truth needs source-lineage awareness. A previously verified record can become stale when any load-bearing implementation, schema, manifest, host adapter, provider contract, or verification fixture changes.
+Capability truth needs source-lineage awareness. A previously verified record can become stale when any load-bearing implementation, schema, manifest, host adapter, provider contract, import/export format, worker boundary, or verification fixture changes.
 
 A practical staleness watermark should compare at least:
 
@@ -123,11 +180,11 @@ A practical staleness watermark should compare at least:
 
 A stale verified record should remain historically verified but be visibly marked as **verification stale** until the affected gates are rerun. Do not silently demote historical evidence or silently present old evidence as current.
 
-A repository head change is not automatically a capability change. For example, the current shipping GameSync head moved to a secret-scan workflow fix, which changes the source watermark but does not by itself invalidate every capability proof. Staleness should therefore be dependency-aware: only records whose load-bearing source/evidence set changed should require re-verification.
+A repository head change is not automatically a capability change. The current `cd906ff...` head is a useful counterexample: it materially changes Bounty, Animation Tracker, and Universal Game Tracker truth, but does not automatically invalidate unrelated capabilities whose load-bearing source/evidence did not change. Staleness must therefore be dependency-aware.
 
 ## Relationship to Project Constellation
 
-Project Constellation should mirror capability truth, not invent it. A useful Project Constellation lens can summarize per-project counts of gaps, implemented-unverified capabilities, implementation-specific capabilities, stale verifications, and verified capabilities, with direct links into the canonical GameSync evidence.
+Project Constellation should mirror capability truth, not invent it. A useful Project Constellation lens can summarize per-project counts of gaps, implemented-unverified capabilities, implementation-specific capabilities, stale verifications, newly verified capabilities, and verified capabilities, with direct links into the canonical GameSync evidence.
 
 This should remain read-only from the Project Constellation presentation layer. Editing the second-brain view must not bypass GameSync's source/test/runtime verification authority.
 
@@ -135,14 +192,17 @@ This should remain read-only from the Project Constellation presentation layer. 
 
 At this evolution pass:
 
-- shipping GameSync `main` resolves to `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`;
-- GameSync Next `main` resolves to `9e337c720f0180cffa577f140b181c699f0a1650`.
+- shipping GameSync `main` remains `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`;
+- GameSync Next `main` is `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`;
+- Extension V2 still declares version `0.8.0`.
 
-The shipping-head delta is release/secret-scan plumbing rather than a known parity-semantic change, so it refreshes the repository watermark without automatically invalidating unrelated runtime proofs. Treat both commit IDs as this pass's evidence watermarks, not permanent latest-version claims.
+The GameSync Next head change is materially relevant because it merged verified feature recovery and changed canonical parity states. These commit IDs are evidence watermarks, not permanent latest-version claims.
 
 ## Implementation experiment
 
 Build the first Capability Truth surface as a generated/read-only view over the existing parity matrix. Do not add a second manually maintained capability database.
+
+The first fixture should specifically preserve the current transition history for Bounty and Animation Tracker and the introduction of Universal Game Tracker as verified, so the view can demonstrate that status changes are derived from matrix/evidence revision rather than manual UI edits.
 
 ### Acceptance test
 
@@ -152,17 +212,28 @@ The experiment passes only if:
 2. every rendered capability corresponds one-to-one with a canonical matrix record;
 3. all four status classes are represented without lossy remapping;
 4. status counts exactly match the matrix/audit result;
-5. each nontrivial status exposes its source/evidence/test gate or explicit implementation-specific rationale;
-6. the UI cannot promote a capability to verified by itself;
-7. changing a matrix status/evidence source changes the generated surface without manual duplication;
-8. stale-source detection flags only records whose load-bearing implementation/evidence changed after the last verification watermark;
-9. filters never delete or mutate canonical records;
-10. real contextual controls used from the surface land on the exact evidence/destination they promise.
+5. Bounty and Animation Tracker render as `verified` at the `cd906ff...` evidence watermark and retain provenance showing they were previously gaps;
+6. Universal Game Tracker renders as a first-class verified capability with its actual source/evidence/test gate;
+7. each nontrivial status exposes its source/evidence/test gate or explicit implementation-specific rationale;
+8. the UI cannot promote a capability to verified by itself;
+9. changing a matrix status/evidence source changes the generated surface without manual duplication;
+10. stale-source detection flags only records whose load-bearing implementation/evidence changed after the last verification watermark;
+11. filters never delete or mutate canonical records;
+12. real contextual controls used from the surface land on the exact evidence/destination they promise.
 
 ## Exact current next action
 
-Implement or prototype the read-only Capability Truth generator/view against the current parity matrix and audit output, including the `implementation-specific` state and dependency-aware stale-evidence logic, then verify exact record/status parity. Keep the feature advisory until its own stale-evidence and exact-destination tests pass in the real GameSync workflow.
+Implement or prototype the read-only Capability Truth generator/view against the current `cd906ff...` parity matrix and audit output. Include all four status classes, dependency-aware stale-evidence logic, and status-transition provenance. Use Bounty, Animation Tracker, and Universal Game Tracker as the first transition fixtures, then verify exact record/status parity and exact evidence destinations in the real GameSync workflow before treating the surface itself as authoritative.
+
+## Evidence
+
+- Shipping GameSync repository: https://github.com/Herbertofury/Gamesync
+- GameSync Next repository: https://github.com/Herbertofury/GameSync-Next
+- Current parity matrix: https://github.com/Herbertofury/GameSync-Next/blob/main/docs/gamesync-parity-matrix.json
+- Current recovery merge: https://github.com/Herbertofury/GameSync-Next/commit/cd906ff0831bf7fc33b41fea31b6f0c004cc1562
+- Extension V2 package: https://github.com/Herbertofury/GameSync-Next/blob/main/apps/extension-v2/package.json
+- Parity audit: https://github.com/Herbertofury/GameSync-Next/blob/main/scripts/audit-gamesync-parity.mjs
 
 ## Wiki maintenance
 
-Update this page whenever the parity status vocabulary changes, the audit contract changes, a new host becomes part of parity, stale-evidence tracking is implemented, or the current source/runtime verification watermarks materially change. Preserve historical verification evidence rather than rewriting old results as if they never happened.
+Update this page whenever the parity status vocabulary changes, a capability changes canonical state, the audit contract changes, a new host becomes part of parity, stale-evidence tracking is implemented, or the current source/runtime verification watermarks materially change. Preserve historical verification and status-transition evidence rather than rewriting old results as if they never happened.
