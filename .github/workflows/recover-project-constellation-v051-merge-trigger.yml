@@ -110,4 +110,4 @@ jobs:
           jq -e '.status == "VERIFIED_CLEARED" and .canonicalPromotion.githubPerformed == true' <<<"$debt" >/dev/null
           jq -e '.status == "VERIFIED_PUBLISHED"' <<<"$gate" >/dev/null
 
-# Recovery-watch observable retrigger: 2026-08-19T16:53Z
+# Recovery-watch observable retrigger after browser-gate source repair
