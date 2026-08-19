@@ -80,11 +80,11 @@ This is stronger than an upload log. It records the intended source identity, th
 
 A generic Reliable Artifact Publisher should model multi-target publication as one logical transaction with independent target verification. A GitHub target can be verified while a Drive target is still pending, and vice versa. The aggregate publication state remains incomplete until every required target reaches its own verified terminal state.
 
-## Verified catalog-integrity receipt pattern
+## Historical catalog-integrity receipt pattern
 
-Project Constellation now also stores `project-constellation/Project-Constellation-Catalog-Integrity.json`, created by commit `ab071e23eecb9c658ad6b50f62c9c2b73b3a4c68`.
+Project Constellation previously stored `project-constellation/Project-Constellation-Catalog-Integrity.json`, created by commit `ab071e23eecb9c658ad6b50f62c9c2b73b3a4c68`, as a machine-readable joined GitHub/Drive catalog receipt.
 
-That receipt records a canonical catalog publication with:
+That earlier receipt recorded:
 
 - repository path: `project-constellation/Project-Constellation-Project-Catalog.json`;
 - Drive file ID: `1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq`;
@@ -95,9 +95,107 @@ That receipt records a canonical catalog publication with:
 - GitHub state: `RESTORED_AND_FETCH_VERIFIED`;
 - Google Drive state: `SOURCE_REDOWNLOADED_AND_SHA256_VERIFIED`.
 
-It also records semantic invariants separately from byte identity: 63 unique project IDs, required project fields present, and the removed
+That receipt also recorded semantic invariants separately from byte identity, including 63 unique project IDs and required project fields. This remains useful historical lineage, but it must not be treated as the current catalog byte identity after later verified catalog changes.
 
 That separation matters. Raw SHA-256 is the exact byte identity. Semantic invariants answer whether the artifact is structurally acceptable. A future publisher should preserve both rather than normalizing bytes and then pretending the original digest still applies.
+
+## Verified deterministic recovery and publication pattern: Project Constellation v0.5.1
+
+The 2026-08-19 Project Constellation v0.5.1 recovery is the strongest current reference for a publisher that must recover from corrupted durable payload material without silently changing artifact identity.
+
+The durable closeout checkpoint is `project-constellation/evolution/2026-08-19T1755Z-v051-github-publication-complete.json`. Its final status is `VERIFIED_PUBLISHED`.
+
+### Root cause and exact recovery identity
+
+The recovery isolated corruption to `project-constellation/browser-gate/master.b64.part03`. Parts 01 and 02 already matched the deterministic encoding of the exact verified Drive Master candidate.
+
+Verified Master identity:
+
+- Drive file ID: `1Ol5LWw_f97BR0_kST2qJREGd9fFmvpuQ`;
+- size: `143064` bytes;
+- SHA-256: `dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8`;
+- repair commit: `baafe26c97f5d32f91a6624c966d682739b6538d`;
+- repaired Part 03 blob: `8c5a28d0bb022304b2590e536828f151f4c0218d`.
+
+The recovery did not accept "valid-looking base64" as sufficient. It decoded, decompressed, measured, and hashed the payload against the expected exact artifact identity.
+
+### Sanitizer contract
+
+`.github/workflows/recover-v051-payload-sanitize.yml` implements a fail-closed sanitizer/recovery stage before publication.
+
+For each durable browser-gate payload it:
+
+1. reads every current payload part;
+2. removes whitespace for decoding but separately records invalid non-base64 characters;
+3. decodes and gunzips the current payload;
+4. checks decoded byte size and SHA-256 against fixed expected values;
+5. if current durable parts fail, reads the preserved `automation/pc-v051-sourcebundle` fallback;
+6. accepts fallback bytes only when decoded size and SHA-256 match the same expected artifact identity;
+7. deterministically re-encodes the accepted bytes with gzip compression level 9 and `mtime=0`, then base64;
+8. canonicalizes the recovered payload into one `stem.b64.part01` and removes surplus parts only after exact recovery succeeds;
+9. writes `payload-recovery-diagnostic.json` with `SANITIZED_EXACT` or `DIAGNOSTIC_FAILED`;
+10. refuses to dispatch the publisher unless both Quick View and Master payloads have exact hash matches.
+
+This is a reusable publication lesson: recovery material is not trusted because it is older, complete-looking, or decodable. It is trusted only after it reproduces the required artifact identity.
+
+### Deterministic publisher contract
+
+`.github/workflows/recover-project-constellation-v051-deterministic.yml` reconstructs the exact verified v0.5.1 artifact family from durable GitHub evidence, then rechecks artifact and semantic invariants before publishing.
+
+The final six-object publication set is:
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `Bert_Project_Second_Brain_Website.zip` | 144481 | `f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c` |
+| `Bert_Project_Constellation_Quick_View.html` | 128283 | `8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1` |
+| `Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html` | 143064 | `dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8` |
+| `Bert_Project_Wiki_Pack.zip` | 183831 | `9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891` |
+| `Project-Constellation-Project-Catalog.json` | 116737 | `79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab` |
+| `Project-Constellation-Research-Suggestions.json` | 13295 | `c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6` |
+
+The current v0.5.1 catalog identity therefore supersedes the earlier 116771-byte historical catalog receipt as the current exact-byte authority.
+
+### Verified execution chain
+
+The recovery closeout records:
+
+- sanitizer run `32284169760`: success;
+- sanitizer terminal state: `SANITIZED_EXACT`;
+- deterministic publisher run `32284190866`: success;
+- exact published artifact commit: `226a606e37cc208ba8ad8a84194012e02781b4d8`;
+- promoted-state commit: `ff371c5c2892a225837d6b086ad751b2278e0243`;
+- execution PR: `10`;
+- execution PR run: `32283059108`: success;
+- execution PR closed without merge after its execution purpose was satisfied.
+
+Promotion occurred only after all six GitHub objects had exact size/SHA-256 proof, both ZIPs passed integrity checks, catalog and research JSON parsed, the catalog contained exactly 63 projects and 63 unique IDs, the browser gate passed, publication debt was `VERIFIED_CLEARED`, publication gate was `VERIFIED_PUBLISHED`, and `lastAutomationHash` was promoted.
+
+### Current canonical Drive publication identity
+
+The final verified v0.5.1 Drive canonical set is also recorded independently:
+
+- Website ZIP: `1R2GM6-BqDDCJPEpjtGDx6AiOrpDzY_4u`, 144481 bytes, SHA-256 `f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c`;
+- Quick View: `1DQIrgE7feVdUKfan2QhExRL4BGqRXYT5`, 128283 bytes, SHA-256 `8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1`;
+- Master: `1cCgiPwBYhUFnsjPcz6uZwngGJafLHMci`, 143064 bytes, SHA-256 `dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8`;
+- Wiki Pack: `1yFHcbRzkH857STKviZTH_aXb4LG9Lc24`, 183831 bytes, SHA-256 `9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891`;
+- Project Catalog: `1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq`, 116737 bytes, SHA-256 `79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab`;
+- Research Suggestions: `1wHu3owwVTXI7akLfq4Vwqph_Da4vong8`, 13295 bytes, SHA-256 `c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6`.
+
+The closeout also reread the durable Drive checkpoint document `1cGHmUG-iMUnDoncLSWsZL9ZudZ80fltnYRn-Ogwd4rU` and located the recovery closeout heading before treating the checkpoint as durable.
+
+### Receipt self-consistency is part of verification
+
+The current `Project-Constellation-Publication-Debt.json` has top-level status `VERIFIED_CLEARED`, and the newer closeout checkpoint proves GitHub publication and `lastAutomationHash` promotion completed. Some older nested narrative fields inside the same debt document still describe those final steps as open.
+
+That inconsistency is itself a useful publisher lesson. A durable receipt should not be treated as internally authoritative merely because one top-level field says "complete." A generic publisher should validate that:
+
+- aggregate status agrees with every required target state;
+- "required repair" text does not contradict completed terminal states;
+- promoted hash/version fields agree with the artifact identities in the same receipt;
+- a newer superseding checkpoint is explicitly linked when historical fields are intentionally retained;
+- consumers can determine which record is current without interpreting prose heuristically.
+
+For this v0.5.1 lineage, the newer `2026-08-19T1755Z-v051-github-publication-complete.json` closeout is the stronger terminal authority over stale nested prose in the older debt document.
 
 ## What the current evidence proves
 
@@ -110,7 +208,11 @@ Verified now:
 - one machine-readable receipt can join GitHub and Drive publication identities;
 - byte identity and semantic invariants can be recorded separately;
 - a no-change publication can still be healthy when the remote bytes are independently revalidated;
-- publication checkpoints can preserve exact retry/resume state without regenerating unchanged artifacts.
+- publication checkpoints can preserve exact retry/resume state without regenerating unchanged artifacts;
+- corrupted durable fragments can be recovered without changing artifact identity when exact verified fallback bytes exist;
+- deterministic re-encoding can canonicalize repaired durable transport material while preserving decoded artifact bytes;
+- promotion can be held until exact byte checks, semantic checks, browser/runtime gates, and dual-destination verification all pass;
+- publication receipt self-consistency must be checked, not inferred from one status field.
 
 Not yet proven for the standalone Reliable Artifact Publisher toolkit:
 
@@ -119,22 +221,21 @@ Not yet proven for the standalone Reliable Artifact Publisher toolkit:
 - generic provider adapters beyond the observed ProjectDump/Drive workflows;
 - standalone multipart upload/resume implementation;
 - standalone attestation/SBOM implementation;
-- a generic transaction coordinator that enforces all required targets before aggregate success.
+- a generic transaction coordinator that enforces all required targets before aggregate success;
+- standalone implementation of the verified corruption-detection, exact-fallback, deterministic-repair, and terminal-receipt consistency model.
 
 ## Current Project Constellation publication debt
 
-`project-constellation/Project-Constellation-Publication-Debt.json` intentionally preserves a separate unresolved presentation-artifact candidate instead of silently promoting it.
-
-Its contract is important to Reliable Artifact Publisher:
+The current Project Constellation publication-debt state is `VERIFIED_CLEARED` for the v0.5.1 six-artifact set. The older blocked-candidate behavior remains important lineage because it demonstrates how debt must be preserved before recovery:
 
 - exact candidate hashes and sizes are retained;
 - unchanged candidates are not ceremonially regenerated;
-- a failed or unavailable publication path leaves `lastAutomationHash` unchanged;
+- a failed or unavailable publication path does not promote the last verified hash;
 - remote bytes must be replaced and then re-read/re-downloaded before promotion;
 - if source data changes before publication, old candidate hashes are invalidated and a coherent new candidate set must be generated;
 - if source data did not change, retry the exact candidate bytes rather than creating an ambiguous near-duplicate release.
 
-This is the correct behavior for resumable publication debt: preserve the known candidate, preserve why it is blocked, and distinguish `candidate built` from `published and verified`.
+The v0.5.1 recovery adds the complementary terminal rule: once the blocked candidate is repaired, publication debt is cleared only after the exact intended bytes and required semantic/runtime gates independently pass on every required destination.
 
 ## Recommended publication state machine
 
@@ -161,6 +262,10 @@ Useful failure/debt states:
 - `PROVENANCE_FAILED`
 - `SOURCE_CHANGED_REBUILD_REQUIRED`
 - `BYTE_VERIFIED_PROVENANCE_MISSING`
+- `DURABLE_PAYLOAD_CORRUPT`
+- `VERIFIED_FALLBACK_REQUIRED`
+- `REPAIRED_UNPUBLISHED`
+- `RECEIPT_STATE_INCONSISTENT`
 
 A retry must resume from the earliest invalid state, not replay successful stages automatically.
 
@@ -183,8 +288,11 @@ One durable receipt should connect, where applicable:
 - optional signature/attestation/SBOM identity and verification result;
 - semantic invariants checked after retrieval;
 - predecessor/successor release lineage;
+- durable recovery-source identity when repair was required;
+- sanitizer/repair diagnostic identity and terminal state;
 - final per-target status;
 - aggregate status;
+- explicit supersession pointer for older contradictory state;
 - rollback/recovery pointer.
 
 The receipt itself should also be durable and re-readable. A receipt that exists only in an ephemeral runner log is not sufficient continuity evidence.
@@ -203,7 +311,11 @@ Required behavior:
 - use immutable remote IDs or version IDs when the provider supports them;
 - make publish actions idempotent where possible;
 - record whether cleanup of temporary/failed remote objects happened and whether it was safe;
-- preserve enough state to continue after process restart or runner loss.
+- preserve enough state to continue after process restart or runner loss;
+- when recovery fragments are corrupt, prefer an exact independently verified fallback over heuristic repair;
+- verify decoded artifact identity before canonicalizing transport encoding;
+- never remove surplus/legacy recovery parts until exact recovered bytes are proven;
+- validate terminal receipt consistency before promoting aggregate success.
 
 For multi-target publication, retries should operate target-by-target. A verified GitHub target should not be republished simply because Drive needs a retry unless source identity changed.
 
@@ -253,6 +365,8 @@ The attestation step must never replace remote-byte verification.
 - Never treat one successful destination as aggregate success when another required destination is stale, missing, or unverifiable.
 - Never regenerate unchanged artifact bytes merely to create activity.
 - Never promote a new source/catalog hash while known publication debt still refers to older candidate bytes without explicitly invalidating that debt.
+- Never treat decodable recovery material as trusted unless decoded size and digest match the required artifact identity.
+- Never clear publication debt from one top-level state flag when nested target or repair state still contradicts the claimed terminal condition.
 
 ## Current stop point
 
@@ -261,16 +375,19 @@ The standalone Reliable Artifact Publisher source/toolkit remains unresolved, bu
 - verified GitHub Wiki publication with fresh-clone byte comparison;
 - verified Drive re-read/re-export hashing;
 - dual-target wiki publication receipts;
-- catalog-integrity receipts joining GitHub and Drive identity;
-- explicit preserved publication-debt state for blocked candidates.
+- historical and current catalog integrity identities;
+- explicit preserved publication-debt state for blocked candidates;
+- verified v0.5.1 corruption diagnosis, exact fallback, deterministic sanitizer, deterministic rebuild, and terminal publication closeout;
+- exact six-artifact GitHub and Drive identities after recovery;
+- explicit receipt self-consistency and supersession lessons.
 
 ## Exact next action
 
-Resolve the toolkit/source bytes matching the recorded standalone hash or a newer verified lineage. Then reproduce the now-proven ProjectDump patterns with a disposable generic artifact through a real standalone publisher command:
+Resolve the toolkit/source bytes matching the recorded standalone hash or a newer verified lineage. Then reproduce the now-proven ProjectDump patterns with a disposable generic artifact through a real standalone publisher command, including a deliberate corruption/recovery lane:
 
-`source identity -> deterministic build -> local hash -> two required targets -> independent remote verification -> optional provenance -> durable joined receipt -> restart/resume verification`
+`source identity -> deterministic build -> local hash -> corrupt one durable transport fragment -> detect mismatch -> recover only from exact verified fallback -> deterministic repair -> two required targets -> independent remote verification -> optional provenance -> internally consistent durable joined receipt -> restart/resume verification`
 
-The acceptance gate is not that the command exits zero. Both target copies and the receipt must survive independent reread after the publisher process exits.
+The acceptance gate is not that the command exits zero. Both target copies and the receipt must survive independent reread after the publisher process exits, the corrupted-fragment case must recover to the exact original artifact bytes, and aggregate terminal state must agree with every target and repair field.
 
 ## Documentation gaps
 
@@ -280,7 +397,8 @@ The acceptance gate is not that the command exits zero. Both target copies and t
 - Standalone multipart/resume behavior remains unproven.
 - Standalone attestation/SBOM support remains unproven.
 - No recovered standalone transaction coordinator yet proves required-target aggregate completion.
+- No recovered standalone implementation yet proves the v0.5.1-style corruption recovery and terminal receipt-consistency contract.
 
 ## Wiki maintenance
 
-Update this page when the toolkit/source is resolved, provider adapters change, publication receipt/state-machine behavior changes, standalone multipart/resume becomes verified, attestation support is implemented, or new project-owned publication evidence proves a stronger end-to-end contract. Preserve old hashes, receipts, and blocked candidate identities as release-lineage evidence.
+Update this page when the toolkit/source is resolved, provider adapters change, publication receipt/state-machine behavior changes, standalone multipart/resume becomes verified, attestation support is implemented, recovery/sanitizer behavior changes, or new project-owned publication evidence proves a stronger end-to-end contract. Preserve old hashes, receipts, blocked candidate identities, and superseded state records as release-lineage evidence.
