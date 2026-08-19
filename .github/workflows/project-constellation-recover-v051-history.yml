@@ -1,0 +1,56 @@
+name: Diagnose Project Constellation v0.5.1 staged history
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/project-constellation-recover-v051-history.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct removed staging payload from Git history
+        shell: bash
+        run: |
+          set -euo pipefail
+          REF='2a0c69febadf21d6a26d994cc871247c43a3d962'
+          STAGE='project-constellation/.staging/v0.5.1'
+          WORK="$RUNNER_TEMP/pcx-v051-history"
+          mkdir -p "$WORK"
+
+          echo 'Historical staging tree:'
+          git ls-tree -r --name-only "$REF" -- "$STAGE" | sort
+
+          mapfile -t site_parts < <(git ls-tree -r --name-only "$REF" -- "$STAGE" | grep '/site\.part' | sort)
+          mapfile -t wiki_parts < <(git ls-tree -r --name-only "$REF" -- "$STAGE" | grep '/wiki\.part' | sort)
+          printf 'site parts: %s\n' "${#site_parts[@]}"
+          printf 'wiki parts: %s\n' "${#wiki_parts[@]}"
+          test "${#site_parts[@]}" -gt 0
+          test "${#wiki_parts[@]}" -gt 0
+
+          : > "$WORK/site.b64"
+          for p in "${site_parts[@]}"; do git show "$REF:$p" >> "$WORK/site.b64"; done
+          base64 --decode "$WORK/site.b64" > "$WORK/Bert_Project_Second_Brain_Website.zip"
+
+          : > "$WORK/wiki.b64"
+          for p in "${wiki_parts[@]}"; do git show "$REF:$p" >> "$WORK/wiki.b64"; done
+          base64 --decode "$WORK/wiki.b64" > "$WORK/Bert_Project_Wiki_Pack.zip"
+
+          sha256sum "$WORK/Bert_Project_Second_Brain_Website.zip" "$WORK/Bert_Project_Wiki_Pack.zip"
+          wc -c "$WORK/Bert_Project_Second_Brain_Website.zip" "$WORK/Bert_Project_Wiki_Pack.zip"
+
+          test "$(wc -c < "$WORK/Bert_Project_Second_Brain_Website.zip")" -eq 144481
+          echo 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  '"$WORK/Bert_Project_Second_Brain_Website.zip" | sha256sum -c -
+          test "$(wc -c < "$WORK/Bert_Project_Wiki_Pack.zip")" -eq 183831
+          echo '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  '"$WORK/Bert_Project_Wiki_Pack.zip" | sha256sum -c -
+          unzip -t "$WORK/Bert_Project_Second_Brain_Website.zip"
+          unzip -t "$WORK/Bert_Project_Wiki_Pack.zip"
