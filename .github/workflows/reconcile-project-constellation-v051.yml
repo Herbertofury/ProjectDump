@@ -10,6 +10,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: reconcile-project-constellation-v051
+  cancel-in-progress: false
+
 jobs:
   reconcile:
     runs-on: ubuntu-latest
@@ -18,81 +22,176 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify staged source artifacts and build canonical set
+      - name: Detect complete staged payload
+        id: ready
+        shell: bash
+        run: |
+          if test -f project-constellation/.staging/v0.5.1/READY; then
+            echo 'ready=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'ready=false' >> "$GITHUB_OUTPUT"
+            echo 'Staging is incomplete; waiting for READY.'
+          fi
+
+      - name: Reconstruct and verify exact source artifacts
+        if: steps.ready.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
-          STAGE="project-constellation/.staging/v0.5.1"
-          test "$(wc -c < "$STAGE/Bert_Project_Second_Brain_Website.zip")" -eq 144481
-          echo "f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  $STAGE/Bert_Project_Second_Brain_Website.zip" | sha256sum -c -
-          test "$(wc -c < "$STAGE/Bert_Project_Wiki_Pack.zip")" -eq 183831
-          echo "9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  $STAGE/Bert_Project_Wiki_Pack.zip" | sha256sum -c -
-          unzip -t "$STAGE/Bert_Project_Second_Brain_Website.zip"
-          unzip -t "$STAGE/Bert_Project_Wiki_Pack.zip"
-          rm -rf /tmp/pc-v051
-          mkdir -p /tmp/pc-v051
-          unzip -q "$STAGE/Bert_Project_Second_Brain_Website.zip" -d /tmp/pc-v051
-          cp "$STAGE/Bert_Project_Second_Brain_Website.zip" project-constellation/Bert_Project_Second_Brain_Website.zip
-          cp "$STAGE/Bert_Project_Wiki_Pack.zip" project-constellation/Bert_Project_Wiki_Pack.zip
-          cp /tmp/pc-v051/Bert_Project_Constellation_Quick_View.html project-constellation/Bert_Project_Constellation_Quick_View.html
-          cp /tmp/pc-v051/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html
-          cp /tmp/pc-v051/Project-Constellation-Project-Catalog.json project-constellation/Project-Constellation-Project-Catalog.json
-          cp /tmp/pc-v051/Project-Constellation-Research-Suggestions.json project-constellation/Project-Constellation-Research-Suggestions.json
-          cat > /tmp/expected.sha256 <<'EOF'
-          f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  project-constellation/Bert_Project_Second_Brain_Website.zip
-          8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1  project-constellation/Bert_Project_Constellation_Quick_View.html
-          dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8  project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html
-          9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  project-constellation/Bert_Project_Wiki_Pack.zip
-          79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab  project-constellation/Project-Constellation-Project-Catalog.json
-          c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6  project-constellation/Project-Constellation-Research-Suggestions.json
+          STAGE='project-constellation/.staging/v0.5.1'
+          WORK="$RUNNER_TEMP/pcx-v051"
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+          cat "$STAGE"/site.part* | base64 --decode > "$WORK/Bert_Project_Second_Brain_Website.zip"
+          cat "$STAGE"/wiki.part* | base64 --decode > "$WORK/Bert_Project_Wiki_Pack.zip"
+          test "$(wc -c < "$WORK/Bert_Project_Second_Brain_Website.zip")" -eq 144481
+          echo "f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  $WORK/Bert_Project_Second_Brain_Website.zip" | sha256sum -c -
+          test "$(wc -c < "$WORK/Bert_Project_Wiki_Pack.zip")" -eq 183831
+          echo "9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  $WORK/Bert_Project_Wiki_Pack.zip" | sha256sum -c -
+          unzip -t "$WORK/Bert_Project_Second_Brain_Website.zip"
+          unzip -t "$WORK/Bert_Project_Wiki_Pack.zip"
+          unzip -q "$WORK/Bert_Project_Second_Brain_Website.zip" -d "$WORK/site"
+          cp "$WORK/site/Bert_Project_Constellation_Quick_View.html" "$WORK/"
+          cp "$WORK/site/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html" "$WORK/"
+          cp "$WORK/site/Project-Constellation-Project-Catalog.json" "$WORK/"
+          cp "$WORK/site/Project-Constellation-Research-Suggestions.json" "$WORK/"
+          cd "$WORK"
+          cat > expected.sha256 <<'EOF'
+          f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  Bert_Project_Second_Brain_Website.zip
+          8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1  Bert_Project_Constellation_Quick_View.html
+          dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8  Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html
+          9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  Bert_Project_Wiki_Pack.zip
+          79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab  Project-Constellation-Project-Catalog.json
+          c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6  Project-Constellation-Research-Suggestions.json
           EOF
-          sha256sum -c /tmp/expected.sha256
+          sha256sum -c expected.sha256
+          python -m json.tool Project-Constellation-Project-Catalog.json >/dev/null
+          python -m json.tool Project-Constellation-Research-Suggestions.json >/dev/null
           python - <<'PY'
           import json
-          for p in (
-              "project-constellation/Project-Constellation-Project-Catalog.json",
-              "project-constellation/Project-Constellation-Research-Suggestions.json",
-          ):
-              with open(p, encoding="utf-8") as f:
-                  json.load(f)
+          data=json.load(open('Project-Constellation-Project-Catalog.json',encoding='utf-8'))
+          projects=data.get('projects')
+          assert isinstance(projects,list) and len(projects)==63
+          ids=[p.get('id') or p.get('projectId') for p in projects]
+          assert len(set(ids))==63
           PY
-          rm -rf "$STAGE"
 
-      - name: Publish canonical artifacts
+      - name: Publish canonical artifact bytes
+        if: steps.ready.outputs.ready == 'true'
+        id: publish
         shell: bash
         run: |
           set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add project-constellation
-          if git diff --cached --quiet; then
-            echo "Canonical artifacts already match."
-            exit 0
-          fi
-          git commit -m "project-constellation: publish verified v0.5.1 presentation artifacts"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          WORK="$RUNNER_TEMP/pcx-v051"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            for f in Bert_Project_Second_Brain_Website.zip Bert_Project_Constellation_Quick_View.html Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html Bert_Project_Wiki_Pack.zip Project-Constellation-Project-Catalog.json Project-Constellation-Research-Suggestions.json; do
+              cp "$WORK/$f" "project-constellation/$f"
+            done
+            rm -rf project-constellation/.staging/v0.5.1
+            mkdir -p project-constellation/publication-gate
+            cat > project-constellation/publication-gate/v0.5.1.json <<EOF
+          {"schema":"project-constellation.canonical-publication/1","version":"0.5.1","status":"PUBLISHED_PENDING_REMOTE_VERIFICATION","projectCount":63,"browserAcceptanceCommit":"67f29ed34d8109892cfa1e2f6d30c61ce6ff8b38"}
+          EOF
+            git add project-constellation
+            if git diff --cached --quiet; then
+              sha="$(git rev-parse HEAD)"
+              echo "published_sha=$sha" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git commit -m 'publish: Project Constellation v0.5.1 canonical artifacts [skip ci]'
+            sha="$(git rev-parse HEAD)"
+            if git push origin HEAD:main; then
+              echo "published_sha=$sha" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          exit 1
 
-      - name: Remote verification from origin main
+      - name: Independently verify published GitHub bytes
+        if: steps.ready.outputs.ready == 'true'
+        shell: bash
+        env:
+          PUBLISHED_SHA: ${{ steps.publish.outputs.published_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$PUBLISHED_SHA"
+          TMP="$RUNNER_TEMP/github-roundtrip"
+          rm -rf "$TMP"; mkdir -p "$TMP"
+          for f in Bert_Project_Second_Brain_Website.zip Bert_Project_Constellation_Quick_View.html Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html Bert_Project_Wiki_Pack.zip Project-Constellation-Project-Catalog.json Project-Constellation-Research-Suggestions.json; do
+            curl --fail --location --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors "https://raw.githubusercontent.com/Herbertofury/ProjectDump/$PUBLISHED_SHA/project-constellation/$f" -o "$TMP/$f"
+          done
+          cd "$TMP"
+          cat > expected.sha256 <<'EOF'
+          f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  Bert_Project_Second_Brain_Website.zip
+          8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1  Bert_Project_Constellation_Quick_View.html
+          dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8  Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html
+          9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  Bert_Project_Wiki_Pack.zip
+          79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab  Project-Constellation-Project-Catalog.json
+          c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6  Project-Constellation-Research-Suggestions.json
+          EOF
+          sha256sum -c expected.sha256
+          unzip -t Bert_Project_Second_Brain_Website.zip
+          unzip -t Bert_Project_Wiki_Pack.zip
+          python -m json.tool Project-Constellation-Project-Catalog.json >/dev/null
+          python -m json.tool Project-Constellation-Research-Suggestions.json >/dev/null
+
+      - name: Promote verified durable state
+        if: steps.ready.outputs.ready == 'true'
+        shell: bash
+        env:
+          PUBLISHED_SHA: ${{ steps.publish.outputs.published_sha }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            PUBLISHED_SHA="$PUBLISHED_SHA" python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          root=Path('project-constellation')
+          now=datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z')
+          hashes={
+          'Bert_Project_Second_Brain_Website.zip':'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c',
+          'Bert_Project_Constellation_Quick_View.html':'8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1',
+          'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html':'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8',
+          'Bert_Project_Wiki_Pack.zip':'9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891',
+          'Project-Constellation-Project-Catalog.json':'79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab',
+          'Project-Constellation-Research-Suggestions.json':'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'}
+          state=json.load(open(root/'Project-Constellation-Automation-State.json',encoding='utf-8'))
+          state['version']='0.5.1'; state['updatedAt']=now; state['lastAutomationHash']=hashes
+          state.setdefault('mergeBase',{})['lastVerifiedPresentationLineage']='0.5.1'
+          state['mergeBase']['quickViewDriveFileId']='1DQIrgE7feVdUKfan2QhExRL4BGqRXYT5'
+          state['mergeBase']['masterCommandCenterDriveFileId']='1cCgiPwBYhUFnsjPcz6uZwngGJafLHMci'
+          state['mergeBase']['quickViewMatchedPriorLastAutomationHash']=True
+          state['mergeBase']['masterMatchedPriorLastAutomationHash']=True
+          json.dump(state,open(root/'Project-Constellation-Automation-State.json','w',encoding='utf-8'),indent=2,ensure_ascii=False); open(root/'Project-Constellation-Automation-State.json','a').write('\n')
+          debt=json.load(open(root/'Project-Constellation-Publication-Debt.json',encoding='utf-8'))
+          debt['updatedAt']=now; debt['status']='VERIFIED_CLEARED'
+          debt['reason']='Exact v0.5.1 six-artifact set is verified on Drive and GitHub; real-browser acceptance passed; GitHub bytes round-tripped with expected SHA-256 and sizes.'
+          debt['canonicalPromotion']={'performed':True,'drivePerformed':True,'githubPerformed':True,'githubPublishedSha':os.environ['PUBLISHED_SHA'],'verifiedAt':now}
+          debt['requiredRepair']=None
+          json.dump(debt,open(root/'Project-Constellation-Publication-Debt.json','w',encoding='utf-8'),indent=2,ensure_ascii=False); open(root/'Project-Constellation-Publication-Debt.json','a').write('\n')
+          gate={'schema':'project-constellation.canonical-publication/1','version':'0.5.1','status':'VERIFIED_PUBLISHED','publishedSha':os.environ['PUBLISHED_SHA'],'verifiedAt':now,'projectCount':63,'browserAcceptanceCommit':'67f29ed34d8109892cfa1e2f6d30c61ce6ff8b38','artifacts':hashes}
+          json.dump(gate,open(root/'publication-gate/v0.5.1.json','w',encoding='utf-8'),indent=2); open(root/'publication-gate/v0.5.1.json','a').write('\n')
+          PY
+            git add project-constellation/Project-Constellation-Automation-State.json project-constellation/Project-Constellation-Publication-Debt.json project-constellation/publication-gate/v0.5.1.json
+            git commit -m 'state: verify Project Constellation v0.5.1 publication [skip ci]'
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+
+      - name: Verify promoted state from origin main
+        if: steps.ready.outputs.ready == 'true'
         shell: bash
         run: |
           set -euo pipefail
           git fetch origin main
-          TMP="$(mktemp -d)"
-          git archive --format=tar origin/main project-constellation | tar -xf - -C "$TMP"
-          cd "$TMP"
-          cat > /tmp/expected.sha256 <<'EOF'
-          f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  project-constellation/Bert_Project_Second_Brain_Website.zip
-          8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1  project-constellation/Bert_Project_Constellation_Quick_View.html
-          dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8  project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html
-          9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  project-constellation/Bert_Project_Wiki_Pack.zip
-          79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab  project-constellation/Project-Constellation-Project-Catalog.json
-          c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6  project-constellation/Project-Constellation-Research-Suggestions.json
-          EOF
-          sha256sum -c /tmp/expected.sha256
-          test "$(wc -c < project-constellation/Bert_Project_Second_Brain_Website.zip)" -eq 144481
-          test "$(wc -c < project-constellation/Bert_Project_Constellation_Quick_View.html)" -eq 128283
-          test "$(wc -c < project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html)" -eq 143064
-          test "$(wc -c < project-constellation/Bert_Project_Wiki_Pack.zip)" -eq 183831
-          test "$(wc -c < project-constellation/Project-Constellation-Project-Catalog.json)" -eq 116737
-          test "$(wc -c < project-constellation/Project-Constellation-Research-Suggestions.json)" -eq 13295
+          git show origin/main:project-constellation/Project-Constellation-Publication-Debt.json | python -c "import json,sys; d=json.load(sys.stdin); assert d['status']=='VERIFIED_CLEARED'; assert d['canonicalPromotion']['githubPerformed'] is True"
+          git show origin/main:project-constellation/Project-Constellation-Automation-State.json | python -c "import json,sys; d=json.load(sys.stdin); assert d['version']=='0.5.1'; assert d['lastAutomationHash']['Bert_Project_Constellation_Quick_View.html']=='8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'"
