@@ -47,6 +47,7 @@ jobs:
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3-natives-windows.jar
           curl -fsSLO https://repo1.maven.org/maven2/com/github/ben-manes/caffeine/caffeine/3.2.1/caffeine-3.2.1.jar
+          curl -fsSLO https://repo1.maven.org/maven2/org/apache/commons/commons-compress/1.28.0/commons-compress-1.28.0.jar
           cd ../../..
 
           python3 - <<'PY'
@@ -139,6 +140,10 @@ jobs:
             echo 'Caffeine runtime was not visible to Forge.' >&2
             exit 1
           fi
+          if grep -Fq 'ClassNotFoundException: org.apache.commons.compress' server.log; then
+            echo 'Commons Compress runtime was not visible to Forge.' >&2
+            exit 1
+          fi
           grep -Fq 'Loaded configuration file for Radium: 125 options available, 2 override(s) found' server.log
           grep -Fq "Force-disabling mixin 'world.chunk_access.ServerChunkManagerMixin'" server.log
           grep -Fq "Force-disabling mixin 'alloc.nbt.NbtCompoundMixin'" server.log
@@ -148,6 +153,7 @@ jobs:
           fi
           echo "Forge 47.4.0 headless startup reached Done; rc=$rc" >> ../out/BUILD-VERIFICATION.txt
           echo 'Radium exact build loaded with both targeted compatibility overrides.' >> ../out/BUILD-VERIFICATION.txt
+          echo 'LWJGL, Caffeine, and Commons Compress Java runtimes were visible to Forge.' >> ../out/BUILD-VERIFICATION.txt
           echo 'OpenCL fallback skipped world codegen cleanly on the GPU-less headless runner.' >> ../out/BUILD-VERIFICATION.txt
           cd ../..
 
