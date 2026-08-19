@@ -41,6 +41,7 @@ jobs:
           unzip -j .tmpbuild/downloads/c2meF.jar 'META-INF/jarjar/*.jar' -d .tmpbuild/src/libs
 
           cd .tmpbuild/src/libs
+          curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-opencl/3.3.3/lwjgl-opencl-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3-natives-windows.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3.jar
@@ -130,6 +131,10 @@ jobs:
             echo 'LWJGL OpenCL binding was not visible to Forge.' >&2
             exit 1
           fi
+          if grep -Fq 'ClassNotFoundException: org.lwjgl.system.CustomBuffer' server.log || grep -Fq 'ClassNotFoundException: org.lwjgl.system.MemoryUtil' server.log; then
+            echo 'LWJGL core Java classes were not visible to Forge.' >&2
+            exit 1
+          fi
           if grep -Fq 'ClassNotFoundException: com.github.benmanes.caffeine' server.log; then
             echo 'Caffeine runtime was not visible to Forge.' >&2
             exit 1
@@ -167,3 +172,13 @@ jobs:
           git add tmp-c2me-build/output tmp-c2me-build/c2me-opencl-radiumcompat-forge1201.zip
           git commit -m 'Publish temporary verified C2ME build'
           git push origin "$GITHUB_HEAD_REF"
+
+      - name: Upload verified bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: c2me-opencl-radiumcompat-forge1201
+          path: |
+            work/tmp-c2me-build/c2me-opencl-radiumcompat-forge1201.zip
+            work/tmp-c2me-build/output/
+          if-no-files-found: error
+          retention-days: 14
