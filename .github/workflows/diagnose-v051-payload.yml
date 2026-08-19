@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - recovery/v051-pr-trigger-20260819-1653
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/diagnose-v051-payload.yml'
 
 permissions:
   contents: read
@@ -19,6 +24,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          git fetch origin main
+          git checkout --detach origin/main
           python - <<'PY'
           from pathlib import Path
           import base64, glob, gzip, hashlib, re
