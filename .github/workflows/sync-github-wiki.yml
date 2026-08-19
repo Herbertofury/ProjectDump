@@ -8,6 +8,11 @@ on:
       - 'tools/github-wiki/**'
       - '.github/workflows/sync-github-wiki.yml'
   workflow_dispatch:
+  # Recovery safety net: if a qualifying push/dispatch event is ever missed,
+  # the current complete wiki source set is republished and fresh-clone verified
+  # on the next hourly pass. wiki-sync.sh is idempotent when bytes are unchanged.
+  schedule:
+    - cron: '11 * * * *'
 
 permissions:
   contents: write
