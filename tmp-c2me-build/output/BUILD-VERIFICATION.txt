@@ -1,10 +1,11 @@
-output_sha256= 9d379c43a2ad12b41784f11bb733bb0076cc867ac26d94f8259c9f6e834cb1c4
+output_sha256= 0f6f9e8d349bc092197e25c99e3a992eda1dab3a6dd1b62d15f75dbbd16cd393
 preserved_original_nested_entries= 25
-runtime_entries_added= 3
+runtime_entries_added= 4
 runtime= META-INF/jarjar/lwjgl-opencl-c2me-runtime-3.3.3.jar
 runtime= META-INF/jarjar/lwjgl-zstd-c2me-runtime-3.3.3.jar
 runtime= META-INF/jarjar/caffeine-3.2.1.jar
-final_nested_entries= 30
+runtime= META-INF/jarjar/commons-compress-c2me-runtime-1.28.0.jar
+final_nested_entries= 31
 dfc= c2meF-opts-dfc-mc1.20.1-0.2.0+alpha.12.1-0.2.0+alpha.12.1.jar
 opencl= c2meF-opts-accel-opencl-mc1.20.1-0.2.0+alpha.12.1-0.2.0+alpha.12.1.jar
 Archive:  .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar
@@ -53,9 +54,11 @@ Archive:  .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar
     testing: META-INF/jarjar/lwjgl-opencl-c2me-runtime-3.3.3.jar   OK
     testing: META-INF/jarjar/lwjgl-zstd-c2me-runtime-3.3.3.jar   OK
     testing: META-INF/jarjar/caffeine-3.2.1.jar   OK
+    testing: META-INF/jarjar/commons-compress-c2me-runtime-1.28.0.jar   OK
     testing: META-INF/c2me-opencl-radium-compat.txt   OK
 No errors detected in compressed data of .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar.
 Forge 47.4.0 headless startup reached Done; rc=143
 Radium exact build loaded with both targeted compatibility overrides.
+LWJGL, Caffeine, and Commons Compress Java runtimes were visible to Forge.
 OpenCL fallback skipped world codegen cleanly on the GPU-less headless runner.
-03699a73255fbf520fb6244dfba14754ac140571d60ae0557963f6ec2f1bd6e5  tmp-c2me-build/c2me-opencl-radiumcompat-forge1201.zip
+35d48f7f392b268819c653a57032bdf3a8f62f665d9d03d80b6716ce83d0565f  tmp-c2me-build/c2me-opencl-radiumcompat-forge1201.zip
