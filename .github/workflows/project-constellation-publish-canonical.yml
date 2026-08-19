@@ -16,7 +16,7 @@ concurrency:
 jobs:
   publish-canonical:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -43,7 +43,7 @@ jobs:
           download_drive '1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq' 'Project-Constellation-Project-Catalog.json'
           download_drive '1wHu3owwVTXI7akLfq4Vwqph_Da4vong8' 'Project-Constellation-Research-Suggestions.json'
 
-      - name: Verify exact bytes and package integrity
+      - name: Verify exact Drive bytes and package integrity
         shell: bash
         run: |
           set -euo pipefail
@@ -80,7 +80,8 @@ jobs:
           print('catalog project count and unique IDs: pass')
           PY
 
-      - name: Publish canonical repository objects with race-safe fast-forward retries
+      - name: Publish exact canonical repository objects
+        id: publish
         shell: bash
         env:
           SOURCE_SHA: ${{ github.sha }}
@@ -105,6 +106,7 @@ jobs:
             "sourceWorkflowSha": "${SOURCE_SHA}",
             "status": "VERIFIED_PUBLISHED",
             "projectCount": 63,
+            "browserAcceptanceCommit": "67f29ed34d8109892cfa1e2f6d30c61ce6ff8b38",
             "artifacts": {
               "Bert_Project_Second_Brain_Website.zip": {"size":144481,"sha256":"f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c"},
               "Bert_Project_Constellation_Quick_View.html": {"size":128283,"sha256":"8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1"},
@@ -124,15 +126,250 @@ jobs:
               project-constellation/Project-Constellation-Research-Suggestions.json \
               project-constellation/publication-gate/v0.5.1.json
             if git diff --cached --quiet; then
-              echo 'Canonical v0.5.1 repository objects already match exact verified bytes.'
+              published_sha="$(git rev-parse HEAD)"
+              echo "published_sha=$published_sha" >> "$GITHUB_OUTPUT"
+              echo "Canonical v0.5.1 repository objects already match exact verified bytes at $published_sha."
               exit 0
             fi
             git commit -m 'publish: Project Constellation v0.5.1 canonical artifacts [skip ci]'
+            published_sha="$(git rev-parse HEAD)"
             if git push origin HEAD:main; then
-              git rev-parse HEAD
+              echo "published_sha=$published_sha" >> "$GITHUB_OUTPUT"
+              echo "Published canonical artifacts at $published_sha"
               exit 0
             fi
             echo "Canonical publication raced with another main update; retrying attempt ${attempt}."
           done
           echo 'Unable to publish canonical artifacts after five fast-forward retries.' >&2
           exit 1
+
+      - name: Independently round-trip published GitHub bytes
+        shell: bash
+        env:
+          PUBLISHED_SHA: ${{ steps.publish.outputs.published_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$PUBLISHED_SHA"
+          mkdir -p "$RUNNER_TEMP/github-roundtrip"
+          fetch_raw() {
+            local name="$1"
+            curl --fail --location --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors \
+              "https://raw.githubusercontent.com/Herbertofury/ProjectDump/${PUBLISHED_SHA}/project-constellation/${name}" \
+              --output "$RUNNER_TEMP/github-roundtrip/${name}"
+          }
+          fetch_raw 'Bert_Project_Second_Brain_Website.zip'
+          fetch_raw 'Bert_Project_Constellation_Quick_View.html'
+          fetch_raw 'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html'
+          fetch_raw 'Bert_Project_Wiki_Pack.zip'
+          fetch_raw 'Project-Constellation-Project-Catalog.json'
+          fetch_raw 'Project-Constellation-Research-Suggestions.json'
+          cd "$RUNNER_TEMP/github-roundtrip"
+          verify() {
+            local file="$1" size="$2" hash="$3"
+            test "$(wc -c < "$file" | tr -d ' ')" -eq "$size"
+            test "$(sha256sum "$file" | awk '{print $1}')" = "$hash"
+          }
+          verify 'Bert_Project_Second_Brain_Website.zip' 144481 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c'
+          verify 'Bert_Project_Constellation_Quick_View.html' 128283 '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'
+          verify 'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html' 143064 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8'
+          verify 'Bert_Project_Wiki_Pack.zip' 183831 '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891'
+          verify 'Project-Constellation-Project-Catalog.json' 116737 '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab'
+          verify 'Project-Constellation-Research-Suggestions.json' 13295 'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'
+          unzip -t 'Bert_Project_Second_Brain_Website.zip'
+          unzip -t 'Bert_Project_Wiki_Pack.zip'
+          python -m json.tool 'Project-Constellation-Project-Catalog.json' >/dev/null
+          python -m json.tool 'Project-Constellation-Research-Suggestions.json' >/dev/null
+          echo "GitHub exact-byte round trip passed for $PUBLISHED_SHA"
+
+      - name: Promote durable v0.5.1 state after remote verification
+        id: state
+        shell: bash
+        env:
+          PUBLISHED_SHA: ${{ steps.publish.outputs.published_sha }}
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            PUBLISHED_SHA="$PUBLISHED_SHA" python - <<'PY'
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+
+          root = Path('project-constellation')
+          published_sha = os.environ['PUBLISHED_SHA']
+          now = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00', 'Z')
+          artifacts = {
+              'Bert_Project_Second_Brain_Website.zip': {'size': 144481, 'sha256': 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c', 'driveId': '1R2GM6-BqDDCJPEpjtGDx6AiOrpDzY_4u'},
+              'Bert_Project_Constellation_Quick_View.html': {'size': 128283, 'sha256': '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1', 'driveId': '1DQIrgE7feVdUKfan2QhExRL4BGqRXYT5'},
+              'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html': {'size': 143064, 'sha256': 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8', 'driveId': '1cCgiPwBYhUFnsjPcz6uZwngGJafLHMci'},
+              'Bert_Project_Wiki_Pack.zip': {'size': 183831, 'sha256': '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891', 'driveId': '1yFHcbRzkH857STKviZTH_aXb4LG9Lc24'},
+              'Project-Constellation-Project-Catalog.json': {'size': 116737, 'sha256': '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab', 'driveId': '1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq'},
+              'Project-Constellation-Research-Suggestions.json': {'size': 13295, 'sha256': 'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6', 'driveId': '1wHu3owwVTXI7akLfq4Vwqph_Da4vong8'},
+          }
+
+          def load_json(name):
+              return json.loads((root / name).read_text(encoding='utf-8'))
+
+          def save_json(name, data):
+              (root / name).write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+
+          state = load_json('Project-Constellation-Automation-State.json')
+          state['version'] = '0.5.1'
+          state['updatedAt'] = now
+          state.setdefault('mergeBase', {})['lastVerifiedPresentationLineage'] = '0.5.1'
+          state['lastAutomationHash'] = {name: meta['sha256'] for name, meta in artifacts.items()}
+          drive = state.setdefault('driveArtifacts', {})
+          for name, meta in artifacts.items():
+              drive[name] = {
+                  'id': meta['driveId'],
+                  'sha256': meta['sha256'],
+                  'size': meta['size'],
+                  'verification': 'full canonical Drive re-download SHA-256 and size matched v0.5.1',
+              }
+          state['githubArtifacts'] = {
+              name: {
+                  'path': f'project-constellation/{name}',
+                  'commit': published_sha,
+                  'sha256': meta['sha256'],
+                  'size': meta['size'],
+                  'verification': 'raw.githubusercontent.com exact-commit round-trip SHA-256 and size matched',
+              }
+              for name, meta in artifacts.items()
+          }
+          changes = state.setdefault('changes', [])
+          publication_note = f'Promoted Project Constellation v0.5.1 after exact Drive and GitHub byte round trips plus the real Quick View browser gate; canonical artifact commit {published_sha}.'
+          if publication_note not in changes:
+              changes.append(publication_note)
+          save_json('Project-Constellation-Automation-State.json', state)
+
+          active = load_json('ACTIVE-CHECKPOINT.json')
+          active['checkpointAt'] = now
+          presentation = active.setdefault('presentation', {})
+          presentation['currentVersion'] = '0.5.1'
+          presentation['predecessorVersion'] = '0.5.0'
+          presentation['artifactHashes'] = {name: meta['sha256'] for name, meta in artifacts.items()}
+          active['nextPassDirective'] = 'Resume normal Project Constellation operation from verified v0.5.1. Preserve the exact canonical Drive/GitHub artifact hashes and invalidate/regenerate only if newer source evidence changes the presentation inputs.'
+          verification = active.setdefault('verification', {})
+          verification['driveRemoteHashRoundTrip'] = 'pass: all six canonical v0.5.1 artifacts re-downloaded and SHA-256/size matched'
+          verification['githubRemoteHashRoundTrip'] = f'pass: all six canonical v0.5.1 artifacts fetched from exact commit {published_sha} and SHA-256/size matched'
+          verification['browserRuntime'] = 'pass: exact 128283-byte Quick View candidate exercised in public GitHub Actions; 63 cards, evidence overlay, search, all built-in lenses, project drawer, Today reload persistence, app-research drawer, snapshot export/import, post-import persistence, and clean runtime diagnostics passed at result commit 67f29ed34d8109892cfa1e2f6d30c61ce6ff8b38'
+          drive_pub = active.setdefault('drivePublication', {})
+          drive_pub['artifactFileIds'] = {name: meta['driveId'] for name, meta in artifacts.items()}
+          active['githubPublication'] = {
+              'status': 'VERIFIED_PUBLISHED',
+              'commit': published_sha,
+              'artifactPaths': {name: f'project-constellation/{name}' for name in artifacts},
+              'roundTrip': 'all six exact SHA-256 and size matched',
+          }
+          save_json('ACTIVE-CHECKPOINT.json', active)
+
+          project = load_json('PROJECT.json')
+          current = project.setdefault('currentPresentation', {})
+          current['version'] = '0.5.1'
+          current['predecessor'] = '0.5.0'
+          current['projectCount'] = 63
+          current['artifactBytesCanonical'] = True
+          names = list(current.get('artifactNames') or [])
+          for name in list(artifacts) + ['Project-Constellation-Automation-State.json']:
+              if name not in names:
+                  names.append(name)
+          current['artifactNames'] = names
+          project['catalogDriveFileId'] = artifacts['Project-Constellation-Project-Catalog.json']['driveId']
+          project['updatedAt'] = now
+          save_json('PROJECT.json', project)
+
+          debt = load_json('Project-Constellation-Publication-Debt.json')
+          debt['updatedAt'] = now
+          debt['status'] = 'RESOLVED_CANONICAL_V0_5_1_PUBLISHED'
+          debt['reason'] = f'The exact v0.5.1 six-artifact set is canonical in Drive and GitHub. All six Drive objects and all six GitHub objects were independently round-trip verified by SHA-256 and size, and the exact Quick View browser gate passed. GitHub canonical artifact commit: {published_sha}.'
+          promotion = debt.setdefault('canonicalPromotion', {})
+          promotion['performed'] = True
+          promotion['drivePerformed'] = True
+          promotion['githubPerformed'] = True
+          promotion['reason'] = 'Drive and GitHub canonical bytes are promoted and independently verified; browser acceptance is satisfied.'
+          debt['githubCanonical'] = {
+              'status': 'VERIFIED_PUBLISHED',
+              'commit': published_sha,
+              'artifacts': {
+                  name: {
+                      'path': f'project-constellation/{name}',
+                      'size': meta['size'],
+                      'sha256': meta['sha256'],
+                      'roundTrip': 'exact-commit raw fetch matched',
+                  }
+                  for name, meta in artifacts.items()
+              },
+          }
+          debt['requiredRepair'] = 'No canonical v0.5.1 publication repair remains open. Preserve these verified bytes; invalidate and regenerate only if newer canonical source state changes the presentation inputs.'
+          save_json('Project-Constellation-Publication-Debt.json', debt)
+
+          handoff_path = root / 'HANDOFF.md'
+          handoff = handoff_path.read_text(encoding='utf-8')
+          handoff = handoff.replace(
+              'Project Constellation is **ACTIVE** in **NORMAL OPERATION** at **v0.5.0**. Missing ephemeral files are not a restoration condition.',
+              'Project Constellation is **ACTIVE** in **NORMAL OPERATION** at **v0.5.1**. Missing ephemeral files are not a restoration condition.'
+          )
+          handoff = handoff.replace('The v0.5.0 line contains exactly 63 tracked records.', 'The v0.5.1 line contains exactly 63 tracked records.')
+          old_verification = 'Static validation passed for 63 records, JavaScript syntax, JSON parsing, goal/requirements/history presence, research contract rendering data, local wiki links, hash agreement, and both ZIP integrity checks. All four presentation artifacts were re-downloaded from Drive and SHA-256 matched. Chromium was attempted but timed out with D-Bus runtime errors before producing a DOM, so browser interaction is not claimed.'
+          new_verification = f'Static validation passes for exactly 63 records, unique project IDs, JavaScript syntax, JSON parsing, goal/requirements/history presence, research contract rendering data, local wiki links, hash agreement, and both ZIP integrity checks. All six v0.5.1 canonical artifacts were independently re-downloaded from Drive and fetched from GitHub commit `{published_sha}` with exact size/SHA-256 matches. The exact 128,283-byte Quick View passed the real browser acceptance gate covering all 63 cards, evidence overlay, search, every built-in lens, project drawer, Today reload persistence, app-research drawer, snapshot export/import, post-import reload persistence, and clean runtime diagnostics.'
+          handoff = handoff.replace(old_verification, new_verification)
+          handoff_path.write_text(handoff, encoding='utf-8')
+          PY
+            git diff --check
+            git add project-constellation/Project-Constellation-Automation-State.json \
+              project-constellation/ACTIVE-CHECKPOINT.json \
+              project-constellation/PROJECT.json \
+              project-constellation/Project-Constellation-Publication-Debt.json \
+              project-constellation/HANDOFF.md
+            if git diff --cached --quiet; then
+              state_sha="$(git rev-parse HEAD)"
+              echo "state_sha=$state_sha" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+            git commit -m 'state: promote verified Project Constellation v0.5.1 publication [skip ci]'
+            state_sha="$(git rev-parse HEAD)"
+            if git push origin HEAD:main; then
+              echo "state_sha=$state_sha" >> "$GITHUB_OUTPUT"
+              echo "Promoted durable state at $state_sha"
+              exit 0
+            fi
+            echo "State promotion raced with another main update; retrying attempt ${attempt}."
+          done
+          echo 'Unable to promote durable state after five fast-forward retries.' >&2
+          exit 1
+
+      - name: Verify promoted durable state from GitHub
+        shell: bash
+        env:
+          STATE_SHA: ${{ steps.state.outputs.state_sha }}
+          PUBLISHED_SHA: ${{ steps.publish.outputs.published_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$STATE_SHA"
+          test -n "$PUBLISHED_SHA"
+          mkdir -p "$RUNNER_TEMP/state-roundtrip"
+          for name in Project-Constellation-Automation-State.json ACTIVE-CHECKPOINT.json PROJECT.json Project-Constellation-Publication-Debt.json HANDOFF.md; do
+            curl --fail --location --silent --show-error --retry 8 --retry-delay 2 --retry-all-errors \
+              "https://raw.githubusercontent.com/Herbertofury/ProjectDump/${STATE_SHA}/project-constellation/${name}" \
+              --output "$RUNNER_TEMP/state-roundtrip/${name}"
+          done
+          STATE_SHA="$STATE_SHA" PUBLISHED_SHA="$PUBLISHED_SHA" python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'state-roundtrip'
+          state = json.loads((root/'Project-Constellation-Automation-State.json').read_text())
+          active = json.loads((root/'ACTIVE-CHECKPOINT.json').read_text())
+          project = json.loads((root/'PROJECT.json').read_text())
+          debt = json.loads((root/'Project-Constellation-Publication-Debt.json').read_text())
+          assert state['version'] == '0.5.1'
+          assert active['presentation']['currentVersion'] == '0.5.1'
+          assert project['currentPresentation']['version'] == '0.5.1'
+          assert debt['status'] == 'RESOLVED_CANONICAL_V0_5_1_PUBLISHED'
+          assert debt['githubCanonical']['commit'] == os.environ['PUBLISHED_SHA']
+          assert 'v0.5.1' in (root/'HANDOFF.md').read_text()
+          print('durable v0.5.1 state round trip: pass')
+          PY
