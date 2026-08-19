@@ -1,0 +1,84 @@
+name: TMP C2ME OpenCL Radium Build
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tmp-c2me-build/**'
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Compile, assemble, and smoke test
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" work
+          cd work
+          git checkout "$GITHUB_HEAD_REF"
+          if [ "$(git log -1 --pretty=%s)" = "Publish temporary verified C2ME build" ]; then
+            echo 'Output already published.'
+            exit 0
+          fi
+          rm -rf .tmpbuild && mkdir -p .tmpbuild/downloads .tmpbuild/out
+          git clone https://github.com/udbwhdjwbdj/c2me-opencl-forge1201.git .tmpbuild/src
+          cd .tmpbuild/src
+          git checkout 342c5035d7251ca987c962a14997a21a36eace44
+          mkdir -p libs
+          cd ../..
+          C2ME_URL="$(curl -fsSL https://api.modrinth.com/v2/version/h9trYS7V | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["url"] for x in d["files"] if x.get("primary")))')"
+          RADIUM_URL="$(curl -fsSL https://api.modrinth.com/v2/version/n947JjJH | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["url"] for x in d["files"] if x.get("primary")))')"
+          curl -fsSL "$C2ME_URL" -o .tmpbuild/downloads/c2meF.jar
+          curl -fsSL "$RADIUM_URL" -o .tmpbuild/downloads/radium.jar
+          echo 'ad44f615a4b15afd1d6a4d907ccab1c3855451a1  .tmpbuild/downloads/c2meF.jar' | sha1sum -c -
+          echo 'b42584e2672d6b5329959ec2b0f342395b19389fed0ee4d86ea71072f42f77a0  .tmpbuild/downloads/radium.jar' | sha256sum -c -
+          unzip -j .tmpbuild/downloads/c2meF.jar 'META-INF/jarjar/*.jar' -d .tmpbuild/src/libs
+          cd .tmpbuild/src/libs
+          curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-opencl/3.3.3/lwjgl-opencl-3.3.3.jar
+          curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3-natives-windows.jar
+          curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3.jar
+          curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3-natives-windows.jar
+          cd ../../..
+          curl -fsSLo .tmpbuild/gradle.zip https://services.gradle.org/distributions/gradle-8.8-bin.zip
+          unzip -q .tmpbuild/gradle.zip -d .tmpbuild
+          cd .tmpbuild/src
+          ../gradle-8.8/bin/gradle --no-daemon --stacktrace :c2me_opts_dfc:reobfJar :c2me_opts_accel_opencl:reobfJar
+          cd ../..
+          DFC="$(find .tmpbuild/src/c2me_opts_dfc/build/libs -type f -name '*.jar' ! -name '*sources*' | head -1)"
+          OCL="$(find .tmpbuild/src/c2me_opts_accel_opencl/build/libs -type f -name '*.jar' ! -name '*sources*' | head -1)"
+          python3 tmp-c2me-build/assemble.py .tmpbuild/downloads/c2meF.jar "$DFC" "$OCL" .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar | tee .tmpbuild/out/BUILD-VERIFICATION.txt
+          unzip -t .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar >> .tmpbuild/out/BUILD-VERIFICATION.txt
+          mkdir -p .tmpbuild/out/config
+          printf '%s\n' '# Radium 0.12.4 + C2ME compatibility' 'mixin.world.chunk_access=false' 'mixin.alloc.nbt=false' > .tmpbuild/out/config/lithium.properties
+          mkdir -p .tmpbuild/server
+          cd .tmpbuild/server
+          curl -fsSLo forge-installer.jar https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.0/forge-1.20.1-47.4.0-installer.jar
+          java -jar forge-installer.jar --installServer >/dev/null
+          mkdir -p mods config
+          cp ../out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar mods/
+          cp ../downloads/radium.jar mods/radium-mc1.20.1-0.12.4+git.26c9d8e.jar
+          cp ../out/config/lithium.properties config/
+          echo eula=true > eula.txt
+          set +e
+          timeout 180s bash -c '(sleep 120; echo stop) | ./run.sh nogui' > server.log 2>&1
+          rc=$?
+          set -e
+          cp server.log ../out/FORGE-SMOKE-TEST.log
+          grep -Eq 'Done \([0-9.]+s\)!' server.log
+          ! grep -Eiq 'Mixin apply failed|InvalidMixinException|InjectionError|Critical injection failure|MixinTransformerError|NoClassDefFoundError|ClassNotFoundException|ModLoadingException' server.log
+          echo "Forge 47.4.0 headless startup reached Done; rc=$rc" >> ../out/BUILD-VERIFICATION.txt
+          cd ../..
+          rm -rf tmp-c2me-build/output
+          mkdir -p tmp-c2me-build/output
+          cp -a .tmpbuild/out/. tmp-c2me-build/output/
+          (cd tmp-c2me-build/output && zip -q -r ../c2me-opencl-radiumcompat-forge1201.zip .)
+          sha256sum tmp-c2me-build/c2me-opencl-radiumcompat-forge1201.zip >> tmp-c2me-build/output/BUILD-VERIFICATION.txt
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add tmp-c2me-build/output tmp-c2me-build/c2me-opencl-radiumcompat-forge1201.zip
+          git commit -m 'Publish temporary verified C2ME build'
+          git push origin "$GITHUB_HEAD_REF"
