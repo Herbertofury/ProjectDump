@@ -64,12 +64,31 @@ jobs:
           cp ../out/config/lithium.properties config/
           echo eula=true > eula.txt
           set +e
-          timeout 180s bash -c '(sleep 120; echo stop) | ./run.sh nogui' > server.log 2>&1
+          timeout -k 5s 240s ./run.sh nogui > server.log 2>&1 &
+          runner=$!
+          reached_done=0
+          for _ in $(seq 1 120); do
+            if grep -Eq 'Done \([0-9.]+s\)!' server.log 2>/dev/null; then
+              reached_done=1
+              break
+            fi
+            kill -0 "$runner" 2>/dev/null || break
+            sleep 2
+          done
+          kill "$runner" 2>/dev/null || true
+          wait "$runner" 2>/dev/null
           rc=$?
           set -e
           cp server.log ../out/FORGE-SMOKE-TEST.log
-          grep -Eq 'Done \([0-9.]+s\)!' server.log
-          ! grep -Eiq 'Mixin apply failed|InvalidMixinException|InjectionError|Critical injection failure|MixinTransformerError|NoClassDefFoundError|ClassNotFoundException|ModLoadingException' server.log
+          cat server.log
+          if [ "$reached_done" -ne 1 ]; then
+            echo 'Server never reached Done.' >&2
+            exit 1
+          fi
+          if grep -Eiq 'Mixin apply failed|InvalidMixinException|InjectionError|Critical injection failure|MixinTransformerError|NoClassDefFoundError|ClassNotFoundException|ModLoadingException' server.log; then
+            echo 'Fatal mixin/class-loading signature found.' >&2
+            exit 1
+          fi
           echo "Forge 47.4.0 headless startup reached Done; rc=$rc" >> ../out/BUILD-VERIFICATION.txt
           cd ../..
           rm -rf tmp-c2me-build/output
