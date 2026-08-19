@@ -1,9 +1,6 @@
 name: Diagnose v0.5.1 payload
 
 on:
-  push:
-    branches:
-      - recovery/v051-pr-trigger-20260819-1653
   pull_request:
     branches:
       - main
@@ -20,38 +17,52 @@ jobs:
       - uses: actions/checkout@v5
         with:
           fetch-depth: 0
-      - name: Inspect encoded payloads
+      - name: Inspect main and sourcebundle payloads
         shell: bash
         run: |
           set -euo pipefail
-          git fetch origin main
-          git checkout --detach origin/main
+          git fetch origin main automation/pc-v051-sourcebundle
           python - <<'PY'
           from pathlib import Path
-          import base64, glob, gzip, hashlib, re
+          import base64, gzip, hashlib, re, subprocess
 
-          for stem, expected_size, expected_sha in [
-              ('qv', 128283, '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'),
-              ('master', 143064, 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8'),
-          ]:
-              paths = sorted(glob.glob(f'project-constellation/browser-gate/{stem}.b64.part*'))
-              chunks = [Path(p).read_text(encoding='ascii') for p in paths]
-              text = ''.join(chunks)
-              invalid = [(i, ch, ord(ch)) for i, ch in enumerate(text) if ch not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t ']
-              padding = [i for i, ch in enumerate(text) if ch == '=']
-              print({'stem': stem, 'parts': [(Path(p).name, len(c)) for p, c in zip(paths, chunks)], 'total': len(text), 'invalidCount': len(invalid), 'invalidFirst': invalid[:20], 'padding': padding[:20]})
-              compact = re.sub(r'\s+', '', text)
+          expected = {
+            'qv': (128283, '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'),
+            'master': (143064, 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8'),
+          }
+          allowed = set('ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+
+          def inspect(label, stem, chunks):
+              text=''.join(chunks)
+              compact=re.sub(r'\s+','',text)
+              invalid=[(i,ch,ord(ch)) for i,ch in enumerate(compact) if ch not in allowed]
+              padding=[i for i,ch in enumerate(compact) if ch=='=']
+              print({'label':label,'stem':stem,'chunkLengths':[len(c) for c in chunks],'total':len(text),'compact':len(compact),'mod4':len(compact)%4,'invalidCount':len(invalid),'invalidFirst':invalid[:30],'padding':padding[:20]})
+              for i, ch, _ in invalid[:20]:
+                  print({'label':label,'stem':stem,'invalidContext':compact[max(0,i-32):i+33]})
+              offsets=[]; n=0
+              for c in chunks:
+                  n += len(re.sub(r'\s+','',c)); offsets.append(n)
+              print({'label':label,'stem':stem,'compactChunkEnds':offsets})
+              for off in offsets[:-1]:
+                  print({'label':label,'stem':stem,'boundary':off,'context':compact[max(0,off-40):off+40]})
+              filtered=''.join(ch for ch in compact if ch in allowed)
               try:
-                  raw = base64.b64decode(compact, validate=True)
-                  print({'stem': stem, 'strictBase64': True, 'rawBytes': len(raw), 'rawSha256': hashlib.sha256(raw).hexdigest()})
+                  raw=base64.b64decode(filtered,validate=True)
+                  data=gzip.decompress(raw)
+                  print({'label':label,'stem':stem,'decode':'success','rawBytes':len(raw),'decodedBytes':len(data),'decodedSha256':hashlib.sha256(data).hexdigest(),'match':len(data)==expected[stem][0] and hashlib.sha256(data).hexdigest()==expected[stem][1]})
               except Exception as e:
-                  print({'stem': stem, 'strictBase64': False, 'error': repr(e)})
-                  filtered = ''.join(ch for ch in compact if ch in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
-                  raw = base64.b64decode(filtered, validate=False)
-                  print({'stem': stem, 'filteredRawBytes': len(raw), 'filteredRawSha256': hashlib.sha256(raw).hexdigest()})
-              try:
-                  data = gzip.decompress(raw)
-                  print({'stem': stem, 'gzip': True, 'decodedBytes': len(data), 'decodedSha256': hashlib.sha256(data).hexdigest(), 'sizeMatch': len(data)==expected_size, 'shaMatch': hashlib.sha256(data).hexdigest()==expected_sha})
-              except Exception as e:
-                  print({'stem': stem, 'gzip': False, 'error': repr(e)})
+                  print({'label':label,'stem':stem,'decode':'failure','error':repr(e),'filteredLength':len(filtered),'filteredMod4':len(filtered)%4})
+
+          main_ref='origin/main'
+          source_ref='origin/automation/pc-v051-sourcebundle'
+          for stem in ('qv','master'):
+              main_names=subprocess.check_output(['git','ls-tree','-r','--name-only',main_ref,'project-constellation/browser-gate'],text=True).splitlines()
+              main_names=sorted(n for n in main_names if Path(n).name.startswith(f'{stem}.b64.part'))
+              main_chunks=[subprocess.check_output(['git','show',f'{main_ref}:{n}'],text=True) for n in main_names]
+              inspect('main',stem,main_chunks)
+              source_names=subprocess.check_output(['git','ls-tree','-r','--name-only',source_ref,'project-constellation/browser-gate'],text=True).splitlines()
+              source_names=sorted(n for n in source_names if Path(n).name.startswith(f'{stem}.b64.part'))
+              source_chunks=[subprocess.check_output(['git','show',f'{source_ref}:{n}'],text=True) for n in source_names]
+              inspect('sourcebundle',stem,source_chunks)
           PY
