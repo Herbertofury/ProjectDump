@@ -1,1 +1,1 @@
-Trigger build after outer JarJar flattening, LWJGL core packaging, OpenCL fallback hardening, corrected assembler invocation, and confirmed current base workflow cc17ba5225caaf409c29210d408a0926288f81ce.
+Trigger final build after outer JarJar flattening, LWJGL core/OpenCL/Zstd packaging, Caffeine 3.2.1, Commons Compress 1.28.0, OpenCL fallback hardening, and confirmed current base workflow 0eb54a6d9165e358af56689f6f5c434be1dfb483.
