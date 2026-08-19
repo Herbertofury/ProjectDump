@@ -1,0 +1,68 @@
+name: Pull-request GitHub Wiki publication recovery
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/sync-github-wiki-pr-recovery.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  statuses: write
+
+jobs:
+  publish-current-main:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout current main Wiki source
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 1
+
+      - name: Publish and fresh-clone verify current Wiki
+        id: wiki
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          source_sha="$(git rev-parse HEAD)"
+          log_file="$(mktemp)"
+          bash tools/github-wiki/wiki-sync.sh "${{ github.repository }}" wikis "${{ github.server_url }}" | tee "$log_file"
+          wiki_commit="$(awk '/^Wiki master commit: / {print $4}' "$log_file" | tail -n 1)"
+          if [[ ! "$wiki_commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Publisher completed without a valid Wiki master commit." >&2
+            exit 71
+          fi
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
+          echo "wiki_commit=$wiki_commit" >> "$GITHUB_OUTPUT"
+
+      - name: Record verified publication on exact current-main source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.wiki.outputs.source_sha }}
+          WIKI_COMMIT: ${{ steps.wiki.outputs.wiki_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${SOURCE_SHA}" \
+            -f state=success \
+            -f context=wiki-publication \
+            -f description="PR-recovery fresh-clone byte-verified wiki ${WIKI_COMMIT}" \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+
+      - name: Record publication failure on exact current-main source
+        if: failure() && steps.wiki.outputs.source_sha != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.wiki.outputs.source_sha }}
+        shell: bash
+        run: |
+          gh api --method POST "repos/${GITHUB_REPOSITORY}/statuses/${SOURCE_SHA}" \
+            -f state=failure \
+            -f context=wiki-publication \
+            -f description="PR-recovery GitHub Wiki publish or verification failed" \
+            -f target_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" || true
