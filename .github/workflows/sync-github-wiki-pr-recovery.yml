@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   publish-current-main:
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.title == '[recovery] publish ProjectDump wiki'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
