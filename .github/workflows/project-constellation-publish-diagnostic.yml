@@ -1,0 +1,81 @@
+name: Project Constellation Canonical Publication Diagnostic
+
+on:
+  push:
+    paths:
+      - '.github/workflows/project-constellation-publish-diagnostic.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download Drive bytes
+        id: download
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pcx-v051"
+          for spec in \
+            '1R2GM6-BqDDCJPEpjtGDx6AiOrpDzY_4u|Bert_Project_Second_Brain_Website.zip' \
+            '1DQIrgE7feVdUKfan2QhExRL4BGqRXYT5|Bert_Project_Constellation_Quick_View.html' \
+            '1cCgiPwBYhUFnsjPcz6uZwngGJafLHMci|Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html' \
+            '1yFHcbRzkH857STKviZTH_aXb4LG9Lc24|Bert_Project_Wiki_Pack.zip' \
+            '1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq|Project-Constellation-Project-Catalog.json' \
+            '1wHu3owwVTXI7akLfq4Vwqph_Da4vong8|Project-Constellation-Research-Suggestions.json'; do
+            id="${spec%%|*}"
+            name="${spec#*|}"
+            curl --fail --location --silent --show-error --retry 3 \
+              "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t" \
+              --output "$RUNNER_TEMP/pcx-v051/$name"
+          done
+          wc -c "$RUNNER_TEMP"/pcx-v051/*
+
+      - name: Verify downloaded hashes
+        id: verify
+        if: steps.download.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP/pcx-v051"
+          echo 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  Bert_Project_Second_Brain_Website.zip' > expected.sha256
+          echo '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1  Bert_Project_Constellation_Quick_View.html' >> expected.sha256
+          echo 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8  Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html' >> expected.sha256
+          echo '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  Bert_Project_Wiki_Pack.zip' >> expected.sha256
+          echo '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab  Project-Constellation-Project-Catalog.json' >> expected.sha256
+          echo 'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6  Project-Constellation-Research-Suggestions.json' >> expected.sha256
+          sha256sum --check expected.sha256
+
+      - name: Publish diagnostic outcome
+        if: always()
+        shell: bash
+        env:
+          DOWNLOAD_OUTCOME: ${{ steps.download.outcome }}
+          VERIFY_OUTCOME: ${{ steps.verify.outcome }}
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin main
+          git reset --hard origin/main
+          mkdir -p project-constellation/publication-gate
+          cat > project-constellation/publication-gate/diagnostic.json <<EOF
+          {
+            "schema": "project-constellation.publication-diagnostic/1",
+            "workflowSha": "${GITHUB_SHA}",
+            "downloadOutcome": "${DOWNLOAD_OUTCOME}",
+            "verifyOutcome": "${VERIFY_OUTCOME}",
+            "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          }
+          EOF
+          git add project-constellation/publication-gate/diagnostic.json
+          git commit -m 'state: record Project Constellation publication diagnostic [skip ci]'
+          git push origin HEAD:main
