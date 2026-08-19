@@ -9,13 +9,19 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: project-constellation-v051-canonical-publisher
+  cancel-in-progress: false
+
 jobs:
   publish-canonical:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - name: Download exact Drive-promoted v0.5.1 artifacts
         shell: bash
@@ -24,9 +30,11 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pcx-v051"
           download_drive() {
             local id="$1" name="$2"
-            curl --fail --location --retry 3 --retry-delay 2 \
-              "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t" \
-              --output "$RUNNER_TEMP/pcx-v051/$name"
+            local primary="https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"
+            local fallback="https://drive.google.com/uc?export=download&id=${id}&confirm=t"
+            if ! curl --fail --location --silent --show-error --retry 3 --retry-delay 2 "$primary" --output "$RUNNER_TEMP/pcx-v051/$name"; then
+              curl --fail --location --silent --show-error --retry 3 --retry-delay 2 "$fallback" --output "$RUNNER_TEMP/pcx-v051/$name"
+            fi
           }
           download_drive '1R2GM6-BqDDCJPEpjtGDx6AiOrpDzY_4u' 'Bert_Project_Second_Brain_Website.zip'
           download_drive '1DQIrgE7feVdUKfan2QhExRL4BGqRXYT5' 'Bert_Project_Constellation_Quick_View.html'
@@ -42,9 +50,11 @@ jobs:
           cd "$RUNNER_TEMP/pcx-v051"
           verify() {
             local file="$1" size="$2" hash="$3"
-            test "$(wc -c < "$file")" -eq "$size"
+            local actual_size actual
+            actual_size="$(wc -c < "$file" | tr -d ' ')"
             actual="$(sha256sum "$file" | awk '{print $1}')"
-            echo "$file $actual"
+            echo "$file size=$actual_size sha256=$actual"
+            test "$actual_size" -eq "$size"
             test "$actual" = "$hash"
           }
           verify 'Bert_Project_Second_Brain_Website.zip' 144481 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c'
@@ -57,6 +67,18 @@ jobs:
           unzip -t 'Bert_Project_Wiki_Pack.zip'
           python -m json.tool 'Project-Constellation-Project-Catalog.json' >/dev/null
           python -m json.tool 'Project-Constellation-Research-Suggestions.json' >/dev/null
+          python - <<'PY'
+          import json
+          with open('Project-Constellation-Project-Catalog.json', encoding='utf-8') as f:
+              catalog = json.load(f)
+          projects = catalog.get('projects')
+          if not isinstance(projects, list) or len(projects) != 63:
+              raise SystemExit(f'expected exactly 63 projects, got {len(projects) if isinstance(projects, list) else type(projects).__name__}')
+          ids = [p.get('id') or p.get('projectId') for p in projects]
+          if len(set(ids)) != 63:
+              raise SystemExit('project IDs are not unique')
+          print('catalog project count and unique IDs: pass')
+          PY
 
       - name: Publish canonical repository objects with race-safe fast-forward retries
         shell: bash
@@ -93,6 +115,7 @@ jobs:
             }
           }
           EOF
+            git diff --check
             git add project-constellation/Bert_Project_Second_Brain_Website.zip \
               project-constellation/Bert_Project_Constellation_Quick_View.html \
               project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html \
@@ -101,10 +124,12 @@ jobs:
               project-constellation/Project-Constellation-Research-Suggestions.json \
               project-constellation/publication-gate/v0.5.1.json
             if git diff --cached --quiet; then
+              echo 'Canonical v0.5.1 repository objects already match exact verified bytes.'
               exit 0
             fi
             git commit -m 'publish: Project Constellation v0.5.1 canonical artifacts [skip ci]'
             if git push origin HEAD:main; then
+              git rev-parse HEAD
               exit 0
             fi
             echo "Canonical publication raced with another main update; retrying attempt ${attempt}."
