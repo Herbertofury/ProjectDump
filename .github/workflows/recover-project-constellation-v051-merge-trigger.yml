@@ -5,6 +5,10 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/recover-project-constellation-v051-merge-trigger.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/recover-project-constellation-v051-merge-trigger.yml'
   workflow_dispatch:
 
 permissions:
@@ -56,6 +60,12 @@ jobs:
             local output="$2"
             gh api "repos/${GITHUB_REPOSITORY}/contents/${path}?ref=main" --jq '.content' | tr -d '\n' | base64 --decode > "$output"
           }
+          expect_blob() {
+            local path="$1"
+            local expected="$2"
+            actual="$(gh api "repos/${GITHUB_REPOSITORY}/contents/${path}?ref=main" --jq '.sha')"
+            test "$actual" = "$expected"
+          }
 
           fetch_file 'project-constellation/Bert_Project_Second_Brain_Website.zip' "$work/Bert_Project_Second_Brain_Website.zip"
           fetch_file 'project-constellation/Bert_Project_Constellation_Quick_View.html' "$work/Bert_Project_Constellation_Quick_View.html"
@@ -63,6 +73,13 @@ jobs:
           fetch_file 'project-constellation/Bert_Project_Wiki_Pack.zip' "$work/Bert_Project_Wiki_Pack.zip"
           fetch_file 'project-constellation/Project-Constellation-Project-Catalog.json' "$work/Project-Constellation-Project-Catalog.json"
           fetch_file 'project-constellation/Project-Constellation-Research-Suggestions.json' "$work/Project-Constellation-Research-Suggestions.json"
+
+          expect_blob 'project-constellation/Bert_Project_Second_Brain_Website.zip' 'e90cab98efa9ede0c0aed76ae36487b1a781c12f'
+          expect_blob 'project-constellation/Bert_Project_Constellation_Quick_View.html' '98853d70caa3d737123151d4db23dba51861d665'
+          expect_blob 'project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html' 'f45fdf93257cb6cdc991c2752b77d6d4de109921'
+          expect_blob 'project-constellation/Bert_Project_Wiki_Pack.zip' 'b190e2199474b1d6d48c202314f7f681ec3ff15b'
+          expect_blob 'project-constellation/Project-Constellation-Project-Catalog.json' '0cbd23ef565c5ea61c26c978142d2b1f434c6bbf'
+          expect_blob 'project-constellation/Project-Constellation-Research-Suggestions.json' '9eb5efa43ab811ac0c0e175606c552cfd95d4b6e'
 
           cat > "$work/expected.sha256" <<'EOF'
           f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  Bert_Project_Second_Brain_Website.zip
