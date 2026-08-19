@@ -54,7 +54,7 @@ def add_module(artifact: str, module_path: Path, clean_name: str):
 
 def merge_jars(paths, output_name):
     merged = {}
-    for index, jar_path in enumerate(paths):
+    for jar_path in paths:
         with zipfile.ZipFile(jar_path) as zin:
             for info in zin.infolist():
                 name = info.filename
@@ -68,7 +68,6 @@ def merge_jars(paths, output_name):
                 payload = zin.read(name)
                 prior = merged.get(name)
                 if prior is not None and prior != payload:
-                    # Service files/manifests are not needed for these LWJGL bindings. Any class/resource collision is unsafe.
                     raise SystemExit(f'Conflicting merged entry {name} while building {output_name}')
                 merged[name] = payload
     buf = io.BytesIO()
@@ -81,9 +80,11 @@ def merge_jars(paths, output_name):
 add_module('c2me_opts_dfc', dfc, 'c2meF-opts-dfc-mc1.20.1-0.2.0+alpha.12.1.jar')
 add_module('c2me_opts_accel_opencl', opencl, 'c2meF-opts-accel-opencl-mc1.20.1-0.2.0+alpha.12.1.jar')
 
-# Preserve every runtime payload declared by the source build without creating duplicate native-only Java modules.
-# Minecraft's client already supplies LWJGL core Java classes. The source intentionally declares only the core Windows native.
+# Forge dedicated-server classpaths do not provide LWJGL core Java classes. The earlier smoke test
+# proved org.lwjgl.system.CustomBuffer and MemoryUtil were missing, so vendor LWJGL core Java +
+# OpenCL bindings + the Windows core native together as one non-modular runtime payload.
 opencl_runtime = merge_jars([
+    libs_dir / 'lwjgl-3.3.3.jar',
     libs_dir / 'lwjgl-opencl-3.3.3.jar',
     libs_dir / 'lwjgl-3.3.3-natives-windows.jar',
 ], 'lwjgl-opencl-c2me-runtime-3.3.3.jar')
@@ -110,7 +111,7 @@ entries['META-INF/c2me-opencl-radium-compat.txt'] = (
     'Base c2meF 0.2.0+alpha.12 SHA1 ad44f615a4b15afd1d6a4d907ccab1c3855451a1\n'
     'OpenCL source 342c5035d7251ca987c962a14997a21a36eace44\n'
     'Radium 0.12.4+git.26c9d8e: disable mixin.world.chunk_access and mixin.alloc.nbt\n'
-    'Runtime hardening: OpenCL/Zstd Windows payloads and Caffeine 3.2.1 vendored in the outer JarJar.\n'
+    'Runtime hardening: LWJGL core/OpenCL Windows payload, Zstd Windows payload, and Caffeine 3.2.1 vendored in outer JarJar.\n'
     'Fallback hardening: OpenCL global-context failure skips world codegen cleanly.\n'
 ).encode()
 
@@ -125,7 +126,10 @@ with zipfile.ZipFile(out) as z:
     assert all(hashlib.sha256(z.read(path)).hexdigest() == digest for path, digest in original.items())
     assert all(path in names for path in runtime_paths)
     with zipfile.ZipFile(io.BytesIO(z.read(runtime_paths[0]))) as rt:
-        assert 'org/lwjgl/opencl/CL.class' in rt.namelist()
+        runtime_names = set(rt.namelist())
+        assert 'org/lwjgl/system/CustomBuffer.class' in runtime_names
+        assert 'org/lwjgl/system/MemoryUtil.class' in runtime_names
+        assert 'org/lwjgl/opencl/CL.class' in runtime_names
     with zipfile.ZipFile(io.BytesIO(z.read(runtime_paths[1]))) as rt:
         assert 'org/lwjgl/util/zstd/Zstd.class' in rt.namelist()
     with zipfile.ZipFile(io.BytesIO(z.read(runtime_paths[2]))) as rt:
