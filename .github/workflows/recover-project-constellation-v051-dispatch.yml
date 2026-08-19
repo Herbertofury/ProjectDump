@@ -1,0 +1,25 @@
+name: Dispatch Project Constellation v0.5.1 recovery
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/recover-project-constellation-v051-dispatch.yml'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  dispatch-recovery:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch canonical v0.5.1 recovery workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh workflow run recover-project-constellation-v051-deterministic.yml --repo "$GITHUB_REPOSITORY" --ref main
+          echo 'Dispatched recover-project-constellation-v051-deterministic.yml on canonical main.'
