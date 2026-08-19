@@ -1,0 +1,113 @@
+name: Recover v0.5.1 durable payload
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/recover-v051-payload-sanitize.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  repair-and-publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Diagnose and sanitize durable browser-gate payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64, glob, gzip, hashlib, json, re
+
+          root = Path('project-constellation/browser-gate')
+          specs = {
+            'qv': (128283, '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'),
+            'master': (143064, 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8'),
+          }
+          report = {'schema':'project-constellation.v051-payload-recovery/1','payloads':{},'status':'RUNNING'}
+          all_ok = True
+          for stem, (expected_size, expected_sha) in specs.items():
+              paths = sorted(root.glob(f'{stem}.b64.part*'))
+              text = ''.join(p.read_text(encoding='ascii') for p in paths)
+              compact = re.sub(r'\s+', '', text)
+              invalid = [(i, ch, ord(ch)) for i, ch in enumerate(compact) if ch not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=']
+              filtered = ''.join(ch for ch in compact if ch in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+              entry = {
+                'parts':[{'name':p.name,'bytes':p.stat().st_size} for p in paths],
+                'encodedChars':len(compact),
+                'filteredChars':len(filtered),
+                'invalidCount':len(invalid),
+                'invalidFirst':[{'index':i,'char':ch,'ord':n} for i,ch,n in invalid[:20]],
+              }
+              try:
+                  raw = base64.b64decode(filtered, validate=False)
+                  entry['compressedBytes'] = len(raw)
+                  entry['compressedSha256'] = hashlib.sha256(raw).hexdigest()
+                  data = gzip.decompress(raw)
+                  entry['decodedBytes'] = len(data)
+                  entry['decodedSha256'] = hashlib.sha256(data).hexdigest()
+                  entry['sizeMatch'] = len(data) == expected_size
+                  entry['shaMatch'] = entry['decodedSha256'] == expected_sha
+                  if not (entry['sizeMatch'] and entry['shaMatch']):
+                      all_ok = False
+                  else:
+                      canonical = base64.b64encode(gzip.compress(data, compresslevel=9, mtime=0)).decode('ascii') + '\n'
+                      (root / f'{stem}.b64.part01').write_text(canonical, encoding='ascii')
+                      for extra in paths:
+                          if extra.name != f'{stem}.b64.part01':
+                              extra.unlink()
+                      entry['canonicalEncodedChars'] = len(canonical.strip())
+                      entry['canonicalPart'] = f'{stem}.b64.part01'
+              except Exception as exc:
+                  entry['error'] = repr(exc)
+                  all_ok = False
+              report['payloads'][stem] = entry
+          report['status'] = 'SANITIZED_EXACT' if all_ok else 'DIAGNOSTIC_FAILED'
+          (root / 'payload-recovery-diagnostic.json').write_text(json.dumps(report, indent=2, ensure_ascii=False)+'\n', encoding='utf-8')
+          if not all_ok:
+              raise SystemExit(41)
+          PY
+
+      - name: Commit exact sanitized payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add project-constellation/browser-gate/qv.b64.part* \
+                  project-constellation/browser-gate/master.b64.part* \
+                  project-constellation/browser-gate/payload-recovery-diagnostic.json
+          git add -u project-constellation/browser-gate
+          git commit -m 'recovery: sanitize exact v0.5.1 browser-gate payloads [skip ci]'
+          git push origin HEAD:main
+
+      - name: Dispatch deterministic publisher and require success
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          workflow='recover-project-constellation-v051-deterministic.yml'
+          before="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow" --branch main --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+          gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref main
+          run_id=''
+          for _ in $(seq 1 60); do
+            candidate="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow" --branch main --event workflow_dispatch --limit 1 --json databaseId --jq '.[0].databaseId // 0')"
+            if [[ "$candidate" != '0' && "$candidate" != "$before" ]]; then
+              run_id="$candidate"
+              break
+            fi
+            sleep 2
+          done
+          test -n "$run_id"
+          echo "Deterministic publisher run: $run_id"
+          gh run watch "$run_id" --repo "$GITHUB_REPOSITORY" --exit-status
