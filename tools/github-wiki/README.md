@@ -52,6 +52,22 @@ Treat these states differently:
 - **Missing Wiki master SHA:** fail closed. The workflow intentionally exits instead of producing an unverifiable success.
 - **No source changes:** `wiki-sync.sh` may report that the Wiki already matches source, but it must still fresh-clone, byte-compare, and report the remote Wiki master commit before the workflow records success.
 
+## Missing-run recovery and exact-head rule
+
+An eligible source push with no observable `Sync GitHub Wiki` run and no `wiki-publication` status is a publication-trigger/execution failure, not a successful no-op.
+
+Use this recovery order:
+
+1. confirm the source commit actually changed `wikis/**`, `tools/github-wiki/**`, or `.github/workflows/sync-github-wiki.yml`;
+2. confirm the current workflow still includes that path and still has `contents: write` plus `statuses: write`;
+3. inspect connected Actions/run evidence when available;
+4. make one meaningful publisher-path change only when it improves or repairs the publication contract, and verify that eligible change produces a run;
+5. after the trigger path is healthy, make the next meaningful project-wiki source change and require a successful run associated with that exact source head.
+
+A later run that happens to publish the same current Wiki bytes does **not** retroactively become the exact run for an earlier source commit. Durable checkpoints may record that the remote bytes were later reconciled, but an individual project-wiki update is only called fully published when the source head being closed has its own successful publication proof, or when a newer meaningful source head for that same page supersedes it and has complete proof.
+
+Do not create timestamp-only or cosmetic page edits merely to manufacture a new source head. If the trigger path itself is unavailable, keep the project wiki source and Drive mirror preserved, record publication debt, and fail closed until a supported recovery path produces verifiable publication.
+
 ## Scope rule
 
 `wikis/` documents projects tracked inside Project Constellation. Project Constellation itself is the control plane, not a normal recurring project-wiki target. The preserved PCX-036 page is a legacy continuity reference only.
