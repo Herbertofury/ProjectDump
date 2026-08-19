@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   diagnose:
@@ -54,3 +54,31 @@ jobs:
           echo '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  '"$WORK/Bert_Project_Wiki_Pack.zip" | sha256sum -c -
           unzip -t "$WORK/Bert_Project_Second_Brain_Website.zip"
           unzip -t "$WORK/Bert_Project_Wiki_Pack.zip"
+
+      - name: Record successful reconstruction proof
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p project-constellation/publication-gate
+          cat > project-constellation/publication-gate/v0.5.1-history-recovery.json <<'EOF'
+          {
+            "schema": "project-constellation.history-recovery-proof/1",
+            "version": "0.5.1",
+            "status": "EXACT_HISTORICAL_PARTS_RECONSTRUCTED",
+            "sourceCommit": "2a0c69febadf21d6a26d994cc871247c43a3d962",
+            "artifacts": {
+              "Bert_Project_Second_Brain_Website.zip": {"size": 144481, "sha256": "f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c"},
+              "Bert_Project_Wiki_Pack.zip": {"size": 183831, "sha256": "9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891"}
+            }
+          }
+          EOF
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add project-constellation/publication-gate/v0.5.1-history-recovery.json
+          git commit -m 'state: prove exact v0.5.1 historical staging recovery [skip ci]'
+          for attempt in 1 2 3 4 5; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+          done
+          exit 1
