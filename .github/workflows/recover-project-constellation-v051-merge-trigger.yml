@@ -15,6 +15,10 @@ permissions:
   actions: write
   contents: read
 
+concurrency:
+  group: project-constellation-v051-recovery
+  cancel-in-progress: false
+
 jobs:
   dispatch-and-verify:
     runs-on: ubuntu-latest
