@@ -20,4 +20,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run recover-project-constellation-v051-deterministic.yml --repo "${{ github.repository }}" --ref main
 
-# Recovery watch re-arm: 2026-08-19T16:52Z
+# Recovery watch retry after browser-gate payload repair
