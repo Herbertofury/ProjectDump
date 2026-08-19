@@ -1,0 +1,97 @@
+name: Project Constellation Browser Diagnostic
+
+on:
+  push:
+    paths:
+      - '.github/workflows/project-constellation-browser-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  inspect-quick-view:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Reconstruct exact v0.5.1 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd project-constellation/browser-gate
+          cat qv.b64.part01 qv.b64.part02 qv.b64.part03 qv.b64.part04 qv.b64.part05 qv.b64.part06 > qv.b64
+          base64 --decode qv.b64 | gzip --decompress > quick-view.html
+          test "$(sha256sum quick-view.html | awk '{print $1}')" = "8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1"
+          test "$(wc -c < quick-view.html)" -eq 128283
+
+      - name: Set up Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Install Playwright
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd project-constellation/browser-gate
+          npm init -y >/dev/null
+          npm install --no-save playwright@1.63.0-alpha-2026-08-17
+          npx playwright install --with-deps chromium
+
+      - name: Inspect real candidate controls
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --input-type=module <<'NODE'
+          import { chromium } from 'playwright';
+          import fs from 'node:fs/promises';
+          import path from 'node:path';
+          import { pathToFileURL } from 'node:url';
+          const htmlPath = path.resolve('project-constellation/browser-gate/quick-view.html');
+          const browser = await chromium.launch({ headless: true });
+          const context = await browser.newContext();
+          const page = await context.newPage();
+          const errors = [];
+          page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
+          page.on('console', msg => { if (msg.type() === 'error') errors.push(`console: ${msg.text()}`); });
+          await page.goto(pathToFileURL(htmlPath).href, { waitUntil: 'domcontentloaded', timeout: 30000 });
+          await page.waitForSelector('#grid .card', { timeout: 15000 });
+          const buttons = (await page.getByRole('button').allTextContents()).map(value => value.trim()).filter(Boolean);
+          const ids = await page.locator('button[id]').evaluateAll(nodes => nodes.map(node => ({ id: node.id, text: node.textContent?.trim() || '', cls: node.className })));
+          const filters = await page.locator('[data-lens], [data-filter], .lens, .filters button, .filter button').evaluateAll(nodes => nodes.map(node => ({ tag: node.tagName, text: node.textContent?.trim() || '', lens: node.getAttribute('data-lens'), filter: node.getAttribute('data-filter'), cls: node.className })));
+          const result = {
+            schema: 'project-constellation.browser-diagnostic/1',
+            candidateVersion: '0.5.1',
+            candidateSha256: '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1',
+            title: await page.title(),
+            trackedText: await page.locator('#count').textContent(),
+            cardCount: await page.locator('#grid .card').count(),
+            buttons,
+            buttonIds: ids,
+            filterCandidates: filters,
+            errors,
+          };
+          await fs.writeFile('project-constellation/browser-gate/diagnostic.json', `${JSON.stringify(result, null, 2)}\n`);
+          await browser.close();
+          NODE
+
+      - name: Publish diagnostic
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp project-constellation/browser-gate/diagnostic.json "$RUNNER_TEMP/diagnostic.json"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            cp "$RUNNER_TEMP/diagnostic.json" project-constellation/browser-gate/diagnostic.json
+            git add project-constellation/browser-gate/diagnostic.json
+            if git diff --cached --quiet; then exit 0; fi
+            git commit -m "state: capture Quick View browser diagnostic [skip ci]"
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
