@@ -1,0 +1,93 @@
+name: Recover Project Constellation v0.5.1 publication
+
+on:
+  push:
+    branches:
+      - automation/recover-project-constellation-v051-publication
+    paths:
+      - .github/workflows/recover-project-constellation-v051-publication.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publish-exact-drive-bytes:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out recovery branch
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download canonical Drive artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p recovered-v051
+          download() {
+            local id="$1"
+            local out="$2"
+            local primary="https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t"
+            local fallback="https://drive.google.com/uc?export=download&id=${id}&confirm=t"
+            if ! curl --location --fail --silent --show-error --retry 3 "$primary" -o "$out"; then
+              curl --location --fail --silent --show-error --retry 3 "$fallback" -o "$out"
+            fi
+          }
+          download '1R2GM6-BqDDCJPEpjtGDx6AiOrpDzY_4u' 'recovered-v051/Bert_Project_Second_Brain_Website.zip'
+          download '1DQIrgE7feVdUKfan2QhExRL4BGqRXYT5' 'recovered-v051/Bert_Project_Constellation_Quick_View.html'
+          download '1cCgiPwBYhUFnsjPcz6uZwngGJafLHMci' 'recovered-v051/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html'
+          download '1yFHcbRzkH857STKviZTH_aXb4LG9Lc24' 'recovered-v051/Bert_Project_Wiki_Pack.zip'
+          download '1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq' 'recovered-v051/Project-Constellation-Project-Catalog.json'
+          download '1wHu3owwVTXI7akLfq4Vwqph_Da4vong8' 'recovered-v051/Project-Constellation-Research-Suggestions.json'
+
+      - name: Verify exact bytes and archive/JSON integrity
+        shell: bash
+        run: |
+          set -euo pipefail
+          check() {
+            local file="$1" expected_size="$2" expected_sha="$3"
+            local actual_size actual_sha
+            actual_size="$(wc -c < "$file" | tr -d ' ')"
+            actual_sha="$(sha256sum "$file" | awk '{print $1}')"
+            printf '%s size=%s sha256=%s\n' "$file" "$actual_size" "$actual_sha"
+            test "$actual_size" = "$expected_size"
+            test "$actual_sha" = "$expected_sha"
+          }
+          check recovered-v051/Bert_Project_Second_Brain_Website.zip 144481 f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c
+          check recovered-v051/Bert_Project_Constellation_Quick_View.html 128283 8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1
+          check recovered-v051/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html 143064 dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8
+          check recovered-v051/Bert_Project_Wiki_Pack.zip 183831 9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891
+          check recovered-v051/Project-Constellation-Project-Catalog.json 116737 79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab
+          check recovered-v051/Project-Constellation-Research-Suggestions.json 13295 c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6
+          unzip -t recovered-v051/Bert_Project_Second_Brain_Website.zip
+          unzip -t recovered-v051/Bert_Project_Wiki_Pack.zip
+          node -e "const fs=require('fs'); const c=JSON.parse(fs.readFileSync('recovered-v051/Project-Constellation-Project-Catalog.json','utf8')); const r=JSON.parse(fs.readFileSync('recovered-v051/Project-Constellation-Research-Suggestions.json','utf8')); if(!Array.isArray(c.projects)||c.projects.length!==63) throw new Error('catalog must contain exactly 63 projects'); console.log(JSON.stringify({projects:c.projects.length,researchSchema:r.schema},null,2));"
+
+      - name: Publish exact bytes into canonical repository paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp recovered-v051/Bert_Project_Second_Brain_Website.zip project-constellation/Bert_Project_Second_Brain_Website.zip
+          cp recovered-v051/Bert_Project_Constellation_Quick_View.html project-constellation/Bert_Project_Constellation_Quick_View.html
+          cp recovered-v051/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html
+          cp recovered-v051/Bert_Project_Wiki_Pack.zip project-constellation/Bert_Project_Wiki_Pack.zip
+          cp recovered-v051/Project-Constellation-Project-Catalog.json project-constellation/Project-Constellation-Project-Catalog.json
+          cp recovered-v051/Project-Constellation-Research-Suggestions.json project-constellation/Project-Constellation-Research-Suggestions.json
+          git diff --check
+          git status --short
+
+      - name: Commit canonical v0.5.1 artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add project-constellation/Bert_Project_Second_Brain_Website.zip \
+                  project-constellation/Bert_Project_Constellation_Quick_View.html \
+                  project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html \
+                  project-constellation/Bert_Project_Wiki_Pack.zip \
+                  project-constellation/Project-Constellation-Project-Catalog.json \
+                  project-constellation/Project-Constellation-Research-Suggestions.json
+          git commit -m 'publish Project Constellation v0.5.1 canonical artifacts'
+          git push origin HEAD:automation/recover-project-constellation-v051-publication
+          git rev-parse HEAD
