@@ -62,7 +62,7 @@ jobs:
         run: |
           set -euo pipefail
           python - <<'PY' > "$RUNNER_TEMP/publication-diagnostic.json"
-          import hashlib, json, os
+          import hashlib, json, os, re
           from datetime import datetime, timezone
           from pathlib import Path
           root = Path(os.environ['RUNNER_TEMP']) / 'pcx-v051'
@@ -81,16 +81,22 @@ jobs:
                   actual[name] = {'exists': False}
                   continue
               b = p.read_bytes()
+              digest = hashlib.sha256(b).hexdigest()
+              text = b[:4096].decode('utf-8', errors='replace')
+              title = re.search(r'<title[^>]*>(.*?)</title>', text, flags=re.I|re.S)
               actual[name] = {
                   'exists': True,
                   'size': len(b),
-                  'sha256': hashlib.sha256(b).hexdigest(),
+                  'sha256': digest,
                   'expectedSize': want['size'],
                   'expectedSha256': want['sha256'],
-                  'match': len(b) == want['size'] and hashlib.sha256(b).hexdigest() == want['sha256'],
+                  'match': len(b) == want['size'] and digest == want['sha256'],
+                  'prefix': re.sub(r'\s+', ' ', text[:500]).strip(),
+                  'htmlTitle': re.sub(r'\s+', ' ', title.group(1)).strip() if title else None,
+                  'looksLikeHtml': text.lstrip().lower().startswith(('<!doctype html', '<html')) or '<html' in text[:1000].lower(),
               }
           print(json.dumps({
-              'schema': 'project-constellation.publication-diagnostic/2',
+              'schema': 'project-constellation.publication-diagnostic/3',
               'workflowSha': os.environ['GITHUB_SHA'],
               'downloadOutcome': os.environ.get('DOWNLOAD_OUTCOME'),
               'verifyOutcome': os.environ.get('VERIFY_OUTCOME'),
