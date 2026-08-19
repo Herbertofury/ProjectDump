@@ -1,0 +1,50 @@
+name: Diagnose v0.5.1 payload
+
+on:
+  push:
+    branches:
+      - recovery/v051-pr-trigger-20260819-1653
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Inspect encoded payloads
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64, glob, gzip, hashlib, re
+
+          for stem, expected_size, expected_sha in [
+              ('qv', 128283, '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'),
+              ('master', 143064, 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8'),
+          ]:
+              paths = sorted(glob.glob(f'project-constellation/browser-gate/{stem}.b64.part*'))
+              chunks = [Path(p).read_text(encoding='ascii') for p in paths]
+              text = ''.join(chunks)
+              invalid = [(i, ch, ord(ch)) for i, ch in enumerate(text) if ch not in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=\r\n\t ']
+              padding = [i for i, ch in enumerate(text) if ch == '=']
+              print({'stem': stem, 'parts': [(Path(p).name, len(c)) for p, c in zip(paths, chunks)], 'total': len(text), 'invalidCount': len(invalid), 'invalidFirst': invalid[:20], 'padding': padding[:20]})
+              compact = re.sub(r'\s+', '', text)
+              try:
+                  raw = base64.b64decode(compact, validate=True)
+                  print({'stem': stem, 'strictBase64': True, 'rawBytes': len(raw), 'rawSha256': hashlib.sha256(raw).hexdigest()})
+              except Exception as e:
+                  print({'stem': stem, 'strictBase64': False, 'error': repr(e)})
+                  filtered = ''.join(ch for ch in compact if ch in 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=')
+                  raw = base64.b64decode(filtered, validate=False)
+                  print({'stem': stem, 'filteredRawBytes': len(raw), 'filteredRawSha256': hashlib.sha256(raw).hexdigest()})
+              try:
+                  data = gzip.decompress(raw)
+                  print({'stem': stem, 'gzip': True, 'decodedBytes': len(data), 'decodedSha256': hashlib.sha256(data).hexdigest(), 'sizeMatch': len(data)==expected_size, 'shaMatch': hashlib.sha256(data).hexdigest()==expected_sha})
+              except Exception as e:
+                  print({'stem': stem, 'gzip': False, 'error': repr(e)})
+          PY
