@@ -59,25 +59,42 @@ jobs:
           GATE_STATUS: ${{ job.status }}
         run: |
           set -euo pipefail
-          mkdir -p project-constellation/browser-gate
-          cat > project-constellation/browser-gate/result.json <<EOF
+          mkdir -p "$RUNNER_TEMP/browser-gate-result"
+          if test -f project-constellation/browser-gate/verify.log; then
+            cp project-constellation/browser-gate/verify.log "$RUNNER_TEMP/browser-gate-result/verify.log"
+          fi
+          checked_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p project-constellation/browser-gate
+            cat > project-constellation/browser-gate/result.json <<EOF
           {
             "schema": "project-constellation.browser-gate/1",
             "workflowSha": "${GITHUB_SHA}",
             "candidateVersion": "0.5.1",
             "candidateSha256": "8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1",
             "status": "${GATE_STATUS}",
-            "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            "checkedAt": "${checked_at}"
           }
           EOF
-          git config user.name github-actions[bot]
-          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add project-constellation/browser-gate/result.json
-          if test -f project-constellation/browser-gate/verify.log; then
-            git add project-constellation/browser-gate/verify.log
-          fi
-          if git diff --cached --quiet; then
-            exit 0
-          fi
-          git commit -m "state: record Project Constellation browser gate [skip ci]"
-          git push
+            if test -f "$RUNNER_TEMP/browser-gate-result/verify.log"; then
+              cp "$RUNNER_TEMP/browser-gate-result/verify.log" project-constellation/browser-gate/verify.log
+            fi
+            git add project-constellation/browser-gate/result.json
+            if test -f project-constellation/browser-gate/verify.log; then
+              git add project-constellation/browser-gate/verify.log
+            fi
+            if git diff --cached --quiet; then
+              exit 0
+            fi
+            git commit -m "state: record Project Constellation browser gate [skip ci]"
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "Result publication raced with another main update; retrying attempt ${attempt}."
+          done
+          echo "Unable to publish browser-gate result after five fast-forward retries." >&2
+          exit 1
