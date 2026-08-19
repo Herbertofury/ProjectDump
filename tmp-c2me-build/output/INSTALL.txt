@@ -1,0 +1,8 @@
+C2ME OpenCL + Radium compatibility build for Minecraft 1.20.1 Forge
+
+1. Remove c2meF-0.2.0+alpha.12-all.jar from the mods folder.
+2. Install c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar.
+3. Keep radium-mc1.20.1-0.12.4+git.26c9d8e.jar installed.
+4. Copy config/lithium.properties from this bundle to the instance config folder.
+5. If Twilight Forest is installed, keep tfthreadsafetyaddon-forge-1.20.1-1.1.0.jar as its own separate mod.
+6. Do not leave a second c2meF all-jar installed.

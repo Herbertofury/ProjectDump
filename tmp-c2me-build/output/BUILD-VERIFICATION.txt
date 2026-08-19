@@ -1,0 +1,61 @@
+output_sha256= 9d379c43a2ad12b41784f11bb733bb0076cc867ac26d94f8259c9f6e834cb1c4
+preserved_original_nested_entries= 25
+runtime_entries_added= 3
+runtime= META-INF/jarjar/lwjgl-opencl-c2me-runtime-3.3.3.jar
+runtime= META-INF/jarjar/lwjgl-zstd-c2me-runtime-3.3.3.jar
+runtime= META-INF/jarjar/caffeine-3.2.1.jar
+final_nested_entries= 30
+dfc= c2meF-opts-dfc-mc1.20.1-0.2.0+alpha.12.1-0.2.0+alpha.12.1.jar
+opencl= c2meF-opts-accel-opencl-mc1.20.1-0.2.0+alpha.12.1-0.2.0+alpha.12.1.jar
+Archive:  .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar
+    testing: META-INF/                OK
+    testing: META-INF/MANIFEST.MF     OK
+    testing: META-INF/jarjar/         OK
+    testing: META-INF/jarjar/asyncutil-0.1.0.jar   OK
+    testing: META-INF/jarjar/c2meF-base-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-client-uncapvd-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-fixes-chunkio-threading-issues-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-fixes-general-threading-issues-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-fixes-worldgen-threading-issues-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-fixes-worldgen-vanilla-bugs-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-notickvd-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-allocs-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-chunk-access-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-chunkio-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-math-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-scheduling-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-worldgen-general-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-worldgen-vanilla-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-rewrites-chunk-serializer-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-rewrites-chunkio-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-server-utils-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-threading-chunkio-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-threading-lighting-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/c2meF-threading-worldgen-mc1.20.1-0.2.0+alpha.12.jar   OK
+    testing: META-INF/jarjar/exp4j-0.4.8.jar   OK
+    testing: META-INF/jarjar/metadata.json   OK
+    testing: META-INF/jarjar/mixin-tools-1.2.6.jar   OK
+    testing: META-INF/jarjar/mixinextras-forge-0.5.0.jar   OK
+    testing: META-INF/jarjar/threadly-7.0.jar   OK
+    testing: META-INF/mods.toml       OK
+    testing: assets/                  OK
+    testing: assets/c2me/             OK
+    testing: assets/c2me/icon.png     OK
+    testing: c2me.mixins.json         OK
+    testing: com/                     OK
+    testing: com/ishland/             OK
+    testing: com/ishland/c2me/        OK
+    testing: com/ishland/c2me/C2MEMod.class   OK
+    testing: com/ishland/c2me/PreLaunchHandler.class   OK
+    testing: pack.mcmeta              OK
+    testing: META-INF/jarjar/c2meF-opts-dfc-mc1.20.1-0.2.0+alpha.12.1.jar   OK
+    testing: META-INF/jarjar/c2meF-opts-accel-opencl-mc1.20.1-0.2.0+alpha.12.1.jar   OK
+    testing: META-INF/jarjar/lwjgl-opencl-c2me-runtime-3.3.3.jar   OK
+    testing: META-INF/jarjar/lwjgl-zstd-c2me-runtime-3.3.3.jar   OK
+    testing: META-INF/jarjar/caffeine-3.2.1.jar   OK
+    testing: META-INF/c2me-opencl-radium-compat.txt   OK
+No errors detected in compressed data of .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar.
+Forge 47.4.0 headless startup reached Done; rc=143
+Radium exact build loaded with both targeted compatibility overrides.
+OpenCL fallback skipped world codegen cleanly on the GPU-less headless runner.
+03699a73255fbf520fb6244dfba14754ac140571d60ae0557963f6ec2f1bd6e5  tmp-c2me-build/c2me-opencl-radiumcompat-forge1201.zip
