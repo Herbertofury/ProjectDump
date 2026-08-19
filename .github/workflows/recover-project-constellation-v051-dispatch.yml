@@ -14,12 +14,83 @@ permissions:
 jobs:
   dispatch-recovery:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
+      - name: Check out canonical repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
       - name: Dispatch canonical v0.5.1 recovery workflow
+        id: dispatch
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
-          gh workflow run recover-project-constellation-v051-deterministic.yml --repo "$GITHUB_REPOSITORY" --ref main
-          echo 'Dispatched recover-project-constellation-v051-deterministic.yml on canonical main.'
+          workflow='recover-project-constellation-v051-deterministic.yml'
+          dispatched_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          gh workflow run "$workflow" --repo "$GITHUB_REPOSITORY" --ref main
+          run_id=''
+          for attempt in $(seq 1 30); do
+            run_id="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$workflow" --event workflow_dispatch --limit 10 --json databaseId,createdAt --jq '.[] | select(.createdAt >= "'"$dispatched_at"'") | .databaseId' | head -n1)"
+            if [ -n "$run_id" ]; then break; fi
+            sleep 2
+          done
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "Dispatched recovery run $run_id"
+
+      - name: Require recovery workflow success
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.dispatch.outputs.run_id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh run watch "$RUN_ID" --repo "$GITHUB_REPOSITORY" --exit-status
+
+      - name: Independently verify canonical publication state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git checkout --detach origin/main
+          root='project-constellation'
+          verify() {
+            local file="$1" size="$2" hash="$3"
+            test -f "$root/$file"
+            test "$(wc -c < "$root/$file")" -eq "$size"
+            test "$(sha256sum "$root/$file" | awk '{print $1}')" = "$hash"
+          }
+          verify 'Bert_Project_Second_Brain_Website.zip' 144481 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c'
+          verify 'Bert_Project_Constellation_Quick_View.html' 128283 '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'
+          verify 'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html' 143064 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8'
+          verify 'Bert_Project_Wiki_Pack.zip' 183831 '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891'
+          verify 'Project-Constellation-Project-Catalog.json' 116737 '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab'
+          verify 'Project-Constellation-Research-Suggestions.json' 13295 'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'
+          unzip -t "$root/Bert_Project_Second_Brain_Website.zip"
+          unzip -t "$root/Bert_Project_Wiki_Pack.zip"
+          python -m json.tool "$root/Project-Constellation-Project-Catalog.json" >/dev/null
+          python -m json.tool "$root/Project-Constellation-Research-Suggestions.json" >/dev/null
+          node <<'NODE'
+          const fs=require('fs');
+          const root='project-constellation';
+          const state=JSON.parse(fs.readFileSync(`${root}/Project-Constellation-Automation-State.json`,'utf8'));
+          const debt=JSON.parse(fs.readFileSync(`${root}/Project-Constellation-Publication-Debt.json`,'utf8'));
+          const gate=JSON.parse(fs.readFileSync(`${root}/publication-gate/v0.5.1.json`,'utf8'));
+          const expected={
+            'Bert_Project_Second_Brain_Website.zip':'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c',
+            'Bert_Project_Constellation_Quick_View.html':'8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1',
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html':'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8',
+            'Bert_Project_Wiki_Pack.zip':'9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891',
+            'Project-Constellation-Project-Catalog.json':'79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab',
+            'Project-Constellation-Research-Suggestions.json':'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'
+          };
+          if(state.version!=='0.5.1') throw Error('automation state version was not promoted');
+          for(const [name,hash] of Object.entries(expected)) if(state.lastAutomationHash?.[name]!==hash) throw Error(`lastAutomationHash mismatch for ${name}`);
+          if(debt.status!=='VERIFIED_CLEARED') throw Error(`publication debt is ${debt.status}`);
+          if(gate.status!=='VERIFIED_PUBLISHED'||gate.lastAutomationHashPromoted!==true) throw Error('publication gate is not fully verified');
+          if(!gate.publishedSha) throw Error('publication gate has no published SHA');
+          console.log(JSON.stringify({version:state.version,debt:debt.status,gate:gate.status,publishedSha:gate.publishedSha},null,2));
+          NODE
