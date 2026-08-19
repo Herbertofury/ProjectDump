@@ -36,7 +36,6 @@ jobs:
               "https://drive.usercontent.google.com/download?id=${id}&export=download&confirm=t" \
               --output "$RUNNER_TEMP/pcx-v051/$name"
           done
-          wc -c "$RUNNER_TEMP"/pcx-v051/*
 
       - name: Verify downloaded hashes
         id: verify
@@ -62,20 +61,49 @@ jobs:
           VERIFY_OUTCOME: ${{ steps.verify.outcome }}
         run: |
           set -euo pipefail
+          python - <<'PY' > "$RUNNER_TEMP/publication-diagnostic.json"
+          import hashlib, json, os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          root = Path(os.environ['RUNNER_TEMP']) / 'pcx-v051'
+          expected = {
+              'Bert_Project_Second_Brain_Website.zip': {'size': 144481, 'sha256': 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c'},
+              'Bert_Project_Constellation_Quick_View.html': {'size': 128283, 'sha256': '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1'},
+              'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html': {'size': 143064, 'sha256': 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8'},
+              'Bert_Project_Wiki_Pack.zip': {'size': 183831, 'sha256': '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891'},
+              'Project-Constellation-Project-Catalog.json': {'size': 116737, 'sha256': '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab'},
+              'Project-Constellation-Research-Suggestions.json': {'size': 13295, 'sha256': 'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'},
+          }
+          actual = {}
+          for name, want in expected.items():
+              p = root / name
+              if not p.exists():
+                  actual[name] = {'exists': False}
+                  continue
+              b = p.read_bytes()
+              actual[name] = {
+                  'exists': True,
+                  'size': len(b),
+                  'sha256': hashlib.sha256(b).hexdigest(),
+                  'expectedSize': want['size'],
+                  'expectedSha256': want['sha256'],
+                  'match': len(b) == want['size'] and hashlib.sha256(b).hexdigest() == want['sha256'],
+              }
+          print(json.dumps({
+              'schema': 'project-constellation.publication-diagnostic/2',
+              'workflowSha': os.environ['GITHUB_SHA'],
+              'downloadOutcome': os.environ.get('DOWNLOAD_OUTCOME'),
+              'verifyOutcome': os.environ.get('VERIFY_OUTCOME'),
+              'checkedAt': datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace('+00:00','Z'),
+              'actual': actual,
+          }, indent=2))
+          PY
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git fetch origin main
           git reset --hard origin/main
           mkdir -p project-constellation/publication-gate
-          cat > project-constellation/publication-gate/diagnostic.json <<EOF
-          {
-            "schema": "project-constellation.publication-diagnostic/1",
-            "workflowSha": "${GITHUB_SHA}",
-            "downloadOutcome": "${DOWNLOAD_OUTCOME}",
-            "verifyOutcome": "${VERIFY_OUTCOME}",
-            "checkedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          }
-          EOF
+          cp "$RUNNER_TEMP/publication-diagnostic.json" project-constellation/publication-gate/diagnostic.json
           git add project-constellation/publication-gate/diagnostic.json
           git commit -m 'state: record Project Constellation publication diagnostic [skip ci]'
           git push origin HEAD:main
