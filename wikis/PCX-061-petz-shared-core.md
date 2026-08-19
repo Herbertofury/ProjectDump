@@ -5,8 +5,10 @@
 **Project goal:** preserve PF Magic Petz behavior in one shared core for GameSync hosts.
 **Primary requirement:** one engine with adapters, preserved source/assets, and no flattening of Petz into ordinary mascot animation.
 **Current strongest shared-core source:** `Herbertofury/GameSync-Next`, with dedicated typed `packages/petz-engine`, `packages/petz-compat`, `packages/petz-formats`, and `packages/petz-bridge` workspaces.
+**Current GameSync Next main observed:** `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`.
 **Current shipping parity baseline:** `Herbertofury/Gamesync` GameSync `0.6.3`, `main` observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`.
-**Current implementation boundary:** current source proves both a substantial shipping JavaScript Petz runtime and a newer typed cross-host core architecture. Complete original PF Magic behavioral parity, completed save restore through the typed mascot bridge, complete use of every inventoried Petz resource, and end-to-end parity across shipping GameSync, Extension V2, and desktop are not yet proven.
+**Active persistence repair:** draft [GameSync Next PR #10](https://github.com/Herbertofury/GameSync-Next/pull/10), current head `72669096280904eb0f210d49d3a3e3163f42b106`, based on current `main`, remains unmerged and staging-only.
+**Current implementation boundary:** current `main` still has the source-proven persistence defect tracked by [issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9). PR #10 implements a preservation-first repair in source, but exact-head package/regression/Extension V2/parity/Ferrum/security execution is still blocked before workflow steps by the private hosted-runner allocation condition. Complete original PF Magic behavioral parity, merged and runtime-proven cross-restart persistence, complete use of every inventoried Petz resource, and end-to-end parity across shipping GameSync, Extension V2, and desktop are not yet proven.
 
 ## 1. Purpose and scope
 
@@ -221,9 +223,9 @@ A format parser proves the repository can inspect/normalize a format. It does no
 
 ## 7. `@gamesync/petz-bridge`
 
-`PetzMascotBridge` maps the shared Petz engine into the GameSync mascot contract. Its source explicitly states that the file is consumed by both the shipping Opera extension and Extension V2.
+`PetzMascotBridge` maps the shared Petz engine into the GameSync mascot contract. Its current-main source explicitly states that the file is consumed by both the shipping Opera extension and Extension V2.
 
-Verified responsibilities include:
+Verified current-main responsibilities include:
 
 - creating a `PetzEngine` with one selected compatibility family;
 - resolving pack asset keys to display URLs;
@@ -235,15 +237,55 @@ Verified responsibilities include:
 - exposing the underlying engine and compatibility pack;
 - invoking host callbacks for save/load operations.
 
-### Current bridge persistence boundary
+### Current-main persistence defect
 
-The bridge calls `loadPetData()` before spawn, but the current restore branch is still marked `TODO: restore from save`. It therefore has persistence plumbing without completed spawn-time restoration through this inspected path.
+[GameSync Next issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9) records two source-proven problems in current `main`:
 
-`destroy()` serializes engine state and sends it through `savePetData()`. That proves a save path exists, not that a full close/reopen round trip currently restores the same state.
+1. `spawnPet()` loads saved data with `loadPetData(breedId)` but ignores the returned payload instead of restoring it;
+2. `destroy()` serializes the whole engine and saves that payload under generated runtime `pet.id` keys, so later breed-key loading cannot find the same persisted identity.
+
+That means the current-main bridge has persistence plumbing but does not provide a valid cross-restart restore path. Multiple pets of the same breed also need stable independent persistence identity rather than one implicit breed key.
+
+### Draft PR #10 persistence repair
+
+Draft [PR #10, Fix Petz bridge persistence identity and restore path](https://github.com/Herbertofury/GameSync-Next/pull/10), currently at head `72669096280904eb0f210d49d3a3e3163f42b106` on top of current `main`, contains a source-level preservation-first repair. It remains unmerged and is not current product behavior.
+
+The staged repair changes the shared core in several important ways:
+
+- `PetzEngine.serializePet(petId)` persists one pet without converting every shutdown into a whole-engine save;
+- `PetzEngine.restorePet(save)` restores one pet additively without clearing unrelated live pets;
+- `PetzMascotBridge.spawnPet()` accepts an optional host-owned stable `persistenceId`, with the historical breed key retained as a compatibility default;
+- reads and writes use the same stable persistence identity, with a legacy breed-key fallback;
+- direct one-pet saves and historical whole-engine `{ pets: [...] }` saves remain readable when they contain the requested breed;
+- optional `reportPersistenceError` diagnostics expose load, restore, and save failures to the host;
+- live `pet.id -> persistenceId` mappings are removed when a pet is removed;
+- `destroy()` becomes asynchronous, gathers all per-pet saves, reports individual failures, and does not resolve until every host persistence operation settles.
+
+The staged save-state contract also preserves more runtime identity than the current-main bridge path: physics position/velocity, facing, action and action timers, animation/frame timing, drag/paused/asleep flags, ancestry/generation/offset identity, motives, personality, genetics, wardrobe, and other already-supported save data.
+
+### Staged regression and verification contract
+
+PR #10 adds `scripts/petz/persistence-regression.mjs` plus `.github/workflows/petz-persistence-verify.yml` to exercise the exact proposal source. The intended acceptance surface includes:
+
+- two same-breed pets with distinct stable persistence slots;
+- exact pet IDs and runtime state after a new bridge is created;
+- non-destructive second-pet restore;
+- post-restore drag and petting;
+- legacy whole-engine save compatibility;
+- corrupt-save fallback and host-visible diagnostics;
+- a deliberately gated asynchronous host save proving `destroy()` stays pending until persistence is durable;
+- Petz engine/bridge typecheck and build;
+- Extension V2 build;
+- parity regression/snapshot/audit;
+- patch-integrity proof;
+- exact-build Ferrum extension-host health, restart, identity, and diagnostics;
+- Secret scan.
+
+The latest issue/PR evidence records that exact-head workflow attempts still fail before GitHub supplies executable steps under the known private hosted-runner allocation/payment-spending-limit blocker. This is an **execution blocker**, not evidence that the Petz repair failed or passed. Keep the repair staging-only until the exact current head actually executes and satisfies every gate.
 
 ### Current bridge environment boundary
 
-The inspected tick environment currently supplies real viewport/floor/wall dimensions, but uses placeholders for:
+The inspected current-main tick environment supplies real viewport/floor/wall dimensions, but uses placeholders for:
 
 - `cursorX: 0`
 - `cursorY: 0`
@@ -583,7 +625,9 @@ The typed core is designed to be renderer/API independent and its source comment
 
 ### Current automated-command boundary
 
-Each typed Petz workspace exposes `build` and `typecheck`, but none of the four inspected Petz package manifests exposes a dedicated Petz test script. The GameSync Next root aggregate package build currently omits Petz workspaces.
+Current `main` still exposes `build` and `typecheck` for each typed Petz workspace but does not expose a dedicated Petz regression command in those package manifests, and the root aggregate package build omits the Petz workspaces.
+
+Draft PR #10 adds a dedicated exact-source persistence regression and workflow. Because the PR remains unmerged, those new gates are **staging evidence**, not a current-main guarantee.
 
 The shipping GameSync package has general development/build commands but no dedicated Petz test script identified in the current project documentation. A successful build is necessary but is not sufficient Petz runtime evidence.
 
@@ -596,6 +640,10 @@ The shipping GameSync package has general development/build commands but no dedi
 | Compatibility | Dogz 1, Catz 1, Oddballz, Petz 2, Petz 3, Petz 4, Babyz, Petz 5, and Mega compatibility are exercised. |
 | Formats | Representative LNZ, breed, pet, toy, clothing, scene, and content-scan fixtures parse without silent data loss. |
 | Bridge lifecycle | Spawn, tick, drag, pet, sound, save, destroy, restore, and restart work through real host callbacks. |
+| Persistence identity | Two same-breed pets retain distinct host-owned stable persistence IDs; restoring one pet never clears another. |
+| Teardown durability | Bridge destruction does not resolve until all asynchronous host save operations have settled. |
+| Legacy compatibility | Historical breed-key whole-engine saves remain readable where a matching pet record exists. |
+| Corrupt-save behavior | Invalid saves fall back safely and expose host-visible diagnostics. |
 | Environment | Real cursor and nearby-toy state reach the bridge tick environment. |
 | Shipping routing | `engineOverride=petz` and Petz/PF Magic/Oddballz import types resolve to the shipping Petz engine. |
 | Shipping pack discovery | Catz/Dogz/Petz2/Petz3/Petz4/Petz5/Oddballz packs register and report expected breeds. |
@@ -609,17 +657,25 @@ The shipping GameSync package has general development/build commands but no dedi
 
 ## 21. Troubleshooting
 
-### Typed package changes do not appear in the root build
+### Current-main Petz save data does not restore after restart
 
-The current root `build:packages` script does not include `petz-engine`, `petz-compat`, `petz-formats`, or `petz-bridge`. Run the workspace-specific build/typecheck commands explicitly until the aggregate build is updated.
+Check whether the tested build is current `main` or the unmerged PR #10 staging branch.
 
-### Saved pet data is written but not restored by the typed bridge
+On current `main`, issue #9 remains valid: bridge reads use `breedId`, shutdown writes use generated `pet.id`, and loaded values are ignored. Do not debug host storage first when the loaded bridge is the known-defective current-main implementation.
 
-The inspected `PetzMascotBridge.spawnPet()` loads saved data but its restore branch is still TODO. Do not treat save callbacks as proof of restart persistence until that path is implemented and exercised.
+On PR #10 staging, verify the host supplies a stable `persistenceId` when same-breed pets must remain distinct, that the same key is used for load and save, and that the exact changed build is loaded. The staged code also exposes optional persistence diagnostics for load/restore/save failures.
+
+### Shutdown returns before Petz state is durably saved
+
+Current-main `destroy()` fires asynchronous saves without awaiting durable completion. PR #10 changes `destroy()` to return `Promise<void>` and await all per-pet persistence operations. Until that repair is merged and executed through the real host, treat teardown persistence as an open correctness risk.
+
+### Staged PR #10 looks correct but CI is red
+
+Inspect workflow job steps before inferring a product failure. The latest Petz verification and Secret Scan attempts are documented as failing before executable steps were allocated under the known private hosted-runner account blocker. A zero-step runner failure proves neither pass nor fail for the Petz implementation.
 
 ### Cursor or toy-aware behavior never triggers through the typed bridge
 
-The inspected bridge environment currently uses placeholder cursor coordinates/proximity and `nearbyToyId: null`. Wire real host environment data before debugging the Petz state machine itself.
+The inspected current-main bridge environment uses placeholder cursor coordinates/proximity and `nearbyToyId: null`. Wire real host environment data before debugging the Petz state machine itself.
 
 ### Shipping Petz instance does not appear
 
@@ -666,9 +722,9 @@ The following are **not** claimed complete by this documentation pass:
 - complete runtime use of all 568 inventoried toys, 553 clothing resources, 59 environments, 299 wallpapers, 259 sounds, or 837 inventoried Oddballz NE resources;
 - complete Petz 1 through Petz 5, Babyz, and Oddballz gameplay parity merely because typed compatibility/formats or shipping packs exist;
 - a fresh real-Opera Petz end-to-end qualification during this documentation update;
-- a dedicated Petz automated test suite in the inspected typed package manifests;
 - automatic Petz coverage through GameSync Next root `build:packages`;
-- completed spawn-time restore in `PetzMascotBridge`;
+- merged and current-main cross-restart persistence repair;
+- exact-head execution of PR #10's Petz package, regression, Extension V2, parity, Ferrum, patch-integrity, and security gates;
 - real cursor/toy-proximity input through the inspected typed bridge;
 - fresh Extension V2 and desktop end-to-end Petz parity proof;
 - proof that the historical local `C:\Users\Owner\Desktop\GameSync\PF Magic` tree and current GitHub packages are byte-for-byte the same lineage.
@@ -684,26 +740,29 @@ When contributing to Petz Shared Core:
 3. keep Petz behavior in the Petz engine/domain layer and host-specific browser/desktop behavior in adapters;
 4. keep format parsing in `petz-formats` and family differences in `petz-compat`;
 5. preserve stable pack/breed/pet IDs once user state can reference them;
-6. do not substitute generic mascot behavior for motives, personality, Ballz geometry, Petz actions, or pack semantics;
-7. add runtime proof for every newly advertised action/control;
-8. document typed-vs-shipping schema differences instead of silently normalizing them;
-9. keep inventory/parser facts separate from implemented-runtime claims;
-10. verify both workspace-specific typed builds and the real built host runtime;
-11. preserve `dist/` as generated shipping output from `app/`;
-12. update this wiki when engine API, compatibility coverage, format coverage, asset lineage, bridge behavior, host parity, persistence, build commands, or verification status materially changes.
+6. treat persistence identity as a host/shared-core contract and preserve independent same-breed pets;
+7. do not substitute generic mascot behavior for motives, personality, Ballz geometry, Petz actions, or pack semantics;
+8. add runtime proof for every newly advertised action/control;
+9. document typed-vs-shipping schema differences instead of silently normalizing them;
+10. keep inventory/parser facts separate from implemented-runtime claims;
+11. verify both workspace-specific typed builds and the real built host runtime;
+12. preserve `dist/` as generated shipping output from `app/`;
+13. update this wiki when engine API, compatibility coverage, format coverage, asset lineage, bridge behavior, host parity, persistence, build commands, or verification status materially changes.
 
 ## 24. Next documentation and engineering checkpoint
 
-The highest-value next checkpoint is now a **shared-core parity and persistence proof**, not another source-discovery pass:
+The highest-value next checkpoint is now **execute and qualify the staged persistence repair without weakening its acceptance surface**, not another source-discovery pass:
 
-1. add Petz-specific automated tests for `petz-engine`, `petz-compat`, `petz-formats`, and `petz-bridge`;
-2. finish `PetzMascotBridge` spawn-time restore;
-3. feed real cursor and nearby-toy state into the bridge environment;
-4. add the Petz workspaces to the intended aggregate build/test lane or document a deliberate separate lane;
-5. build and typecheck all Petz packages from a clean checkout;
-6. run one representative Catz, one Dogz, and one Oddballz scenario through shipping GameSync and Extension V2, with motive/action/physics/save-state parity evidence;
-7. qualify desktop only after a real desktop adapter path is identified and exercised;
-8. preserve exact commit/artifact identity and restart evidence for every host;
-9. reconcile the historical local PF Magic source tree against current GitHub package provenance when that source becomes readable.
+1. keep PR #10 draft and unmerged until its exact current head actually receives a runner and executes all required steps;
+2. require Petz engine/bridge typecheck and build plus the exact-source persistence regression, including two same-breed slots, additive restore, runtime state, legacy save compatibility, corrupt-save diagnostics, and awaited async teardown;
+3. require the affected Extension V2 build, current parity regression/snapshot/audit, patch integrity, exact-build Ferrum runtime/restart/identity/diagnostics, and Secret scan;
+4. after successful staging proof, recreate the coherent repair from then-current `main` on the required fresh bug branch and rerun every affected gate before merge;
+5. after merge, prove a real host restart loads the changed build and restores the same pet identity/state through the host storage path;
+6. feed real cursor and nearby-toy state into the bridge environment;
+7. keep Petz workspaces in an explicit aggregate or dedicated required build/test lane;
+8. run representative Catz, Dogz, and Oddballz scenarios through shipping GameSync and Extension V2, with motive/action/physics/save-state parity evidence;
+9. qualify desktop only after a real desktop adapter path is identified and exercised;
+10. preserve exact commit/artifact identity and restart evidence for every host;
+11. reconcile the historical local PF Magic source tree against current GitHub package provenance when that source becomes readable.
 
-Until those checks pass, GameSync Next is the strongest **shared-core source**, while shipping GameSync remains the strongest **user-facing browser parity and resource baseline**.
+Until those checks pass, GameSync Next remains the strongest **shared-core source**, shipping GameSync remains the strongest **user-facing browser parity and resource baseline**, and PR #10 remains a **staging repair**, not released product behavior.
