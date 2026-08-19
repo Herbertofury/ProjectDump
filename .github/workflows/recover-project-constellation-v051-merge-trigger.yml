@@ -1,5 +1,5 @@
 name: Recover Project Constellation v0.5.1 via merge trigger
-# rerun after exact Quick View and Master payload restoration
+# exact Quick View + Master chunks are now present on main; dispatch sanitizer and final proof
 
 on:
   pull_request:
