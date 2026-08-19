@@ -88,11 +88,13 @@ zstd_runtime = merge_jars([
     libs_dir / 'lwjgl-zstd-3.3.3-natives-windows.jar',
 ], 'lwjgl-zstd-c2me-runtime-3.3.3.jar')
 caffeine = (libs_dir / 'caffeine-3.2.1.jar').read_bytes()
+commons_compress = (libs_dir / 'commons-compress-1.28.0.jar').read_bytes()
 
 runtime_paths = [
     add_outer('c2me.runtime', 'lwjgl-opencl-windows', '3.3.3', opencl_runtime, 'lwjgl-opencl-c2me-runtime-3.3.3.jar'),
     add_outer('c2me.runtime', 'lwjgl-zstd-windows', '3.3.3', zstd_runtime, 'lwjgl-zstd-c2me-runtime-3.3.3.jar'),
     add_outer('com.github.ben-manes.caffeine', 'caffeine', '3.2.1', caffeine, 'caffeine-3.2.1.jar'),
+    add_outer('org.apache.commons', 'commons-compress', '1.28.0', commons_compress, 'commons-compress-1.28.0.jar'),
 ]
 
 mods_toml = entries.get('META-INF/mods.toml')
@@ -106,7 +108,7 @@ entries['META-INF/c2me-opencl-radium-compat.txt'] = (
     'Base c2meF 0.2.0+alpha.12 SHA1 ad44f615a4b15afd1d6a4d907ccab1c3855451a1\n'
     'OpenCL source 342c5035d7251ca987c962a14997a21a36eace44\n'
     'Radium 0.12.4+git.26c9d8e: disable mixin.world.chunk_access and mixin.alloc.nbt\n'
-    'Runtime hardening: LWJGL core/OpenCL Windows payload, Zstd Windows payload, and Caffeine 3.2.1 vendored in outer JarJar.\n'
+    'Runtime hardening: LWJGL core/OpenCL Windows payload, Zstd Windows payload, Caffeine 3.2.1, and Commons Compress 1.28.0 vendored in outer JarJar.\n'
     'Fallback hardening: OpenCL global-context failure skips world codegen cleanly.\n'
 ).encode()
 
@@ -129,6 +131,8 @@ with zipfile.ZipFile(out) as z:
         assert 'org/lwjgl/util/zstd/Zstd.class' in rt.namelist()
     with zipfile.ZipFile(io.BytesIO(z.read(runtime_paths[2]))) as rt:
         assert 'com/github/benmanes/caffeine/cache/Caffeine.class' in rt.namelist()
+    with zipfile.ZipFile(io.BytesIO(z.read(runtime_paths[3]))) as rt:
+        assert 'org/apache/commons/compress/archivers/ArchiveEntry.class' in rt.namelist()
 
 print('output_sha256=', hashlib.sha256(out.read_bytes()).hexdigest())
 print('preserved_original_nested_entries=', len(original))
