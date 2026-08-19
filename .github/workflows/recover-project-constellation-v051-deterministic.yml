@@ -1,0 +1,397 @@
+name: Recover Project Constellation v0.5.1 publication
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/recover-project-constellation-v051-deterministic.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    outputs:
+      published_sha: ${{ steps.publish.outputs.published_sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct exact verified v0.5.1 artifacts from durable GitHub evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/v051"
+          rm -rf "$OUT"
+          mkdir -p "$OUT"
+          cat project-constellation/browser-gate/qv.b64.part* | base64 --decode | gzip --decompress > "$OUT/Bert_Project_Constellation_Quick_View.html"
+          cat project-constellation/browser-gate/master.b64.part* | base64 --decode | gzip --decompress > "$OUT/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html"
+          echo '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1  '"$OUT/Bert_Project_Constellation_Quick_View.html" | sha256sum -c -
+          echo 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8  '"$OUT/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html" | sha256sum -c -
+          test "$(wc -c < "$OUT/Bert_Project_Constellation_Quick_View.html")" -eq 128283
+          test "$(wc -c < "$OUT/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html")" -eq 143064
+
+          cat > "$RUNNER_TEMP/rebuild-v051.py" <<'PY'
+          from pathlib import Path
+          import calendar, hashlib, html, json, os, re, shutil, zipfile
+
+          out = Path(os.environ['RUNNER_TEMP']) / 'v051'
+          q = (out / 'Bert_Project_Constellation_Quick_View.html').read_text(encoding='utf-8')
+          master = (out / 'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html').read_text(encoding='utf-8')
+          projects = json.loads(re.search(r'<script id="project-data" type="application/json">(.*?)</script>', q, re.S).group(1))
+          apps = json.loads(re.search(r'<script id="app-research" type="application/json">(.*?)</script>', q, re.S).group(1))
+          if len(projects) != 63 or len({p['id'] for p in projects}) != 63:
+              raise SystemExit('Quick View does not contain exactly 63 unique projects')
+
+          cursor = {
+            'schema': 'project-constellation.research-cursor/1',
+            'updatedAt': '2026-08-18T22:04:30Z',
+            'completedCursor': ['PRJ-017','PRJ-018','PRJ-019','PRJ-020','PRJ-021'],
+            'nextCursor': ['PRJ-022','PRJ-023','PRJ-024','PRJ-025','PCX-026'],
+            'selectionReason': 'PRJ-017 through PRJ-021 were rechecked as a delta pass. PRJ-017/018/019 already contain the current MO2 v2.5.2 host contracts, exact preserved version lineages and explicit source/live-host qualification boundaries; connected Drive search exposed no stronger canonical source archives. PRJ-020 already contains the current NeurolingsCE Rust+Flutter architecture benchmark. PRJ-021 exact Drive search still resolves continuity material only, so its unresolved GX Slim identity and preserved 1.0.0 hash remain correct. Continue the tracked catalog rotation at PRJ-022 through PCX-026.',
+            'sourceCheckpoint': 'project-constellation/evolution/2026-08-18T2204Z-prj-017-021-wiki-delta.json',
+            'authorityRule': 'When newer than Project-Constellation-Automation-State.json, this cursor supersedes only researchCursor/nextResearchCursor scheduling fields. It does not supersede project records, lastAutomationHash, user edits, or project-owned verification evidence.'
+          }
+          catalog = {
+            'schema': 'project-constellation.catalog/2',
+            'version': '0.5.0',
+            'generatedAt': '2026-08-16T03:59:00Z',
+            'operatingMode': 'NORMAL_OPERATION',
+            'projectCount': 63,
+            'source': {
+              'artifact': 'Bert_Project_Constellation_Quick_View.html',
+              'sha256': '1aeaaa510ffd75a457bece24ab630d0595c155dcb10c05bc806d55015fa0a654',
+              'driveFileId': '1up9K9DTdUVg_fnW-v8bHVAIbjEWX7l77'
+            },
+            'projects': projects
+          }
+          catalog_text = json.dumps(catalog, indent=2, ensure_ascii=False) + '\n'
+          project_suggestions = [
+            {'projectId': p['id'], 'projectName': p['name'], 'suggestions': p['research']}
+            for p in projects if p.get('research')
+          ]
+          suggestions = {
+            'schema': 'project-constellation.research-suggestions/1',
+            'version': '0.5.0',
+            'generatedAt': '2026-08-16T03:59:00Z',
+            'projectSuggestions': project_suggestions,
+            'appSuggestions': apps,
+            'updatedAt': '2026-08-18T22:04:30Z',
+            'presentationVersion': '0.5.1',
+            'schedulingAuthority': cursor
+          }
+          suggestions_text = json.dumps(suggestions, indent=2, ensure_ascii=False) + '\n'
+          cursor_text = json.dumps(cursor, indent=2, ensure_ascii=False) + '\n'
+
+          def esc(v): return html.escape(str(v), quote=True)
+          def research_html(p):
+              rows = p.get('research') or []
+              if not rows:
+                  return '<p>No current research suggestion in this rotation.</p>'
+              chunks = []
+              for r in rows:
+                  chunks.append(
+                    '<article><h3>'+esc(r.get('proposal') or r.get('experiment'))+'</h3>'
+                    +'<p><strong>Source:</strong> <a href="'+esc(r['source'])+'">'+esc(r['source'])+'</a></p>'
+                    +'<p><strong>Checked:</strong> '+esc(r['checked'])+' · <strong>Status:</strong> '+esc(r['maturity'])+'</p>'
+                    +'<p><strong>New/notable:</strong> '+esc(r.get('newNotable') or r.get('fact'))+'</p>'
+                    +'<p><strong>Exact goal/requirement:</strong> '+esc(r['goal'])+'</p>'
+                    +'<p><strong>Fit:</strong> '+esc(r['fit'])+'</p>'
+                    +'<p><strong>Experiment:</strong> '+esc(r['experiment'])+'</p>'
+                    +'<p><strong>Risks:</strong> '+esc(r['risks'])+'</p>'
+                    +'<p><strong>Acceptance test:</strong> '+esc(r['acceptance'])+'</p></article>'
+                  )
+              return ''.join(chunks)
+
+          def project_page(p):
+              req = ''.join('<li>'+esc(x)+'</li>' for x in p.get('requirements', [])) or '<li>None recorded.</li>'
+              blocker = p.get('blocker') or 'None recorded.'
+              return '<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'+esc(p['id'])+' · '+esc(p['name'])+'</title><style>body{font-family:system-ui;background:#0c0f16;color:#edf3ff;max-width:960px;margin:auto;padding:28px}a{color:#8fd3ff}section{background:#151a24;border:1px solid #2a3343;border-radius:14px;padding:18px;margin:14px 0}pre{white-space:pre-wrap}</style></head><body><div style="margin:12px 0;padding:10px;border:1px solid #2a3550;border-radius:8px"><b>Current evidence authority:</b> source-controlled ProjectDump wiki/checkpoints. This packaged page preserves continuity history and does not self-promote runtime verification.</div><p><a href="../index.html">← Master Continuity Command Center</a> · <a href="../Bert_Project_Constellation_Quick_View.html">Quick View</a></p><h1>'+esc(p['name'])+'</h1><p><strong>ID:</strong> '+esc(p['id'])+' · <strong>Status:</strong> '+esc(p['status'])+' · <strong>Confidence:</strong> '+esc(p['confidence'])+'</p><section><h2>Goal</h2><p>'+esc(p['goal'])+'</p><h2>Requirements</h2><ul>'+req+'</ul><h2>Latest / version evidence</h2><p>'+esc(p['latest'])+'</p><h2>Exact next action</h2><p>'+esc(p['nextAction'])+'</p><h2>Stop point</h2><p>'+esc(p['stopPoint'])+'</p><h2>Blocker</h2><p>'+esc(blocker)+'</p></section><section><h2>Recovery / continuity history</h2><pre>'+esc(p['recoveryHistory'])+'</pre></section><section><h2>Ideas & Research</h2>'+research_html(p)+'</section></body></html>'
+
+          wiki_index = '<!doctype html><html><head><meta charset="utf-8"><title>Project Constellation Wiki Index</title></head><body><p><b>Freshness:</b> packaged pages preserve continuity. Current project evidence is maintained in the source-controlled ProjectDump Wiki.</p><h1>Project Constellation Wiki Index</h1><p><a href="index.html">Master Continuity Command Center</a></p><ul>'+''.join('<li><a href="projects/'+esc(p['id'])+'.html">'+esc(p['id'])+' · '+esc(p['name'])+'</a></li>' for p in projects)+'</ul></body></html>'
+
+          readme = 'Project Constellation Second Brain Website v0.5.1\n63-project preservation base + current evidence overlay.\nSource-controlled wiki: https://github.com/Herbertofury/ProjectDump/wiki\n'
+          manifest = '{\n  "name": "Project Constellation Second Brain",\n  "short_name": "Constellation",\n  "start_url": "./index.html",\n  "display": "standalone",\n  "background_color": "#0c0f16",\n  "theme_color": "#0c0f16",\n  "version": "0.5.0"\n}'
+          sw = 'const CACHE="project-constellation-v0.5.1";const ASSETS=["./", "./index.html", "./Bert_Project_Constellation_Quick_View.html", "./Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html", "./projects.json", "./manifest.webmanifest"];self.addEventListener("install",e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));self.addEventListener("activate",e=>e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));self.addEventListener("fetch",e=>{if(e.request.method!=="GET")return;e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(resp=>{const copy=resp.clone();caches.open(CACHE).then(c=>c.put(e.request,copy));return resp;}).catch(()=>caches.match("./index.html"))))});\n'
+          projects_text = json.dumps(projects, ensure_ascii=False, separators=(',', ':')) + '\n'
+          index = q.replace('</head>', '<link rel="manifest" href="manifest.webmanifest"></head>', 1)
+          index = index.replace('<p><a href="https://github.com/Herbertofury/ProjectDump/wiki" target="_blank">Open source-controlled project wiki index</a></p>', '', 1)
+          before, after = index.rsplit('</body>', 1)
+          index = before + '<script>if("serviceWorker" in navigator){addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));}</script></body>' + after
+
+          expected_text = {
+            'Bert_Project_Constellation_Quick_View.html': (128283, '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1', q),
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html': (143064, 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8', master),
+            'Project-Constellation-Project-Catalog.json': (116737, '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab', catalog_text),
+            'Project-Constellation-Research-Suggestions.json': (13295, 'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6', suggestions_text),
+          }
+          for name, (size, sha, text) in expected_text.items():
+              data = text.encode('utf-8')
+              if len(data) != size or hashlib.sha256(data).hexdigest() != sha:
+                  raise SystemExit(f'{name} reconstruction mismatch')
+              (out / name).write_bytes(data)
+
+          site_dir = out / '_site'
+          wiki_dir = out / '_wiki'
+          shutil.rmtree(site_dir, ignore_errors=True); shutil.rmtree(wiki_dir, ignore_errors=True)
+          site_dir.mkdir(); wiki_dir.mkdir(); (wiki_dir / 'projects').mkdir()
+          site_files = {
+            'Bert_Project_Constellation_Quick_View.html': q,
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html': master,
+            'Project-Constellation-Project-Catalog.json': catalog_text,
+            'Project-Constellation-Research-Cursor.json': cursor_text,
+            'Project-Constellation-Research-Suggestions.json': suggestions_text,
+            'README.txt': readme,
+            'index.html': index,
+            'manifest.webmanifest': manifest,
+            'projects.json': projects_text,
+            'sw.js': sw,
+          }
+          for name, text in site_files.items(): (site_dir / name).write_text(text, encoding='utf-8')
+          wiki_files = {
+            'Bert_Project_Constellation_Quick_View.html': q,
+            'PROJECT-WIKI-INDEX.html': wiki_index,
+            'Project-Constellation-Project-Catalog.json': catalog_text,
+            'Project-Constellation-Research-Cursor.json': cursor_text,
+            'Project-Constellation-Research-Suggestions.json': suggestions_text,
+            'index.html': master,
+          }
+          for name, text in wiki_files.items(): (wiki_dir / name).write_text(text, encoding='utf-8')
+          for p in projects: (wiki_dir / 'projects' / f"{p['id']}.html").write_text(project_page(p), encoding='utf-8')
+
+          mtime = calendar.timegm((2026,8,18,22,27,40,0,0,0))
+          for root in (site_dir, wiki_dir):
+              for path in root.rglob('*'):
+                  if path.is_file(): os.utime(path, (mtime, mtime))
+
+          site_order = ['Bert_Project_Constellation_Quick_View.html','Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html','Project-Constellation-Project-Catalog.json','Project-Constellation-Research-Cursor.json','Project-Constellation-Research-Suggestions.json','README.txt','index.html','manifest.webmanifest','projects.json','sw.js']
+          wiki_order = ['Bert_Project_Constellation_Quick_View.html','PROJECT-WIKI-INDEX.html','Project-Constellation-Project-Catalog.json','Project-Constellation-Research-Cursor.json','Project-Constellation-Research-Suggestions.json','index.html'] + [f"projects/{p['id']}.html" for p in sorted(projects, key=lambda p:p['id'])]
+          def make_zip(root, target, order):
+              with zipfile.ZipFile(target, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as z:
+                  for rel in order: z.write(root / rel, rel)
+          make_zip(site_dir, out / 'Bert_Project_Second_Brain_Website.zip', site_order)
+          make_zip(wiki_dir, out / 'Bert_Project_Wiki_Pack.zip', wiki_order)
+
+          expected_binary = {
+            'Bert_Project_Second_Brain_Website.zip': (144481, 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c'),
+            'Bert_Project_Wiki_Pack.zip': (183831, '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891'),
+          }
+          for name, (size, sha) in expected_binary.items():
+              data=(out/name).read_bytes()
+              if len(data)!=size or hashlib.sha256(data).hexdigest()!=sha:
+                  raise SystemExit(f'{name} deterministic ZIP reconstruction mismatch')
+          PY
+          python "$RUNNER_TEMP/rebuild-v051.py"
+
+          for spec in \
+            'Bert_Project_Second_Brain_Website.zip 144481 f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c' \
+            'Bert_Project_Constellation_Quick_View.html 128283 8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1' \
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html 143064 dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8' \
+            'Bert_Project_Wiki_Pack.zip 183831 9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891' \
+            'Project-Constellation-Project-Catalog.json 116737 79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab' \
+            'Project-Constellation-Research-Suggestions.json 13295 c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'; do
+              set -- $spec
+              test "$(wc -c < "$OUT/$1")" -eq "$2"
+              echo "$3  $OUT/$1" | sha256sum -c -
+          done
+          unzip -t "$OUT/Bert_Project_Second_Brain_Website.zip"
+          unzip -t "$OUT/Bert_Project_Wiki_Pack.zip"
+          node -e "const fs=require('fs');const c=JSON.parse(fs.readFileSync('$OUT/Project-Constellation-Project-Catalog.json','utf8'));if(c.projectCount!==63||c.projects.length!==63||new Set(c.projects.map(x=>x.id)).size!==63)throw Error('catalog invariant failed')"
+
+      - name: Publish exact six objects without promoting state
+        id: publish
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/v051"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          published=''
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            mkdir -p project-constellation/publication-gate
+            for f in \
+              Bert_Project_Second_Brain_Website.zip \
+              Bert_Project_Constellation_Quick_View.html \
+              Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html \
+              Bert_Project_Wiki_Pack.zip \
+              Project-Constellation-Project-Catalog.json \
+              Project-Constellation-Research-Suggestions.json; do
+              cp "$OUT/$f" "project-constellation/$f"
+            done
+            cat > project-constellation/publication-gate/v0.5.1.json <<EOF
+          {
+            "schema": "project-constellation.publication-gate/2",
+            "candidateVersion": "0.5.1",
+            "status": "GITHUB_PUBLISHED_PENDING_REMOTE_VERIFY",
+            "browserGate": {"status":"success","candidateSha256":"8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1"},
+            "drivePromotion": "verified exact canonical bytes before GitHub publication",
+            "publicationMethod": "deterministic reconstruction from verified Quick View/Master GitHub evidence plus preserved candidate metadata; ZIPs rebuilt byte-identically with fixed timestamp and deflate level 9"
+          }
+          EOF
+            python - <<'PY'
+          import json
+          p='project-constellation/Project-Constellation-Publication-Debt.json'
+          d=json.load(open(p))
+          d['updatedAt']='2026-08-19T08:00:00Z'
+          d['status']='GITHUB_PUBLISHED_PENDING_REMOTE_VERIFY'
+          d['reason']='The exact verified v0.5.1 six-object set has been deterministically reconstructed and committed to GitHub. lastAutomationHash remains unpromoted until an independent checkout of the published commit verifies all six exact sizes/SHA-256 values and ZIP/JSON integrity.'
+          d.setdefault('canonicalPromotion',{})['githubPerformed']=True
+          d['canonicalPromotion']['githubVerificationPending']=True
+          open(p,'w').write(json.dumps(d,indent=2,ensure_ascii=False)+'\n')
+          PY
+            git add project-constellation/Bert_Project_Second_Brain_Website.zip \
+              project-constellation/Bert_Project_Constellation_Quick_View.html \
+              project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html \
+              project-constellation/Bert_Project_Wiki_Pack.zip \
+              project-constellation/Project-Constellation-Project-Catalog.json \
+              project-constellation/Project-Constellation-Research-Suggestions.json \
+              project-constellation/Project-Constellation-Publication-Debt.json \
+              project-constellation/publication-gate/v0.5.1.json
+            git commit -m 'Publish Project Constellation v0.5.1 exact verified artifacts [skip ci]'
+            published="$(git rev-parse HEAD)"
+            if git push origin HEAD:main; then break; fi
+            published=''
+          done
+          test -n "$published"
+          echo "published_sha=$published" >> "$GITHUB_OUTPUT"
+
+  verify-and-promote:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.publish.outputs.published_sha }}
+
+      - name: Independently verify exact published commit bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT=project-constellation
+          for spec in \
+            'Bert_Project_Second_Brain_Website.zip 144481 f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c' \
+            'Bert_Project_Constellation_Quick_View.html 128283 8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1' \
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html 143064 dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8' \
+            'Bert_Project_Wiki_Pack.zip 183831 9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891' \
+            'Project-Constellation-Project-Catalog.json 116737 79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab' \
+            'Project-Constellation-Research-Suggestions.json 13295 c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'; do
+              set -- $spec
+              test "$(wc -c < "$ROOT/$1")" -eq "$2"
+              echo "$3  $ROOT/$1" | sha256sum -c -
+          done
+          unzip -t "$ROOT/Bert_Project_Second_Brain_Website.zip"
+          unzip -t "$ROOT/Bert_Project_Wiki_Pack.zip"
+          node -e "const fs=require('fs');for(const f of ['Project-Constellation-Project-Catalog.json','Project-Constellation-Research-Suggestions.json'])JSON.parse(fs.readFileSync('$ROOT/'+f,'utf8'));const c=JSON.parse(fs.readFileSync('$ROOT/Project-Constellation-Project-Catalog.json','utf8'));if(c.projects.length!==63||new Set(c.projects.map(x=>x.id)).size!==63)throw Error('catalog invariant failed')"
+          node -e "const fs=require('fs');const r=JSON.parse(fs.readFileSync('$ROOT/browser-gate/result.json','utf8'));if(r.status!=='success'||r.candidateSha256!=='8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1')throw Error('browser gate evidence mismatch')"
+
+      - name: Promote verified state and clear publication debt
+        shell: bash
+        env:
+          PUBLISHED_SHA: ${{ needs.publish.outputs.published_sha }}
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            git reset --hard origin/main
+            ROOT=project-constellation
+            echo 'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c  project-constellation/Bert_Project_Second_Brain_Website.zip' | sha256sum -c -
+            echo '8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1  project-constellation/Bert_Project_Constellation_Quick_View.html' | sha256sum -c -
+            echo 'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8  project-constellation/Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html' | sha256sum -c -
+            echo '9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891  project-constellation/Bert_Project_Wiki_Pack.zip' | sha256sum -c -
+            echo '79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab  project-constellation/Project-Constellation-Project-Catalog.json' | sha256sum -c -
+            echo 'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6  project-constellation/Project-Constellation-Research-Suggestions.json' | sha256sum -c -
+            python - <<'PY'
+          import json, os
+          root='project-constellation'
+          hashes={
+            'Bert_Project_Second_Brain_Website.zip':'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c',
+            'Bert_Project_Constellation_Quick_View.html':'8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1',
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html':'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8',
+            'Bert_Project_Wiki_Pack.zip':'9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891',
+            'Project-Constellation-Project-Catalog.json':'79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab',
+            'Project-Constellation-Research-Suggestions.json':'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'
+          }
+          drive={
+            'Bert_Project_Second_Brain_Website.zip':('1R2GM6-BqDDCJPEpjtGDx6AiOrpDzY_4u',144481),
+            'Bert_Project_Constellation_Quick_View.html':('1DQIrgE7feVdUKfan2QhExRL4BGqRXYT5',128283),
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html':('1cCgiPwBYhUFnsjPcz6uZwngGJafLHMci',143064),
+            'Bert_Project_Wiki_Pack.zip':('1yFHcbRzkH857STKviZTH_aXb4LG9Lc24',183831),
+            'Project-Constellation-Project-Catalog.json':('1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq',116737),
+            'Project-Constellation-Research-Suggestions.json':('1wHu3owwVTXI7akLfq4Vwqph_Da4vong8',13295)
+          }
+          sp=f'{root}/Project-Constellation-Automation-State.json'
+          state=json.load(open(sp))
+          state['version']='0.5.1'
+          state['updatedAt']='2026-08-19T08:00:00Z'
+          state['lastAutomationHash']=hashes
+          state.setdefault('mergeBase',{})['quickViewDriveFileId']=drive['Bert_Project_Constellation_Quick_View.html'][0]
+          state['mergeBase']['masterCommandCenterDriveFileId']=drive['Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html'][0]
+          state['mergeBase']['quickViewMatchedPriorLastAutomationHash']=True
+          state['mergeBase']['masterMatchedPriorLastAutomationHash']=True
+          state['mergeBase']['lastVerifiedPresentationLineage']='0.5.1'
+          state['driveArtifacts']={name:{'id':fid,'sha256':hashes[name],'size':size,'verification':'canonical Drive remote re-download SHA-256 and size matched before GitHub publication'} for name,(fid,size) in drive.items()}
+          changes=state.setdefault('changes',[])
+          note='Recovered and verified Project Constellation v0.5.1 publication to canonical GitHub bytes after exact browser and Drive acceptance; all six GitHub objects were independently re-read from the published commit before lastAutomationHash promotion.'
+          if note not in changes: changes.append(note)
+          open(sp,'w').write(json.dumps(state,indent=2,ensure_ascii=False)+'\n')
+
+          dp=f'{root}/Project-Constellation-Publication-Debt.json'
+          debt=json.load(open(dp))
+          debt['updatedAt']='2026-08-19T08:00:00Z'
+          debt['status']='VERIFIED_CLEARED'
+          debt['reason']='Project Constellation v0.5.1 is byte-verified on canonical Google Drive and GitHub. The exact Quick View browser acceptance passed, all six GitHub objects were independently verified at the published commit, ZIP/JSON integrity passed, and lastAutomationHash was promoted only after that proof.'
+          debt.setdefault('canonicalPromotion',{})['githubPerformed']=True
+          debt['canonicalPromotion']['githubVerificationPending']=False
+          debt['canonicalPromotion']['githubPublishedSha']=os.environ['PUBLISHED_SHA']
+          debt['canonicalPromotion']['githubRoundTrip']='exact size/SHA-256, ZIP integrity, JSON parse and 63-project invariant passed from independent checkout'
+          open(dp,'w').write(json.dumps(debt,indent=2,ensure_ascii=False)+'\n')
+
+          gp=f'{root}/publication-gate/v0.5.1.json'
+          gate=json.load(open(gp))
+          gate['status']='VERIFIED_PUBLISHED'
+          gate['publishedSha']=os.environ['PUBLISHED_SHA']
+          gate['githubRoundTrip']='passed exact six-object size/SHA-256 plus ZIP/JSON integrity'
+          gate['lastAutomationHashPromoted']=True
+          open(gp,'w').write(json.dumps(gate,indent=2,ensure_ascii=False)+'\n')
+          PY
+            git add project-constellation/Project-Constellation-Automation-State.json \
+              project-constellation/Project-Constellation-Publication-Debt.json \
+              project-constellation/publication-gate/v0.5.1.json
+            git commit -m 'state: verify and promote Project Constellation v0.5.1 [skip ci]'
+            if git push origin HEAD:main; then exit 0; fi
+          done
+          exit 1
+
+      - name: Verify promoted origin state
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main
+          git reset --hard origin/main
+          node - <<'NODE'
+          const fs=require('fs');
+          const root='project-constellation';
+          const s=JSON.parse(fs.readFileSync(`${root}/Project-Constellation-Automation-State.json`,'utf8'));
+          const d=JSON.parse(fs.readFileSync(`${root}/Project-Constellation-Publication-Debt.json`,'utf8'));
+          const g=JSON.parse(fs.readFileSync(`${root}/publication-gate/v0.5.1.json`,'utf8'));
+          const expected={
+            'Bert_Project_Second_Brain_Website.zip':'f49eb085c230da9ea2c62b2d4e91770be0b2638bf47a188fa43f6ff2b537893c',
+            'Bert_Project_Constellation_Quick_View.html':'8234e889c6b8cae67158c3cec525e3607bb8403173cf095e80c1b7ffd597ffe1',
+            'Bert_Project_Constellation_Recovery_Command_Center_Full_Wiki.html':'dd1f852bf4f7d677d3a499a7238359dff55aa6a3bc3f338c534dca2c89faa1a8',
+            'Bert_Project_Wiki_Pack.zip':'9be52cefe088ef3b4dbdac906073c21f3b48c4265f25bff02aec5a0010163891',
+            'Project-Constellation-Project-Catalog.json':'79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab',
+            'Project-Constellation-Research-Suggestions.json':'c20f76e5eba87a21769dfe582ce8690e0b3dc62570e05ea8e5be87b9a610cac6'
+          };
+          if(s.version!=='0.5.1'||JSON.stringify(s.lastAutomationHash)!==JSON.stringify(expected)) throw Error('automation state promotion mismatch');
+          if(d.status!=='VERIFIED_CLEARED') throw Error('publication debt not cleared');
+          if(g.status!=='VERIFIED_PUBLISHED'||g.lastAutomationHashPromoted!==true) throw Error('publication gate not verified');
+          console.log(JSON.stringify({version:s.version,debt:d.status,gate:g.status,publishedSha:g.publishedSha},null,2));
+          NODE
