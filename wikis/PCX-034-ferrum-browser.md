@@ -4,13 +4,15 @@
 **Canonical repository:** [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser)
 **Canonical branch:** `main`
 **Verified project version:** `0.2.0`
-**Current verified product commit:** `71f85c8c7e10f6098dc5d49a501b07e9c4c4d21f`
-**Current verified product workflow:** `32134811799`
-**Latest verified additive service-acceptance commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`
-**Service-acceptance workflows:** Ferrum CI `32139957979`, disposable-service workflow `32139957988`
-**Latest observed main commit:** `09c8334ef5b744afd8ca94732cd9c458744058fb`
-**Earlier important verified product commits:** Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`
-**Project state:** verified complete product checkpoint on main with later verified additive service-fixture acceptance
+**Latest verified merged product commit:** `8ff1d85d26500f415c01b7de1753608c4d689f80`
+**Latest verified full Ferrum CI:** `32201388085`
+**Native Windows qualification commit:** `eb88b2149cf695edde2591e8e16d13bb43a90c8e`
+**Native Windows workflows:** Ferrum CI `32199800957`, Native Windows `32199800977`
+**Tauri v2 qualification commit:** `cf79303b8788d58fe274d7ce3e4a9b87d889c310`
+**Tauri qualification workflow:** `32194473469`
+**Latest observed main commit:** `dcff27b8c2a2b365aad43fff626fcf233cb3a969` (evolution ledger for run 33)
+**Earlier important verified product commits:** Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`; service parity `09c8334ef5b744afd8ca94732cd9c458744058fb`
+**Project state:** verified complete product checkpoint on main with later verified Tauri v2, native Windows WPF/UIA, and CI critical-path improvements
 
 ## Purpose
 
@@ -21,6 +23,8 @@ Ferrum is broader than a browser wrapper. The same deterministic test/evidence m
 - ordinary web applications;
 - unpacked Manifest V3 extensions;
 - Electron applications;
+- Tauri v2 desktop applications;
+- native Windows applications through W3C/Appium UI Automation providers;
 - arbitrary processes/services;
 - remote WebDriver targets;
 - Appium-backed native/mobile targets;
@@ -29,31 +33,39 @@ Ferrum is broader than a browser wrapper. The same deterministic test/evidence m
 
 Ferrum orchestrates real runtimes. A successful tool handshake, mock, rendered dashboard, or compilation is not a substitute for exercising the target application.
 
-## Current verified status, refreshed 2026-08-18
+## Current verified status, refreshed 2026-08-19
 
-Project-owned `.agents-memory/STATUS.json` now records a verified complete product checkpoint on `main` at commit `71f85c8c7e10f6098dc5d49a501b07e9c4c4d21f`, verified by Ferrum CI run `32134811799`.
+The older `.agents-memory/STATUS.json` remains a valid verified product checkpoint but is not the newest additive evidence. Newer evolution checkpoints supersede it for the capabilities below without invalidating its prior matrix.
 
-The currently verified toolchain is:
+The currently verified baseline toolchain remains:
 
 - Playwright **1.63.0-alpha-2026-08-17**;
 - Electron **43.4.0**;
 - `@electron/packager` **20.3.0**;
 - Node.js **24+**.
 
-The Playwright alpha is verified current project state, not an unqualified freshness experiment. The exact proposal tree passed Ferrum's complete acceptance surface before merge and project memory promotion.
+The Playwright alpha is verified project state, not an unqualified freshness experiment. Exact proposal trees pass the affected acceptance surface before merge and project-memory promotion.
 
 The earlier MV3 product change at commit `7360184f154f9182f9d754126a0348d2b10b1738` remains an important verified milestone because it added CDP-confirmed Manifest V3 service-worker forced termination and on-demand recovery. Ferrum CI run `32088206572` verified that capability across unit/MCP Inspector/evidence integrity, Linux, Windows, browser/MV3/workload paths, Selenium Grid, packaged desktop, Lightpanda, and real Android/Appium.
 
-Since the previous wiki checkpoint, Ferrum materially evolved again. The current verified product includes:
+Ferrum subsequently added and verified:
 
 - bounded-parallel evidence-history scans with no result cap;
 - monotonic run-relative evidence timing and direct compact-result duration;
 - no implicit 400-element snapshot ceiling;
 - stable agent snapshot refs across DOM mutation and replacement;
 - prompt process readiness/log failure when the child has already terminated;
-- direct HTTP interaction for process/service targets with retained response artifacts and authoritative child-exit attribution.
+- direct HTTP interaction for process/service targets with retained response artifacts and authoritative child-exit attribution;
+- a zero-additional-dependency local/Docker real-service parity fixture;
+- real Tauri v2 application qualification on Linux and Windows through the existing provider-neutral W3C runner;
+- real native Windows WPF/UIA qualification through two independent Appium 3 Windows drivers;
+- CI critical-path parallelization that retained all five Windows browsers while reducing the measured full CI wall clock from 349 seconds to 149 seconds in the verified comparison.
 
-A subsequent additive commit, `09c8334ef5b744afd8ca94732cd9c458744058fb`, adds a zero-dependency disposable real-service parity smoke. It was verified by Ferrum CI `32139957979` and the dedicated disposable-service workflow `32139957988`. That acceptance path compares a local Node service with a real Docker `node:24-alpine` service through the same Ferrum process HTTP assertions, records exact image/runtime identity, and proves explicit container cleanup without adding a Node dependency.
+### Latest verified CI critical-path improvement
+
+Commit `8ff1d85d26500f415c01b7de1753608c4d689f80` keeps Chromium, Chrome, Edge, the Windows MV3/restart path, Spaces, Workbench replay, Electron, desktop-source, package, and fresh packaged-desktop gates in the core Windows job. Brave and Opera GX now run as independent Windows matrix jobs with `--require-all` and distinct retained evidence.
+
+Ferrum CI `32201388085` passed unit, Linux, Windows core, Windows Brave, Windows Opera GX, Selenium Grid, Lightpanda, and Android/Appium jobs. The recorded comparison reduced overall workflow wall clock from **349 seconds to 149 seconds**, a **57.31%** reduction, without removing any browser target or acceptance surface. This proves faster feedback, not lower total hosted-runner consumption.
 
 ## Verified target matrix
 
@@ -95,9 +107,90 @@ Verified passed:
 - zero Electron force-close events in the recorded acceptance run;
 - zero Electron shutdown-warning events in the recorded acceptance run.
 
+Brave and Opera GX may execute in independent CI jobs. That is scheduling isolation only. Their browser coverage and retained evidence remain required.
+
 ### Selenium Grid / remote WebDriver
 
 Ferrum's provider-neutral remote WebDriver lane is runtime-qualified against a real Selenium Grid endpoint with bounded visible-state convergence and evidence retention.
+
+### Tauri v2 desktop lane
+
+Ferrum now qualifies real Tauri v2 applications through the same provider-neutral W3C WebDriver runner used for remote browser endpoints.
+
+The required production-like acceptance uses the embedded [`tauri-plugin-wdio-webdriver`](https://github.com/Samyssmile/tauri-plugin-wdio-webdriver) provider rather than adding a special Ferrum runner. The verified stack is:
+
+- `tauri-plugin-wdio-webdriver` **1.3.0**;
+- Tauri **2.11.5**;
+- `tauri-build` **2.6.3**;
+- `tauri-runtime` **2.11.3**;
+- `tauri-runtime-wry` **2.11.4**;
+- pinned Tauri fixture repository `tauri-apps/webdriver-example` at `e4c2607cd60287a0ceb69458a0d69d0b676f39a6`.
+
+Workflow `32194473469` verified the embedded provider on both Linux and Windows. The real acceptance includes:
+
+- building and launching the pinned real Tauri v2 application;
+- bounded provider readiness;
+- a real Ferrum WebDriver session;
+- real UI input and click;
+- Rust `greet` IPC round trip;
+- screenshot and page-source capture;
+- session evidence;
+- application SHA-256 and runtime identity;
+- clean WebDriver/application teardown.
+
+The workflow also retains `tauri-driver` **2.0.6** as an official reference lane. The official Linux reference passed. The direct official Windows path remains diagnostic because WebView2/msedgedriver can fail before session creation, so it is not used as the required Windows acceptance gate.
+
+Important recovered failure history:
+
+- a mixed Tauri runtime family blocked an earlier build;
+- `tauri-build` 2.6.0 was incompatible with Tauri 2.11.5 and was corrected to 2.6.3;
+- Windows embedded capability generation needed deterministic JSON escaping for Windows paths.
+
+Do not loosen those version/fixture controls merely to make a Tauri job green.
+
+### Native Windows WPF/UIA lane
+
+Ferrum now qualifies native Windows applications through its existing W3C WebDriver runner and Appium 3 instead of adding a separate action schema.
+
+The dedicated `.github/workflows/native-windows.yml` matrix currently verifies two independent providers:
+
+- `appium-desktop-driver` **2.4.5**, automation name `DesktopDriver`;
+- `appium-novawindows-driver` **1.4.4**, automation name `NovaWindows`.
+
+Both providers ran the same deterministic .NET 8 WPF/UIA fixture twice through distinct clean WebDriver sessions. Workflow `32199800977` passed both matrix jobs, and broad Ferrum CI `32199800957` passed the surrounding regression surface.
+
+The fixture SHA-256 recorded by the evolution checkpoint is:
+
+`E865F876A7999CEF1F067484C8E7007A809EA2A8A4EE7A65812498D4123A9330`
+
+The required native workload proves:
+
+1. launch of the real WPF fixture;
+2. `AutomationId` lookup for a text input;
+3. text fill;
+4. `AutomationId` lookup and click for a submit control;
+5. exact `hello Ferrum` status assertion;
+6. a second toggle interaction and visibility transition;
+7. screenshot capture;
+8. page-source capture;
+9. a second distinct clean session;
+10. bounded Appium teardown.
+
+The native desktop providers are not browser endpoints. A browser-only WebDriver command such as `GET /url` must not be required for provider-neutral native-app acceptance. NovaWindows exposed that mismatch during failure-first qualification, and the fixture was corrected to assert provider-neutral session evidence instead.
+
+The dedicated PowerShell smoke is:
+
+```powershell
+.\scripts\appium-windows-desktop-smoke.ps1
+```
+
+The workflow builds the deterministic fixture with:
+
+```powershell
+dotnet build .\fixtures\windows-uia\Ferrum.WindowsFixture.csproj -c Release --nologo
+```
+
+Native Windows support currently proves WPF/UIA acceptance through these two providers. It does not imply that every Windows framework or accessibility edge case has already been qualified.
 
 ### Lightpanda
 
@@ -124,7 +217,7 @@ Verified target:
 - screenshot evidence for home/detail/return states;
 - separate 60,000 ms startup budget for server readiness/session creation.
 
-`implementedButNotRuntimeQualifiedYet` is empty in current project-owned status.
+The native Windows and Android lanes share Ferrum's principle of keeping the common W3C/evidence contract while allowing provider-specific capabilities where required.
 
 ## Manifest V3 service-worker recovery
 
@@ -157,6 +250,8 @@ electron 43.4.0
 ```
 
 Electron 43.4.0 has passed the required real Linux + Windows Electron and packaged-desktop lanes.
+
+Tauri and native Windows provider dependencies are CI/fixture qualifications rather than blanket Ferrum core dependencies. Keep them isolated to the relevant target workflow unless a measured requirement justifies promotion into the default installation.
 
 Any future stack change must repeat the exact affected real-runtime matrix. Never promote a dependency by package freshness alone.
 
@@ -216,6 +311,13 @@ Run the disposable local/container service parity smoke:
 npm run smoke:service-fixture
 ```
 
+Run the Tauri reference/provider smokes when the required external fixture/runtime prerequisites are present:
+
+```bash
+npm run smoke:tauri
+npm run smoke:tauri-embedded
+```
+
 Current package scripts include:
 
 ```bash
@@ -225,6 +327,8 @@ npm run smoke:extension
 npm run smoke:network
 npm run smoke:service-fixture
 npm run smoke:webdriver
+npm run smoke:tauri
+npm run smoke:tauri-embedded
 npm run smoke:github-wiki
 npm run smoke:mcp-inspector
 npm run smoke:electron
@@ -354,12 +458,12 @@ A process spec can now exercise the running service directly:
 
 ```json
 {
- "action": "http-request",
- "method": "POST",
- "url": "http://127.0.0.1:8080/echo",
- "json": { "source": "local" },
- "status": 200,
- "text": "\"source\":\"local\""
+  "action": "http-request",
+  "method": "POST",
+  "url": "http://127.0.0.1:8080/echo",
+  "json": { "source": "local" },
+  "status": 200,
+  "text": "\"source\":\"local\""
 }
 ```
 
@@ -408,7 +512,7 @@ The container lane additionally verifies:
 
 The final summary records local/container durations, response sizes/statuses, provision time, cleanup time, image/runtime identity, and `additionalNodeDependencyCount: 0`.
 
-Dedicated workflow `.github/workflows/service-fixture.yml` runs this smoke on Ubuntu with Node 24 and retains `artifacts/service-fixture/` even when the job fails. The additive current-main acceptance was verified by Ferrum CI `32139957979` and dedicated service-fixture run `32139957988`.
+Dedicated workflow `.github/workflows/service-fixture.yml` runs this smoke on Ubuntu with Node 24 and retains `artifacts/service-fixture/` even when the job fails. The additive acceptance was verified by Ferrum CI `32139957979` and dedicated service-fixture run `32139957988`.
 
 ## Test specification format
 
@@ -426,11 +530,16 @@ Supported target types include:
 - `extension`;
 - `electron`;
 - `process`;
+- `webdriver`;
 - `appium`.
+
+Tauri and native Windows qualifications intentionally reuse `webdriver` rather than inventing separate target schemas.
 
 Common browser steps include open, wait, click, fill, press, snapshot, screenshot, text/visibility/url assertions, evaluate, vitals, console-clean assertions, network-state control, and extension/service-worker actions.
 
 Process steps additionally include stdin write/close, log assertions, HTTP request, waiting for exit, and exit-code assertions as supported by the current runner.
+
+WebDriver/native steps use the provider-neutral find/fill/click/assert/screenshot/source/session contract where the underlying provider supports them. Browser-only commands must not be imposed on native providers merely because both speak W3C WebDriver.
 
 Every step must preserve timing and failure context. Browser failures retain trace/evidence output.
 
@@ -450,7 +559,9 @@ Evidence may include:
 - target/build SHA-256 inventory;
 - resolved extension ID and discovery path;
 - restart proof;
-- process/Appium output;
+- process/Appium/WebDriver output;
+- Tauri application/provider identity;
+- native Windows fixture/provider/session identity;
 - process HTTP response artifacts;
 - benchmark machine/workload/reliability metadata;
 - `evidence-manifest.json` with SHA-256 integrity information.
@@ -528,6 +639,8 @@ Current output retains:
 
 A faster run is not an improvement if it removes steps, diagnostics, evidence, restart proof, target coverage, failure visibility, or fidelity.
 
+The run-33 CI change follows the same rule: the measured wall-clock improvement is accepted only because all five Windows browsers and the prior required jobs remained green with retained artifacts.
+
 ## GameSync integration
 
 Ferrum should be used for every applicable GameSync extension change when available, with Opera GX retained as additional compatibility coverage.
@@ -569,7 +682,7 @@ Previously fixed incidents such as ephemeral port reporting and truthful static-
 
 ## Important resolved incidents
 
-Project-owned status preserves regression coverage for incidents including:
+Project-owned status and evolution checkpoints preserve regression coverage for incidents including:
 
 - a GameSync workload pack invoking a nonexistent build script;
 - Android emulator CI shell splitting;
@@ -603,7 +716,13 @@ Project-owned status preserves regression coverage for incidents including:
 - process health checks consuming the startup deadline after a terminal child state;
 - process targets proving health without being able to exercise the service API;
 - HTTP transport errors hiding an authoritative child-process exit;
-- container/service acceptance lacking exact image/runtime identity and cleanup proof.
+- container/service acceptance lacking exact image/runtime identity and cleanup proof;
+- mixed Tauri runtime-family versions blocking the real fixture build;
+- Windows Tauri capability JSON requiring deterministic path escaping;
+- direct official Windows `tauri-driver` being unsuitable as the required gate when WebView2/msedgedriver fails before session creation;
+- nested `cmd.exe` quoting breaking Appium readiness on the native Windows fixture;
+- native Appium providers being incorrectly asked to satisfy browser-only `GET /url` behavior;
+- alternate browser installation serializing the Windows CI critical path even though Brave and Opera GX are independent acceptance lanes.
 
 Do not remove regression coverage for these just because they are currently fixed.
 
@@ -614,8 +733,9 @@ Before editing:
 1. read repository `AGENTS.md`;
 2. read `.agents-memory/PROJECT.json`, `STATUS.json`, `HANDOFF.md`, and `COMPASS.json`;
 3. confirm the exact current main commit;
-4. reproduce the target issue with an existing or minimal new spec;
-5. establish the current target/evidence baseline.
+4. read newer `EVOLUTION_RUN_*` checkpoints when they postdate `STATUS.json`;
+5. reproduce the target issue with an existing or minimal new spec;
+6. establish the current target/evidence baseline.
 
 After editing, run all applicable changed-path and convergence checks. Typical local scripts include:
 
@@ -631,6 +751,10 @@ npm run smoke:dashboard
 
 Run Selenium Grid when remote WebDriver changes, the browser matrix when browser/runtime behavior changes, Lightpanda when that lane changes, the service fixture when process HTTP/service behavior changes, real Linux/Windows Electron and package acceptance when desktop/Electron changes, and real Appium when native/mobile behavior changes.
 
+For Tauri changes, run the dedicated Tauri WebDriver workflow because it builds a pinned real Tauri application on Linux and Windows and verifies the embedded W3C provider. Preserve the official `tauri-driver` reference lane as diagnostic/reference evidence rather than silently substituting it for the required embedded Windows gate.
+
+For native Windows changes, run the dedicated Native Windows matrix and require both `DesktopDriver` and `NovaWindows` against the same deterministic WPF/UIA workload unless project-owned evidence deliberately revises the provider set.
+
 A process/service change that claims container parity should retain explicit runtime/image identity and cleanup proof rather than treating container startup alone as acceptance.
 
 ## Current next actions
@@ -642,6 +766,10 @@ Current project-owned direction includes:
 - keep forced MV3 worker termination/recovery in the extension regression surface;
 - keep complete uncapped snapshots and page-session ref identity as agent-facing correctness guarantees;
 - preserve exact-head severe CI promotion discipline for future stack changes;
+- keep Tauri v2 embedded WebDriver qualification on both Linux and Windows;
+- keep the two-provider native Windows differential so provider-specific assumptions remain visible;
+- evaluate compact Windows-native adapter ideas only against the same deterministic fixture and evidence contract;
+- keep Brave and Opera GX parallelized independently while preserving their exact acceptance/evidence requirements;
 - use the local/container service fixture as a baseline before adopting heavier service-test dependencies;
 - evaluate fixed-seed stateful API testing only if it produces a minimized repeatable defect reproducer without weakening current evidence;
 - evaluate deterministic transport-fault injection only if exact fault configuration and recovery are preserved;
@@ -652,12 +780,13 @@ Current project-owned direction includes:
 For Ferrum facts, prefer:
 
 1. current [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser) source and real evidence;
-2. `.agents-memory/STATUS.json` and current project memory;
-3. repository docs/manifests;
-4. Project Constellation summaries.
+2. the newest project-owned `EVOLUTION_RUN_*` checkpoint when it postdates `STATUS.json`;
+3. `.agents-memory/STATUS.json` and other current project memory;
+4. repository docs/manifests;
+5. Project Constellation summaries.
 
 Project-owned evidence supersedes stale Project Constellation wording.
 
 ## Wiki maintenance triggers
 
-Update this page whenever the verified commit/workflow, supported target matrix, service-worker recovery/diagnostics, process/service HTTP capability, disposable service acceptance, snapshot completeness/ref semantics, evidence schema/history/timing, CLI/MCP contract, Workbench behavior, GameSync acceptance contract, Electron/Appium qualification, dependency pins, packaging status, GitHub Wiki automation, or project-owned next actions materially change.
+Update this page whenever the verified commit/workflow, supported target matrix, Tauri qualification, native Windows provider matrix, CI scheduling/critical-path architecture, service-worker recovery/diagnostics, process/service HTTP capability, disposable service acceptance, snapshot completeness/ref semantics, evidence schema/history/timing, CLI/MCP contract, Workbench behavior, GameSync acceptance contract, Electron/Appium qualification, dependency pins, packaging status, GitHub Wiki automation, or project-owned next actions materially change.
