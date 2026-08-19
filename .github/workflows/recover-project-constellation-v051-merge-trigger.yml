@@ -1,4 +1,5 @@
 name: Recover Project Constellation v0.5.1 via merge trigger
+# rerun after exact Quick View and Master payload restoration
 
 on:
   pull_request:
