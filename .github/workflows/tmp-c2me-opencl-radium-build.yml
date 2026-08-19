@@ -38,11 +38,33 @@ jobs:
           echo 'b42584e2672d6b5329959ec2b0f342395b19389fed0ee4d86ea71072f42f77a0  .tmpbuild/downloads/radium.jar' | sha256sum -c -
           unzip -j .tmpbuild/downloads/c2meF.jar 'META-INF/jarjar/*.jar' -d .tmpbuild/src/libs
           cd .tmpbuild/src/libs
+          curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-opencl/3.3.3/lwjgl-opencl-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3-natives-windows.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3-natives-windows.jar
           cd ../../..
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          build = Path('.tmpbuild/src/c2me_opts_accel_opencl/build.gradle')
+          text = build.read_text()
+          old = "implementation(jarJar(files('../libs/lwjgl-opencl-3.3.3.jar', '../libs/lwjgl-3.3.3-natives-windows.jar', '../libs/lwjgl-zstd-3.3.3.jar', '../libs/lwjgl-zstd-3.3.3-natives-windows.jar')))"
+          new = "implementation(jarJar(files('../libs/lwjgl-3.3.3.jar', '../libs/lwjgl-opencl-3.3.3.jar', '../libs/lwjgl-3.3.3-natives-windows.jar', '../libs/lwjgl-zstd-3.3.3.jar', '../libs/lwjgl-zstd-3.3.3-natives-windows.jar')))"
+          if old not in text:
+              raise SystemExit('Expected OpenCL jarJar declaration not found')
+          build.write_text(text.replace(old, new, 1))
+
+          cfg = Path('.tmpbuild/src/c2me_opts_accel_opencl/src/main/java/com/ishland/c2me/opts/accel/opencl/common/Config.java')
+          text = cfg.read_text()
+          pattern = r'(\.key\("openclAccel\.allowIncompatibilityFallback"\).*?\.getBoolean\()false, false(\);)'
+          text2, n = re.subn(pattern, r'\1true, true\2', text, count=1, flags=re.S)
+          if n != 1:
+              raise SystemExit('Failed to harden allowIncompatibilityFallback default')
+          cfg.write_text(text2)
+          PY
+
           curl -fsSLo .tmpbuild/gradle.zip https://services.gradle.org/distributions/gradle-8.8-bin.zip
           unzip -q .tmpbuild/gradle.zip -d .tmpbuild
           cd .tmpbuild/src
@@ -50,6 +72,9 @@ jobs:
           cd ../..
           DFC="$(find .tmpbuild/src/c2me_opts_dfc/build/libs -type f -name '*.jar' ! -name '*sources*' | head -1)"
           OCL="$(find .tmpbuild/src/c2me_opts_accel_opencl/build/libs -type f -name '*.jar' ! -name '*sources*' | head -1)"
+          echo '--- OpenCL module JarJar metadata before flattening ---'
+          unzip -p "$OCL" META-INF/jarjar/metadata.json || true
+          echo
           python3 tmp-c2me-build/assemble.py .tmpbuild/downloads/c2meF.jar "$DFC" "$OCL" .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar | tee .tmpbuild/out/BUILD-VERIFICATION.txt
           unzip -t .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar >> .tmpbuild/out/BUILD-VERIFICATION.txt
           mkdir -p .tmpbuild/out/config
