@@ -52,6 +52,17 @@ A reusable starter should not depend on whatever package becomes current on the 
 4. regenerate from a clean state;
 5. prove generated output, validation, capsules, ownership data and native build remain equivalent.
 
+### Observed proof that floating versions are already drifting
+
+This is no longer only a theoretical reproducibility concern. The primary npm package records changed between the previous 2026-08-17 documentation check and the current 2026-08-19 check:
+
+- Biome stable moved from **2.5.6** to **2.5.8**;
+- Vue stable moved from **3.5.40** to **3.5.41**.
+
+Vue is recorded explicitly in the recovered starter, so its movement is a normal candidate patch update rather than automatic runtime drift. Biome is different: the starter's floating dependency policy means a clean install performed later can resolve a different Biome version without any source change. That is direct evidence that `latest` weakens repeatability and makes two builds from the same starter archive capable of using different toolchain bytes.
+
+Treat lockfiles, exact resolved versions and the package-manager version as part of the generated artifact identity. A successful build is not enough if the same archive cannot be reproduced intentionally.
+
 ## Portable feature capsule system
 
 Preserve these capsule properties:
@@ -93,29 +104,48 @@ The included validation report records release scenarios as not run. Keep these 
 
 Do not compress them into one `done` state.
 
-## Current technology delta, checked 2026-08-17
+## Current technology delta, checked 2026-08-19
 
-Current primary package/release evidence shows:
+Current primary package evidence shows:
 
 - **Vite 8.2.2** versus starter 8.1.5;
 - **Tauri CLI 2.11.4** versus starter 2.11.1;
-- **Biome 2.5.6** while the starter floats `latest`;
+- **Biome 2.5.8** while the starter floats `latest`;
 - **TypeScript 7.0.2** versus starter 5.8.3;
 - **Vitest 4.1.10** versus starter 3.x;
-- Vue stable remains **3.5.40** in the recovered/current stable line while newer 3.6 packages are release candidates, not a reason to move the starter's stable baseline automatically.
+- **Vue 3.5.41** versus starter 3.5.40;
+- Vue **3.6.0-rc.2** remains a release candidate rather than the stable baseline;
+- Vitest **5.0.0-rc.1** is likewise a release candidate, not a reason to combine another major test-runner migration with the starter's baseline repair.
 
-This corrects the previous Vite 8.2.0 note to the current 8.2.2 line. These are migration candidates, not automatic upgrade instructions.
+These are migration candidates, not automatic upgrade instructions. The smallest current deltas are the Vue 3.5.41 stable patch, Biome 2.5.8 after version pinning, Tauri 2.11.4 and Vite 8.2.2. TypeScript 7 and Vitest 4 remain larger migration gates, while Vue 3.6 and Vitest 5 should stay outside the stable baseline until a deliberate pre-release evaluation is requested and independently qualified.
 
 ## Sequenced migration order
 
 1. establish a clean v0.1.0 baseline and native-build proof;
 2. correct `tauri-react` versus Vue metadata without changing runtime behavior;
-3. pin floating package/dependency declarations and prove reproducibility;
-4. evaluate paired Tauri CLI/API patch updates;
-5. evaluate Vite 8.2.x plus matching Vue plugin compatibility;
-6. migrate TypeScript 7 separately because it is a major compiler jump;
-7. migrate Vitest 4 separately because it is a major test-runner jump;
-8. rerun build, tests, Foundry validation, rehearsal, rollback, capsule lifecycle, native package, runtime and restart/persistence gates after each coherent migration.
+3. pin floating package/dependency declarations and the package-manager version, then prove reproducibility from a second clean install;
+4. evaluate Vue 3.5.41 and pinned Biome 2.5.8 as isolated stable patch updates;
+5. evaluate paired Tauri CLI/API patch updates;
+6. evaluate Vite 8.2.x plus matching Vue plugin compatibility;
+7. migrate TypeScript 7 separately because it is a major compiler jump;
+8. migrate Vitest 4 separately because it is a major test-runner jump;
+9. keep Vue 3.6 and Vitest 5 pre-release evaluation outside the stable baseline until their own acceptance pass is justified;
+10. rerun build, tests, Foundry validation, rehearsal, rollback, capsule lifecycle, native package, runtime and restart/persistence gates after each coherent migration.
+
+## Reproducible-build acceptance contract
+
+Before this starter can be promoted as a dependable generator reference, two clean environments using the same preserved source and lock state should prove:
+
+1. the same package-manager version is used;
+2. the same direct dependency versions are resolved;
+3. the same generated source and owned-file boundaries are produced;
+4. build/test/Foundry validation results agree;
+5. capsule install/upgrade/remove behavior agrees;
+6. rollback restores the same state;
+7. native Tauri output is functionally equivalent;
+8. differences are either byte-identical where deterministic output is expected or explicitly explained by signed/platform-specific build metadata.
+
+If a second clean install silently selects newer toolchain packages because of `latest`, the reproducibility gate fails even when both builds happen to compile.
 
 ## Anti-degradation requirements
 
@@ -136,8 +166,8 @@ A smaller generated scaffold is not an upgrade if it loses these contracts.
 
 ## Exact current next action
 
-**Correct the Vue/Tauri stack identity and floating-version reproducibility defects first, then prove the exact recovered starter through a fresh native Tauri build and complete Foundry validation/rehearsal/rollback/capsule lifecycle. After that, evaluate Tauri 2.11.4 and Vite 8.2.2 as isolated low-risk toolchain steps before separate TypeScript 7 and Vitest 4 migrations.**
+**Correct the Vue/Tauri stack identity and floating-version reproducibility defects first, then prove the exact recovered starter through two clean dependency resolutions plus a fresh native Tauri build and complete Foundry validation/rehearsal/rollback/capsule lifecycle. After the baseline is reproducible, evaluate Vue 3.5.41, pinned Biome 2.5.8, Tauri 2.11.4 and Vite 8.2.2 as isolated stable maintenance steps before separate TypeScript 7 and Vitest 4 migrations.**
 
 ## Wiki maintenance
 
-Update this page when stack metadata is corrected, floating versions are pinned, native build/runtime proof exists, validation/rehearsal scenarios are actually executed, capsule behavior changes, the generation version advances, or a downstream production app proves real integration.
+Update this page when stack metadata is corrected, floating versions are pinned, clean installs prove reproducibility, native build/runtime proof exists, validation/rehearsal scenarios are actually executed, capsule behavior changes, the generation version advances, or a downstream production app proves real integration. Preserve the original v0.1.0 evidence and resolved dependency identities as lineage.
