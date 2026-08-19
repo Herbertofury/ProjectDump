@@ -1,1 +1,1 @@
-Trigger build after outer JarJar flattening, LWJGL core packaging, and OpenCL fallback hardening.
+Trigger build after outer JarJar flattening, LWJGL core packaging, OpenCL fallback hardening, and corrected assembler invocation.
