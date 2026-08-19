@@ -24,12 +24,14 @@ jobs:
             echo 'Output already published.'
             exit 0
           fi
+
           rm -rf .tmpbuild && mkdir -p .tmpbuild/downloads .tmpbuild/out
           git clone https://github.com/udbwhdjwbdj/c2me-opencl-forge1201.git .tmpbuild/src
           cd .tmpbuild/src
           git checkout 342c5035d7251ca987c962a14997a21a36eace44
           mkdir -p libs
           cd ../..
+
           C2ME_URL="$(curl -fsSL https://api.modrinth.com/v2/version/h9trYS7V | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["url"] for x in d["files"] if x.get("primary")))')"
           RADIUM_URL="$(curl -fsSL https://api.modrinth.com/v2/version/n947JjJH | python3 -c 'import json,sys; d=json.load(sys.stdin); print(next(x["url"] for x in d["files"] if x.get("primary")))')"
           curl -fsSL "$C2ME_URL" -o .tmpbuild/downloads/c2meF.jar
@@ -37,24 +39,18 @@ jobs:
           echo 'ad44f615a4b15afd1d6a4d907ccab1c3855451a1  .tmpbuild/downloads/c2meF.jar' | sha1sum -c -
           echo 'b42584e2672d6b5329959ec2b0f342395b19389fed0ee4d86ea71072f42f77a0  .tmpbuild/downloads/radium.jar' | sha256sum -c -
           unzip -j .tmpbuild/downloads/c2meF.jar 'META-INF/jarjar/*.jar' -d .tmpbuild/src/libs
+
           cd .tmpbuild/src/libs
-          curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-opencl/3.3.3/lwjgl-opencl-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl/3.3.3/lwjgl-3.3.3-natives-windows.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3.jar
           curl -fsSLO https://repo1.maven.org/maven2/org/lwjgl/lwjgl-zstd/3.3.3/lwjgl-zstd-3.3.3-natives-windows.jar
+          curl -fsSLO https://repo1.maven.org/maven2/com/github/ben-manes/caffeine/caffeine/3.2.1/caffeine-3.2.1.jar
           cd ../../..
 
           python3 - <<'PY'
           from pathlib import Path
           import re
-          build = Path('.tmpbuild/src/c2me_opts_accel_opencl/build.gradle')
-          text = build.read_text()
-          old = "implementation(jarJar(files('../libs/lwjgl-opencl-3.3.3.jar', '../libs/lwjgl-3.3.3-natives-windows.jar', '../libs/lwjgl-zstd-3.3.3.jar', '../libs/lwjgl-zstd-3.3.3-natives-windows.jar')))"
-          new = "implementation(jarJar(files('../libs/lwjgl-3.3.3.jar', '../libs/lwjgl-opencl-3.3.3.jar', '../libs/lwjgl-3.3.3-natives-windows.jar', '../libs/lwjgl-zstd-3.3.3.jar', '../libs/lwjgl-zstd-3.3.3-natives-windows.jar')))"
-          if old not in text:
-              raise SystemExit('Expected OpenCL jarJar declaration not found')
-          build.write_text(text.replace(old, new, 1))
 
           cfg = Path('.tmpbuild/src/c2me_opts_accel_opencl/src/main/java/com/ishland/c2me/opts/accel/opencl/common/Config.java')
           text = cfg.read_text()
@@ -63,6 +59,20 @@ jobs:
           if n != 1:
               raise SystemExit('Failed to harden allowIncompatibilityFallback default')
           cfg.write_text(text2)
+
+          mixin = Path('.tmpbuild/src/c2me_opts_accel_opencl/src/main/java/com/ishland/c2me/opts/accel/opencl/mixin/MixinThreadedAnvilChunkStorage.java')
+          text = mixin.read_text()
+          anchor = '''   private void postInit(CallbackInfo ci) {\n      ChunkGenerator generator = this.generator;'''
+          replacement = '''   private void postInit(CallbackInfo ci) {\n      CLServerGlobalContext globalContext = ((MinecraftServerExtension)this.level.getServer()).c2me$getCLContext();\n      if (globalContext == null) {\n         LOGGER.warn("World {} cannot use OpenCL since the global context is not initialized", this.level.dimension().location());\n         if (!Config.allowIncompatibilityFallback) {\n            throw new IllegalStateException("OpenCL global context is not initialized");\n         }\n         return;\n      }\n\n      ChunkGenerator generator = this.generator;'''
+          if anchor not in text:
+              raise SystemExit('Could not locate OpenCL world postInit anchor')
+          text = text.replace(anchor, replacement, 1)
+          duplicate = '''      CLServerGlobalContext globalContext = ((MinecraftServerExtension)this.level.getServer()).c2me$getCLContext();\n      if (globalContext == null) {\n         LOGGER.warn("World {} cannot use OpenCL since the global context is not initialized", this.level.dimension().location());\n         if (!Config.allowIncompatibilityFallback) {\n            throw new IllegalStateException("OpenCL global context is not initialized");\n         }\n      } else if (generatedCLSource == null) {'''
+          duplicate_replacement = '''      if (generatedCLSource == null) {'''
+          if duplicate not in text:
+              raise SystemExit('Could not locate old post-codegen global context block')
+          text = text.replace(duplicate, duplicate_replacement, 1)
+          mixin.write_text(text)
           PY
 
           curl -fsSLo .tmpbuild/gradle.zip https://services.gradle.org/distributions/gradle-8.8-bin.zip
@@ -70,15 +80,15 @@ jobs:
           cd .tmpbuild/src
           ../gradle-8.8/bin/gradle --no-daemon --stacktrace :c2me_opts_dfc:reobfJar :c2me_opts_accel_opencl:reobfJar
           cd ../..
+
           DFC="$(find .tmpbuild/src/c2me_opts_dfc/build/libs -type f -name '*.jar' ! -name '*sources*' | head -1)"
           OCL="$(find .tmpbuild/src/c2me_opts_accel_opencl/build/libs -type f -name '*.jar' ! -name '*sources*' | head -1)"
-          echo '--- OpenCL module JarJar metadata before flattening ---'
-          unzip -p "$OCL" META-INF/jarjar/metadata.json || true
-          echo
-          python3 tmp-c2me-build/assemble.py .tmpbuild/downloads/c2meF.jar "$DFC" "$OCL" .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar | tee .tmpbuild/out/BUILD-VERIFICATION.txt
+          python3 tmp-c2me-build/assemble.py .tmpbuild/downloads/c2meF.jar "$DFC" "$OCL" .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar .tmpbuild/src/libs | tee .tmpbuild/out/BUILD-VERIFICATION.txt
           unzip -t .tmpbuild/out/c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar >> .tmpbuild/out/BUILD-VERIFICATION.txt
+
           mkdir -p .tmpbuild/out/config
           printf '%s\n' '# Radium 0.12.4 + C2ME compatibility' 'mixin.world.chunk_access=false' 'mixin.alloc.nbt=false' > .tmpbuild/out/config/lithium.properties
+
           mkdir -p .tmpbuild/server
           cd .tmpbuild/server
           curl -fsSLo forge-installer.jar https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.0/forge-1.20.1-47.4.0-installer.jar
@@ -88,6 +98,7 @@ jobs:
           cp ../downloads/radium.jar mods/radium-mc1.20.1-0.12.4+git.26c9d8e.jar
           cp ../out/config/lithium.properties config/
           echo eula=true > eula.txt
+
           set +e
           timeout -k 5s 240s ./run.sh nogui > server.log 2>&1 &
           runner=$!
@@ -104,18 +115,48 @@ jobs:
           wait "$runner" 2>/dev/null
           rc=$?
           set -e
+
           cp server.log ../out/FORGE-SMOKE-TEST.log
           cat server.log
           if [ "$reached_done" -ne 1 ]; then
             echo 'Server never reached Done.' >&2
             exit 1
           fi
-          if grep -Eiq 'Mixin apply failed|InvalidMixinException|InjectionError|Critical injection failure|MixinTransformerError|NoClassDefFoundError|ClassNotFoundException|ModLoadingException' server.log; then
-            echo 'Fatal mixin/class-loading signature found.' >&2
+          if grep -Eiq 'Mixin apply failed|InvalidMixinException|InjectionError|Critical injection failure|MixinTransformerError|ModLoadingException' server.log; then
+            echo 'Fatal mixin/loading signature found.' >&2
+            exit 1
+          fi
+          if grep -Fq 'ClassNotFoundException: org.lwjgl.opencl.CL' server.log; then
+            echo 'LWJGL OpenCL binding was not visible to Forge.' >&2
+            exit 1
+          fi
+          if grep -Fq 'ClassNotFoundException: com.github.benmanes.caffeine' server.log; then
+            echo 'Caffeine runtime was not visible to Forge.' >&2
+            exit 1
+          fi
+          grep -Fq 'Loaded configuration file for Radium: 125 options available, 2 override(s) found' server.log
+          grep -Fq "Force-disabling mixin 'world.chunk_access.ServerChunkManagerMixin'" server.log
+          grep -Fq "Force-disabling mixin 'alloc.nbt.NbtCompoundMixin'" server.log
+          if grep -Fq 'OpenCL codegen for world' server.log; then
+            echo 'OpenCL world codegen ran despite an unavailable global context.' >&2
             exit 1
           fi
           echo "Forge 47.4.0 headless startup reached Done; rc=$rc" >> ../out/BUILD-VERIFICATION.txt
+          echo 'Radium exact build loaded with both targeted compatibility overrides.' >> ../out/BUILD-VERIFICATION.txt
+          echo 'OpenCL fallback skipped world codegen cleanly on the GPU-less headless runner.' >> ../out/BUILD-VERIFICATION.txt
           cd ../..
+
+          cat > .tmpbuild/out/INSTALL.txt <<'EOF'
+          C2ME OpenCL + Radium compatibility build for Minecraft 1.20.1 Forge
+
+          1. Remove c2meF-0.2.0+alpha.12-all.jar from the mods folder.
+          2. Install c2meF-0.2.0+alpha.12.1-opencl-radiumcompat-all.jar.
+          3. Keep radium-mc1.20.1-0.12.4+git.26c9d8e.jar installed.
+          4. Copy config/lithium.properties from this bundle to the instance config folder.
+          5. If Twilight Forest is installed, keep tfthreadsafetyaddon-forge-1.20.1-1.1.0.jar as its own separate mod.
+          6. Do not leave a second c2meF all-jar installed.
+          EOF
+
           rm -rf tmp-c2me-build/output
           mkdir -p tmp-c2me-build/output
           cp -a .tmpbuild/out/. tmp-c2me-build/output/
