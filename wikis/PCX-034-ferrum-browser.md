@@ -4,15 +4,17 @@
 **Canonical repository:** [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser)
 **Canonical branch:** `main`
 **Verified project version:** `0.2.0`
-**Latest verified merged product commit:** `8ff1d85d26500f415c01b7de1753608c4d689f80`
-**Latest verified full Ferrum CI:** `32201388085`
+**Latest verified merged product commit:** `56879a6410f41b3142ad97f21d4ffefb9ca1b5d3`
+**Latest verified full Ferrum CI:** `32369906986`
+**Latest verified evidence-history benchmark:** `32369906922`
+**Latest verified toolchain:** Playwright `1.63.0-alpha-2026-08-20`, Electron `43.4.0`, `@electron/packager` `20.3.0`
 **Native Windows qualification commit:** `eb88b2149cf695edde2591e8e16d13bb43a90c8e`
 **Native Windows workflows:** Ferrum CI `32199800957`, Native Windows `32199800977`
 **Tauri v2 qualification commit:** `cf79303b8788d58fe274d7ce3e4a9b87d889c310`
 **Tauri qualification workflow:** `32194473469`
-**Latest observed main commit:** `dcff27b8c2a2b365aad43fff626fcf233cb3a969` (evolution ledger for run 33)
-**Earlier important verified product commits:** Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`; service parity `09c8334ef5b744afd8ca94732cd9c458744058fb`
-**Project state:** verified complete product checkpoint on main with later verified Tauri v2, native Windows WPF/UIA, and CI critical-path improvements
+**Latest observed main commit:** `13c5deffe4e7901fcfd4e26206ff8156d0525226` (verified STATUS synchronization after run 65 recovery validation)
+**Earlier important verified product commits:** CI critical path `8ff1d85d26500f415c01b7de1753608c4d689f80`; Playwright Aug-20 qualification `4068747e8c3fce19155cfe1087aa7cd534bba910`; Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`; service parity `09c8334ef5b744afd8ca94732cd9c458744058fb`
+**Project state:** verified complete product checkpoint on main with collision-safe evidence-history caching, current Playwright Aug-20 qualification, real Tauri v2 and native Windows coverage, and preserved broad CI/runtime fidelity
 
 ## Purpose
 
@@ -33,24 +35,39 @@ Ferrum is broader than a browser wrapper. The same deterministic test/evidence m
 
 Ferrum orchestrates real runtimes. A successful tool handshake, mock, rendered dashboard, or compilation is not a substitute for exercising the target application.
 
-## Current verified status, refreshed 2026-08-19
+## Current verified status, refreshed 2026-08-20
 
-The older `.agents-memory/STATUS.json` remains a valid verified product checkpoint but is not the newest additive evidence. Newer evolution checkpoints supersede it for the capabilities below without invalidating its prior matrix.
+The current `.agents-memory/STATUS.json` is synchronized through verified evolution run 65. The latest verified code commit is `56879a6410f41b3142ad97f21d4ffefb9ca1b5d3`, verified by Ferrum CI run `32369906986`. Later `main` commits through `13c5deffe4e7901fcfd4e26206ff8156d0525226` synchronize durable status and exact-head recovery validation; they do not supersede the run-65 product tree with a different implementation.
 
-The currently verified baseline toolchain remains:
+The currently verified baseline toolchain is:
 
-- Playwright **1.63.0-alpha-2026-08-17**;
+- Playwright **1.63.0-alpha-2026-08-20**;
 - Electron **43.4.0**;
 - `@electron/packager` **20.3.0**;
 - Node.js **24+**.
 
-The Playwright alpha is verified project state, not an unqualified freshness experiment. Exact proposal trees pass the affected acceptance surface before merge and project-memory promotion.
+The Playwright alpha is verified project state, not an unqualified freshness experiment. Evolution run 64 advanced the exact npm lock from the Aug-17 alpha to `1.63.0-alpha-2026-08-20`, retained Electron/packager versions, and added an Opera GX-specific `PLAYWRIGHT_LEGACY_SCREENSHOT=1` compatibility path only when the caller has not explicitly configured it. The exact proposal tree passed Ferrum CI, lock-integrity, Native Windows, Tauri WebDriver, service-fixture, stateful-API, and service-network-fault workflows before promotion.
+
+Evolution run 65 then fixed a correctness defect in the otherwise fast uncapped evidence-history cache. A same-size `agent-summary.json` rewrite could preserve the same observable filesystem stat tuple long enough for a stat-only cache to return stale parsed state. The merged repair keeps bounded 32-worker scans and cached parsing while making cache reuse collision-safe through platform-specific watchers, mutation epochs/rescans, and exact-byte fallback.
+
+The forced-collision acceptance intentionally reproduced the old defect: the legacy stat-only cache returned stale `passed` state, while the repaired cache returned the current `failed` bytes on both Linux and Windows. The 2,000-run evidence-history benchmark retained large performance gains versus direct reads:
+
+- Linux direct-read median/p95: **150.543 / 179.873 ms**;
+- Linux collision-safe median/p95: **62.670 / 71.249 ms**;
+- Linux gain: **58.37% median / 60.39% p95**;
+- Windows direct-read median/p95: **93.824 / 105.025 ms**;
+- Windows collision-safe median/p95: **42.616 / 46.844 ms**;
+- Windows gain: **54.58% median / 55.40% p95**.
+
+The repair was accepted only after the complete Ferrum severe runtime matrix remained green. Run-65 verification includes Ferrum CI `32369906986`, evidence benchmark `32369906922`, Perfetto compatibility `32369907019`, Playwright lock integrity `32369906884`, service fixture `32369906931`, stateful API `32369906942`, and service network-fault `32369906881`.
 
 The earlier MV3 product change at commit `7360184f154f9182f9d754126a0348d2b10b1738` remains an important verified milestone because it added CDP-confirmed Manifest V3 service-worker forced termination and on-demand recovery. Ferrum CI run `32088206572` verified that capability across unit/MCP Inspector/evidence integrity, Linux, Windows, browser/MV3/workload paths, Selenium Grid, packaged desktop, Lightpanda, and real Android/Appium.
 
 Ferrum subsequently added and verified:
 
 - bounded-parallel evidence-history scans with no result cap;
+- collision-safe evidence-history cache invalidation across same-stat rewrites;
+- current Playwright `1.63.0-alpha-2026-08-20` qualification with Opera GX-specific screenshot compatibility;
 - monotonic run-relative evidence timing and direct compact-result duration;
 - no implicit 400-element snapshot ceiling;
 - stable agent snapshot refs across DOM mutation and replacement;
@@ -60,6 +77,22 @@ Ferrum subsequently added and verified:
 - real Tauri v2 application qualification on Linux and Windows through the existing provider-neutral W3C runner;
 - real native Windows WPF/UIA qualification through two independent Appium 3 Windows drivers;
 - CI critical-path parallelization that retained all five Windows browsers while reducing the measured full CI wall clock from 349 seconds to 149 seconds in the verified comparison.
+
+### Latest verified evidence-history cache improvement
+
+Run 65 preserves the complete evidence-history behavior while removing stale-cache risk caused by filesystem stat collisions.
+
+The current `src/core/evidence-store.mjs` behavior is intentionally platform-aware:
+
+- evidence-history scans use **32 bounded workers** and retain every finalized run;
+- Linux and other supported non-Windows hosts use a non-persistent recursive watcher on the evidence root;
+- Windows uses non-recursive per-`agent-summary.json` file watchers after real Node 24.19.0 CI exposed recursive watcher instability during benchmark-tree teardown;
+- watcher events advance an epoch and invalidate affected cached summaries;
+- a list operation rescans when mutation is observed during the scan, with a bounded rescan limit of three attempts;
+- when watcher protection is unavailable or unhealthy, exact summary bytes are compared before same-stat cache reuse;
+- structured-clone isolation, malformed/incomplete skip behavior, deletion pruning, chronological output, and all evidence files remain preserved.
+
+Do not simplify this back to stat-only cache identity. The deterministic same-size/same-stat collision regression is now part of the correctness contract, and exact-byte fallback is the backstop when watcher coverage cannot be trusted.
 
 ### Latest verified CI critical-path improvement
 
@@ -244,12 +277,12 @@ Current `package.json` pins:
 
 ```text
 Node >= 24.0.0
-playwright 1.63.0-alpha-2026-08-17
+playwright 1.63.0-alpha-2026-08-20
 electron 43.4.0
 @electron/packager 20.3.0
 ```
 
-Electron 43.4.0 has passed the required real Linux + Windows Electron and packaged-desktop lanes.
+Electron 43.4.0 and Playwright `1.63.0-alpha-2026-08-20` have passed the required severe matrix on the exact promoted product tree. The Opera GX legacy-screenshot compatibility environment remains browser-specific and must not be broadened to other browsers without new evidence.
 
 Tauri and native Windows provider dependencies are CI/fixture qualifications rather than blanket Ferrum core dependencies. Keep them isolated to the relevant target workflow unless a measured requirement justifies promotion into the default installation.
 
@@ -324,8 +357,11 @@ Current package scripts include:
 npm test
 npm run smoke:web
 npm run smoke:extension
+npm run smoke:snapshot-delta
 npm run smoke:network
 npm run smoke:service-fixture
+npm run smoke:api-stateful
+npm run smoke:service-network-fault
 npm run smoke:webdriver
 npm run smoke:tauri
 npm run smoke:tauri-embedded
@@ -574,11 +610,26 @@ Current finalized events preserve the original wall-clock timestamp and also exp
 
 This timing path was verified as additive. It does not replace raw timestamps or discard full evidence.
 
-### Evidence history completeness and speed
+### Evidence history completeness, correctness, and speed
 
-Evidence-history summary scans now use bounded parallel I/O while retaining every finalized run. The implementation intentionally avoids hidden caps, pagination shortcuts, or cache staleness. Incomplete and malformed entries remain skippable without truncating valid finalized history.
+Evidence-history summary scans use bounded parallel I/O while retaining every finalized run. The implementation intentionally avoids hidden caps, pagination shortcuts, or stale-cache correctness compromises. Incomplete and malformed entries remain skippable without truncating valid finalized history.
 
-This matters to long-lived Ferrum installations where evidence history can grow large but still has to remain complete.
+Run 65 strengthened this guarantee after reproducing a subtle filesystem-stat collision: an `agent-summary.json` file could be rewritten to different same-size content while retaining the observable stat identity long enough for a stat-only cache to return stale parsed state.
+
+Current behavior:
+
+- scan concurrency is bounded at 32 workers;
+- Linux/other supported non-Windows hosts use a non-persistent recursive evidence-root watcher;
+- Windows uses per-summary file watchers;
+- watcher events advance a mutation epoch and invalidate affected cache entries;
+- scans settle watcher turns and retry when mutation is observed during a list operation, with three bounded scan attempts;
+- exact bytes are compared before same-stat cache reuse whenever watcher protection is unavailable or unhealthy;
+- cache returns use structured cloning so callers cannot mutate cached shared state;
+- deleted, incomplete, malformed, and finalized evidence remain handled without hidden caps or history truncation.
+
+The benchmark fixture contains 2,000 finalized runs and a deterministic forced stat-collision control. It proves both correctness and performance. The repaired cache returns current bytes where the legacy stat-only cache reproduces stale data, while remaining more than 50% faster at median and p95 than direct reads on both Linux and Windows in the recorded run.
+
+This matters to long-lived Ferrum installations because complete history must remain fast **and** exact. A faster history view that can return a stale pass/fail state is not an acceptable optimization.
 
 ## Evidence integrity
 
@@ -640,6 +691,8 @@ Current output retains:
 A faster run is not an improvement if it removes steps, diagnostics, evidence, restart proof, target coverage, failure visibility, or fidelity.
 
 The run-33 CI change follows the same rule: the measured wall-clock improvement is accepted only because all five Windows browsers and the prior required jobs remained green with retained artifacts.
+
+The run-65 evidence-history cache follows the same rule: its 50%+ recorded speedup is accepted only because the forced stat-collision fixture proves current bytes are returned and the entire severe runtime matrix remains green.
 
 ## GameSync integration
 
@@ -709,6 +762,8 @@ Project-owned status and evolution checkpoints preserve regression coverage for 
 - secret leakage risk at recursive evidence boundaries;
 - evidence IDs accepting unsafe dot-only aliases;
 - evidence-history scans serializing unnecessary I/O;
+- evidence-history stat-only cache reuse returning stale parsed state after a same-size/same-stat rewrite;
+- recursive evidence-root watcher instability on Windows benchmark teardown, corrected with per-summary watchers plus exact-byte fallback;
 - compact evidence lacking direct run-relative timing;
 - snapshots silently stopping at 400 qualifying elements;
 - snapshot refs being duplicated or silently retargeted after DOM mutation/replacement;
@@ -751,6 +806,8 @@ npm run smoke:dashboard
 
 Run Selenium Grid when remote WebDriver changes, the browser matrix when browser/runtime behavior changes, Lightpanda when that lane changes, the service fixture when process HTTP/service behavior changes, real Linux/Windows Electron and package acceptance when desktop/Electron changes, and real Appium when native/mobile behavior changes.
 
+For evidence-history/cache changes, run the targeted cache regressions and the cross-platform evidence-manifest benchmark in addition to normal convergence. Preserve the 2,000-run uncapped history fixture, forced same-stat collision control, Linux/Windows performance thresholds, exact-byte fallback, and severe full-runtime verification. Do not reduce history size, worker behavior, watcher coverage, or acceptance thresholds merely to make the benchmark pass.
+
 For Tauri changes, run the dedicated Tauri WebDriver workflow because it builds a pinned real Tauri application on Linux and Windows and verifies the embedded W3C provider. Preserve the official `tauri-driver` reference lane as diagnostic/reference evidence rather than silently substituting it for the required embedded Windows gate.
 
 For native Windows changes, run the dedicated Native Windows matrix and require both `DesktopDriver` and `NovaWindows` against the same deterministic WPF/UIA workload unless project-owned evidence deliberately revises the provider set.
@@ -766,6 +823,9 @@ Current project-owned direction includes:
 - keep forced MV3 worker termination/recovery in the extension regression surface;
 - keep complete uncapped snapshots and page-session ref identity as agent-facing correctness guarantees;
 - preserve exact-head severe CI promotion discipline for future stack changes;
+- preserve Playwright `1.63.0-alpha-2026-08-20` until a newer candidate passes the same exact affected matrix;
+- preserve collision-safe evidence-history caching, platform-appropriate watcher strategy, mutation-epoch rescans, and exact-byte fallback;
+- never restore stat-only evidence-summary reuse without defeating the deterministic collision regression;
 - keep Tauri v2 embedded WebDriver qualification on both Linux and Windows;
 - keep the two-provider native Windows differential so provider-specific assumptions remain visible;
 - evaluate compact Windows-native adapter ideas only against the same deterministic fixture and evidence contract;
@@ -789,4 +849,4 @@ Project-owned evidence supersedes stale Project Constellation wording.
 
 ## Wiki maintenance triggers
 
-Update this page whenever the verified commit/workflow, supported target matrix, Tauri qualification, native Windows provider matrix, CI scheduling/critical-path architecture, service-worker recovery/diagnostics, process/service HTTP capability, disposable service acceptance, snapshot completeness/ref semantics, evidence schema/history/timing, CLI/MCP contract, Workbench behavior, GameSync acceptance contract, Electron/Appium qualification, dependency pins, packaging status, GitHub Wiki automation, or project-owned next actions materially change.
+Update this page whenever the verified commit/workflow, supported target matrix, Playwright/toolchain qualification, evidence-history cache invalidation or benchmark contract, Tauri qualification, native Windows provider matrix, CI scheduling/critical-path architecture, service-worker recovery/diagnostics, process/service HTTP capability, disposable service acceptance, snapshot completeness/ref semantics, evidence schema/history/timing, CLI/MCP contract, Workbench behavior, GameSync acceptance contract, Electron/Appium qualification, dependency pins, packaging status, GitHub Wiki automation, or project-owned next actions materially change.
