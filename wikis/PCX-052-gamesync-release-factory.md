@@ -32,7 +32,7 @@ The repository explicitly separates:
 ### GameSync Next / Extension V2
 
 Repository: `Herbertofury/GameSync-Next`
-Current observed `main` head used for this wiki: `9e337c720f0180cffa577f140b181c699f0a1650`
+Current observed `main` head used for this wiki: `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`
 Extension V2 package version: **0.8.0**
 
 GameSync Next is a workspace-based migration repository. The Extension V2 workspace is `apps/extension-v2`; it uses WXT, TypeScript, React, and shared GameSync packages. The generated Chromium Manifest V3 build is referenced by the repository's verification tools at:
@@ -40,6 +40,8 @@ GameSync Next is a workspace-based migration repository. The Extension V2 worksp
 `apps/extension-v2/.output/chrome-mv3`
 
 This generated directory is a release/test input, not the canonical source tree.
+
+The current GameSync Next head is two commits ahead of the previous release-factory documentation baseline `9e337c720f0180cffa577f140b181c699f0a1650`. The merged delta materially expands the extension release surface with Universal Game Tracker, Bounty, Animation Tracker, new import/export dependencies, background alarms/message routing, UI routes, parity-matrix changes, and substantially expanded Opera verification.
 
 ## Shipping extension build pipeline
 
@@ -226,11 +228,76 @@ npm run test:extension-regression
 
 Use the checks relevant to the changed release surface. For broad extension changes, `test:extension-regression` combines the current MO2 and intelligence regression groups; the root package also exposes Playwright web, Chromium-extension, and Opera-extension smoke paths.
 
+### Current `test:e2e-opera` boundary
+
+`package.json` still declares:
+
+```text
+node opera-extension/app/tests/e2e.opera-gx.test.js
+```
+
+but that target file is absent at current main `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`. Therefore `npm run test:e2e-opera` must **not** be represented as a currently working release gate until its entrypoint is repaired or intentionally redirected to a maintained equivalent.
+
+For current Extension V2 release qualification, use the maintained `verify:extension-v2:opera` / `verify:opera` path and the Playwright extension lanes that resolve to present files. A missing legacy entrypoint is a release-factory defect to fix, not a reason to mark that check passed.
+
 A single passing build is not a substitute for the affected regression and runtime checks.
+
+## Current merged Extension V2 release surface
+
+The current main merge `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` materially broadens what an Extension V2 release must preserve compared with the previous wiki baseline.
+
+### Universal Game Tracker
+
+The merge adds a typed Game Tracker feature, Dexie-backed data model, UI routes, schema editor, record editor, relationship handling, and worker-owned import/export paths. Supported import/export code now includes DOCX, XLSX/XLS, CSV/TSV, JSON, Google Docs/Sheets export URLs, native Word dropdown extraction, and binary image handling.
+
+Extension V2 now directly depends on additional portability libraries including:
+
+- `docx` `^9.7.1`;
+- `linkedom` `^0.18.12`;
+- `mammoth` `^1.12.0`;
+- SheetJS `xlsx` from the explicit `0.20.3` CDN tarball.
+
+The lockfile changed with this merge. A release candidate must therefore be installed from the candidate lockfile and must not silently reuse a dependency tree from the earlier 9e337 baseline.
+
+Project-owned merge evidence records a clean isolated Opera run that imported both the supplied 43 MB local DOCX and a live Google Doc path independently. Each produced 181 active records, 75 relationships, and 124 schema-bound images; the UI exposed imported dropdown options and persisted an inline edit; JSON, XLSX, DOCX, and CSV exports completed and passed content checks. Treat these as project-owned verification evidence for the merged source, not as tests executed by this wiki-maintenance pass.
+
+### Bounty
+
+The merge adds typed Bounty contracts, service/background routing, reminder alarms, UI routing, and persistence. Project-owned merge evidence records a clean isolated Opera synchronization of 107 live GamerPower records with a healthy source state and rendered calendar.
+
+A release touching background bootstrap, alarms, runtime messaging, storage, or Bounty UI must preserve:
+
+- `BOUNTY_*` message routing;
+- reminder alarm creation and handling;
+- persisted Bounty state;
+- real source synchronization and visible failure state;
+- the exact runtime route in the built extension.
+
+### Animation Tracker
+
+The merge adds creator and pack contracts, HTTPS source validation, version detection/comparison, polling state, alarm handling, UI routes, and persistence. Project-owned merge evidence records an exact HTTPS source poll, semantic-version detection, and an available installed-pack update rendered without remounting the React root.
+
+A release touching the background bootstrap, route shell, storage, or network behavior must preserve the Animation Tracker alarm and polling lifecycle in addition to ordinary compilation.
+
+### Release-factory consequence
+
+The same merge modifies `apps/extension-v2/src/background/bootstrap.ts`, `App.tsx`, `docs/gamesync-parity-matrix.json`, the extension lockfile/dependency graph, and `scripts/verify-extension-v2-opera.js`. Release qualification for current main therefore needs to bind the candidate source SHA to all of the following rather than relying on an older 0.8.0 smoke result:
+
+1. fresh `npm ci` from the current lockfile;
+2. fresh Extension V2 build plus offscreen-runtime verification;
+3. current parity audit after generated output is rebuilt;
+4. current Opera verifier against the generated `.output/chrome-mv3` candidate;
+5. import/export round-trip evidence for Game Tracker when that surface is in scope;
+6. Bounty source/alarm/persistence evidence when Bounty or shared background code is in scope;
+7. Animation Tracker poll/alarm/persistence evidence when Animation or shared background code is in scope;
+8. extension identity and same-ID upgrade proof for migration releases;
+9. final ZIP hash/size and dual-destination remote byte verification when a release artifact is published.
 
 ## Secret scanning and credential boundary
 
 The shipping repository currently has a GitHub Actions `Secret scan` workflow that runs on push, pull request, and manual dispatch. It checks out full history and runs Gitleaks using `.gitleaks.toml`.
+
+GameSync Next current main also contains a `secret-scan.yml` workflow. Release bookkeeping should record which repository and exact source commit supplied the security scan evidence instead of treating a passing scan from the sibling repository as interchangeable.
 
 The repository README also states that Steam, Nexus Mods, Twitch, and other user-provided credentials are stored at runtime in browser-managed extension storage and are not bundled into `app/` or `dist/`.
 
@@ -240,9 +307,9 @@ Before publication, inspect the exact candidate archive/directory rather than as
 
 ## Signed build provenance and artifact attestations
 
-GitHub's current artifact-attestation path can add cryptographically signed build provenance to GameSync release artifacts without replacing any existing release gate. GitHub Actions can generate attestations using `actions/attest@v4` with `id-token: write`, `contents: read`, and `attestations: write`; the final publishable ZIP or binary is supplied as the attestation subject. GitHub also supports signed SPDX or CycloneDX SBOM attestations for the same artifact.
+GitHub's current artifact-attestation path can add cryptographically signed build provenance to GameSync release artifacts without replacing any existing release gate. GitHub Actions currently documents `actions/attest@v4` with `id-token: write`, `contents: read`, and `attestations: write`; the final publishable ZIP or binary is supplied as the attestation subject. GitHub also supports signed SPDX or CycloneDX SBOM attestations for the same artifact.
 
-For public repositories, GitHub-backed attestations use Sigstore-backed signing and are intended to let consumers verify where and how the artifact was built. The corresponding verification command is:
+For public repositories, GitHub-backed attestations use the Sigstore Public Good Instance and are intended to let consumers verify where and how the artifact was built. The corresponding verification command is:
 
 ```text
 gh attestation verify PATH/TO/ARTIFACT -R OWNER/REPOSITORY
@@ -317,10 +384,11 @@ This prevents a source commit, generated folder, ZIP, attestation, and remotely 
 6. Run `npm run audit:gamesync-parity` for migration/parity-sensitive releases.
 7. Run `npm --workspace apps/extension-v2 run verify:same-id-upgrade` when claiming a safe upgrade from the shipping extension.
 8. Run `npm run verify:extension-v2:opera` for the real Opera build/runtime lane when available.
-9. Run relevant Playwright and extension regression suites.
-10. If packaging a release ZIP, run `npm --workspace apps/extension-v2 run zip` only after the candidate build and checks correspond to the source revision being released.
-11. Record the final ZIP hash/size, generate and verify build provenance for those exact bytes when using the GitHub Actions release lane, and keep the attestation subject digest in the release ledger.
-12. Publish the same verified bytes to the intended GitHub and Drive destinations and re-download/hash both before declaring the release durable.
+9. Run relevant Playwright and extension regression suites. Do not count the currently broken `test:e2e-opera` legacy entrypoint as a pass.
+10. For current main, add the Game Tracker/Bounty/Animation feature-specific qualification described above when the candidate touches those features or shared background/UI/storage code.
+11. If packaging a release ZIP, run `npm --workspace apps/extension-v2 run zip` only after the candidate build and checks correspond to the source revision being released.
+12. Record the final ZIP hash/size, generate and verify build provenance for those exact bytes when using the GitHub Actions release lane, and keep the attestation subject digest in the release ledger.
+13. Publish the same verified bytes to the intended GitHub and Drive destinations and re-download/hash both before declaring the release durable.
 
 ## Modifying the release factory
 
@@ -370,6 +438,18 @@ Treat this as a release blocker for an upgrade claim. Determine whether extensio
 
 Treat that as a build-dependency defect rather than preserving generated output to make the test pass. The current repository history already hardened the audit to rebuild Extension V2 before reading generated manifest output.
 
+### `npm run test:e2e-opera` fails with a missing file
+
+At current main this is an expected repository defect because the declared `opera-extension/app/tests/e2e.opera-gx.test.js` entrypoint is absent. Use the maintained current verifier/Playwright paths for actual release evidence, record the legacy gate as unresolved, and repair the package script separately rather than suppressing the failure.
+
+### Game Tracker import/export passes locally but fails after packaging
+
+Verify that the candidate was installed from the exact current lockfile, that worker-owned portability modules are present in the generated extension, and that the build being loaded is the exact `.output/chrome-mv3` candidate. The current merge adds `docx`, `mammoth`, `linkedom`, and SheetJS dependencies plus worker-owned DOCX/spreadsheet/export paths, so stale dependency or generated-output reuse can create false local confidence.
+
+### Bounty or Animation works until browser/service-worker restart
+
+Check that the current build preserved background bootstrap message routing, alarm creation, alarm listeners, and persisted state. Treat a release that only works in the initial live service worker as incomplete.
+
 ### Secret scan fails
 
 Inspect the finding and remove the sensitive material from the candidate/history as appropriate. Do not disable the Gitleaks release guard merely to publish.
@@ -384,18 +464,21 @@ The ZIP is not sufficient release proof. Rebuild from a known source revision, t
 
 ## Verification boundary for this wiki
 
-This page documents the **current repository-declared release and verification mechanisms** plus a sourced GitHub artifact-attestation proposal. During this documentation pass, the repositories were inspected remotely; this pass did not execute npm builds, launch Opera GX, generate a new ZIP, create a GameSync artifact attestation, or publish a GameSync product release. Commands above are included only when present in current project-owned source or current GitHub documentation.
+This page documents the **current repository-declared release and verification mechanisms**, current merged Extension V2 release-surface evidence, and a sourced GitHub artifact-attestation proposal. During this documentation pass, the repositories were inspected remotely and current GitHub documentation was revalidated; this pass did not execute npm builds, launch Opera GX, generate a new ZIP, create a GameSync artifact attestation, or publish a GameSync product release.
 
-The two source baselines inspected were shipping GameSync 0.6.3 at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` and GameSync Next at `9e337c720f0180cffa577f140b181c699f0a1650`, with Extension V2 declaring version 0.8.0.
+The two source baselines inspected were shipping GameSync 0.6.3 at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` and GameSync Next at `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`, with Extension V2 declaring version 0.8.0.
+
+Project-owned commit evidence for `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` records the Universal Game Tracker, Bounty, and Animation Tracker isolated-Opera acceptance summarized above. Those are retained as project evidence, not re-labeled as tests executed during this wiki-maintenance pass.
 
 ## Wiki maintenance triggers
 
 Update this page when any of the following materially changes:
 
 - shipping GameSync version or build layout;
-- Extension V2 version, WXT layout, or output directory;
+- Extension V2 current main head, version, WXT layout, or output directory;
+- Game Tracker, Bounty, Animation Tracker, or another release-critical feature changes the lockfile, background bootstrap, route shell, parity matrix, or Opera verifier;
 - extension identity or same-ID migration logic;
-- build, ZIP, parity, lint, regression, Playwright, or Opera verification commands;
+- build, ZIP, parity, lint, regression, Playwright, legacy E2E, or Opera verification commands;
 - artifact-attestation action/version, provenance policy, SBOM predicate, or verification workflow;
 - release/publishing destination;
 - generated artifact naming/layout;
