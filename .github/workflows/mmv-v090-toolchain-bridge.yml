@@ -126,12 +126,21 @@ jobs:
           curl --fail --location --retry 5 --retry-all-errors \
             https://maven.neoforged.net/releases/net/neoforged/neoform/maven-metadata.xml \
             -o "$seeds/neoform-maven-metadata.xml"
-          jq -e '.versions | type == "array" and length > 500 and .[0].id != null' "$seeds/mojang-version-manifest-v2.json" >/dev/null
-          jq -e '.game | type == "array" and length > 100 and .loader | type == "array" and length > 1' "$seeds/fabric-meta-v2-versions.json" >/dev/null
-          jq -e '.game | type == "array" and length > 100 and .loader | type == "array" and length > 1' "$seeds/quilt-meta-v3-versions.json" >/dev/null
-          jq -e '.promos | type == "object" and length > 100' "$seeds/forge-promotions-slim.json" >/dev/null
+          jq -e '(.versions | type == "array" and length > 500 and .[0].id != null)' "$seeds/mojang-version-manifest-v2.json" >/dev/null
+          jq -e '(.game | type == "array" and length > 100) and (.loader | type == "array" and length > 1)' "$seeds/fabric-meta-v2-versions.json" >/dev/null
+          jq -e '(.game | type == "array" and length > 100) and (.loader | type == "array" and length > 1)' "$seeds/quilt-meta-v3-versions.json" >/dev/null
+          jq -e '(.promos | type == "object" and length > 100)' "$seeds/forge-promotions-slim.json" >/dev/null
           grep -q '<metadata>' "$seeds/neoforge-maven-metadata.xml"
           grep -q '<metadata>' "$seeds/neoform-maven-metadata.xml"
+          jq -n \
+            --argjson mojang "$(jq '.versions | length' "$seeds/mojang-version-manifest-v2.json")" \
+            --argjson fabricGame "$(jq '.game | length' "$seeds/fabric-meta-v2-versions.json")" \
+            --argjson fabricLoader "$(jq '.loader | length' "$seeds/fabric-meta-v2-versions.json")" \
+            --argjson quiltGame "$(jq '.game | length' "$seeds/quilt-meta-v3-versions.json")" \
+            --argjson quiltLoader "$(jq '.loader | length' "$seeds/quilt-meta-v3-versions.json")" \
+            --argjson forgePromos "$(jq '.promos | length' "$seeds/forge-promotions-slim.json")" \
+            '{mojangVersions:$mojang,fabricGameVersions:$fabricGame,fabricLoaders:$fabricLoader,quiltGameVersions:$quiltGame,quiltLoaders:$quiltLoader,forgePromotions:$forgePromos}' \
+            > /tmp/mmv-v090-bridge/output/KNOWLEDGE-SEEDS-STATS.json
           sha256sum "$seeds"/* > /tmp/mmv-v090-bridge/output/KNOWLEDGE-SEEDS-SHA256.txt
 
       - name: Final bridge manifest
@@ -142,6 +151,7 @@ jobs:
           sha256sum go1.27.0.linux-amd64.tar.gz modernc-sqlite-v1.57.0-vendor.tar.gz go.mod go.sum SQLITE-RUNTIME-VERIFICATION.txt > BRIDGE-SHA256.txt
           find . -maxdepth 2 -type f -printf '%P %s\n' | sort > BRIDGE-CONTENTS.txt
           cat BRIDGE-CONTENTS.txt
+          cat KNOWLEDGE-SEEDS-STATS.json
           cat BRIDGE-SHA256.txt
 
       - name: Upload verified bridge
