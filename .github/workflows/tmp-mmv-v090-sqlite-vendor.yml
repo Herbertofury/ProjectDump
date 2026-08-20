@@ -1,4 +1,5 @@
 # Temporary public runner workflow for Minecraft Mod Vault v0.9.0.
+# The artifact is independently verified before use and this branch is never merged.
 name: MMV v0.9.0 SQLite vendor bundle
 
 on:
