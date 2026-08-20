@@ -1,6 +1,6 @@
 # Temporary public runner workflow for Minecraft Mod Vault v0.9.0.
-# The artifact is independently verified before use and this branch is never merged.
-name: MMV v0.9.0 SQLite vendor bundle
+# The artifacts are independently verified before use and this branch is never merged.
+name: MMV v0.9.0 modernc SQLite and Go toolchain bundle
 
 on:
   pull_request:
@@ -14,9 +14,9 @@ permissions:
   contents: read
 
 jobs:
-  vendor:
+  bundle:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -25,11 +25,25 @@ jobs:
           go-version: '1.27.0'
           check-latest: true
 
-      - name: Build and verify SQLite vendor bundle
+      - name: Download and verify official Go 1.27.0 toolchain
         shell: bash
         run: |
           set -euo pipefail
-          ROOT="$RUNNER_TEMP/mmv-sqlite-bundle"
+          ROOT="$RUNNER_TEMP/mmv-toolchain"
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT"
+          cd "$ROOT"
+          curl --fail --location --retry 5 --retry-all-errors \
+            https://dl.google.com/go/go1.27.0.linux-amd64.tar.gz \
+            --output go1.27.0.linux-amd64.tar.gz
+          echo '675c26c449cbb18fc24b74650de1eabbae6e16f64326fd85a283fb3b58280685  go1.27.0.linux-amd64.tar.gz' | sha256sum -c --strict
+          tar -tzf go1.27.0.linux-amd64.tar.gz >/dev/null
+
+      - name: Build and verify modernc SQLite 1.57.0 vendor bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/mmv-modernc-bundle"
           rm -rf "$ROOT"
           mkdir -p "$ROOT"
           cd "$ROOT"
@@ -44,41 +58,52 @@ jobs:
           import (
             "database/sql"
             "fmt"
-            _ "github.com/ncruces/go-sqlite3/driver"
+            _ "modernc.org/sqlite"
           )
 
           func main() {
-            db, err := sql.Open("sqlite3", "file:smoke.db?_pragma=foreign_keys(1)")
+            db, err := sql.Open("sqlite", "file:smoke.db?_pragma=foreign_keys(1)&_pragma=journal_mode(WAL)")
             if err != nil { panic(err) }
             defer db.Close()
             if _, err = db.Exec(`CREATE TABLE facts(id INTEGER PRIMARY KEY, title TEXT NOT NULL, body TEXT NOT NULL); CREATE VIRTUAL TABLE facts_fts USING fts5(title, body, content='facts', content_rowid='id'); INSERT INTO facts VALUES (1, 'Minecraft', 'version migration graph'); INSERT INTO facts_fts(rowid, title, body) SELECT id, title, body FROM facts;`); err != nil { panic(err) }
-            var version string
+            var version, journal string
             var count int
             if err = db.QueryRow(`SELECT sqlite_version()`).Scan(&version); err != nil { panic(err) }
+            if err = db.QueryRow(`PRAGMA journal_mode`).Scan(&journal); err != nil { panic(err) }
             if err = db.QueryRow(`SELECT count(*) FROM facts_fts WHERE facts_fts MATCH 'migration'`).Scan(&count); err != nil { panic(err) }
-            if count != 1 { panic("FTS5 smoke query failed") }
-            fmt.Printf("sqlite=%s fts5=%d\n", version, count)
+            if count != 1 || journal != "wal" { panic("SQLite WAL/FTS5 smoke query failed") }
+            fmt.Printf("sqlite=%s journal=%s fts5=%d\n", version, journal, count)
           }
           EOF
-          go get github.com/ncruces/go-sqlite3/driver@v0.34.3
+          go get modernc.org/sqlite@v1.57.0
           go mod tidy
           go mod vendor
           go run . | tee SQLITE-SMOKE.txt
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -buildvcs=false -o sqlite-smoke-linux .
           CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -trimpath -buildvcs=false -o sqlite-smoke-windows.exe .
           sha256sum go.mod go.sum SQLITE-SMOKE.txt sqlite-smoke-linux sqlite-smoke-windows.exe > SHA256SUMS.txt
-          rm -f smoke.db
+          rm -f smoke.db smoke.db-shm smoke.db-wal
           mkdir bundle
           cp -a vendor go.mod go.sum SQLITE-SMOKE.txt SHA256SUMS.txt bundle/
-          tar --sort=name --mtime='2026-08-20 00:00:00 UTC' --owner=0 --group=0 --numeric-owner -czf mmv-v090-sqlite-vendor.tar.gz -C bundle .
-          sha256sum mmv-v090-sqlite-vendor.tar.gz > mmv-v090-sqlite-vendor.tar.gz.sha256
+          tar --sort=name --mtime='2026-08-20 00:00:00 UTC' --owner=0 --group=0 --numeric-owner -czf mmv-v090-modernc-vendor.tar.gz -C bundle .
+          sha256sum mmv-v090-modernc-vendor.tar.gz > mmv-v090-modernc-vendor.tar.gz.sha256
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload modernc vendor bundle
+        uses: actions/upload-artifact@v4
         with:
-          name: mmv-v090-sqlite-vendor
+          name: mmv-v090-modernc-vendor
           path: |
-            ${{ runner.temp }}/mmv-sqlite-bundle/mmv-v090-sqlite-vendor.tar.gz
-            ${{ runner.temp }}/mmv-sqlite-bundle/mmv-v090-sqlite-vendor.tar.gz.sha256
+            ${{ runner.temp }}/mmv-modernc-bundle/mmv-v090-modernc-vendor.tar.gz
+            ${{ runner.temp }}/mmv-modernc-bundle/mmv-v090-modernc-vendor.tar.gz.sha256
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload exact official Go toolchain
+        uses: actions/upload-artifact@v4
+        with:
+          name: go1.27.0-linux-amd64
+          path: ${{ runner.temp }}/mmv-toolchain/go1.27.0.linux-amd64.tar.gz
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
