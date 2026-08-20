@@ -2,12 +2,13 @@
 
 **Project Constellation ID:** `PCX-044`  
 **Status:** ACTIVE / TRACKED  
-**Strongest verified ecology artifact:** `Feature Foundry V33 - Recovered Ecology`  
-**Verified build ID:** `V33-RECOVERED-ECOLOGY-OUTSIDE-BOX`  
-**Verified artifact SHA-256:** `83aac630afa4e6522d28452bb6a7c0ebe183eee6812b89b6d742662876af06ec`  
-**Verified release ZIP SHA-256:** `680978a3aa8f16b47e767720ebfdc3b89fda5c148c5f3d4d3f308390b09385d9`  
-**Canonical V33 Drive HTML:** file ID `1QL4u4MTrpATCVQxFrt4scEq32ky8hqvk`  
-**Canonical V33 Drive ZIP:** file ID `1_mLbBXiS0yL7g2cKP7qQJxqyyRHP4RSY`
+**Current canonical production repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)  
+**Current released product line:** `v24.0.0`  
+**Current verified repository head:** `e1ba080b5c7590f1c844a6ed13b3a471709920b9`  
+**Current production ecology owners:** `src/world/ObjectEcologyLayer.ts`, `src/world/ThemeDirector.ts`, `src/world/CinematicWorld.ts`, `src/premium.ts`  
+**Historical high-confidence ecology benchmark:** `Feature Foundry V33 - Recovered Ecology` / `V33-RECOVERED-ECOLOGY-OUTSIDE-BOX`  
+**Historical V33 artifact SHA-256:** `83aac630afa4e6522d28452bb6a7c0ebe183eee6812b89b6d742662876af06ec`  
+**Historical V33 release ZIP SHA-256:** `680978a3aa8f16b47e767720ebfdc3b89fda5c148c5f3d4d3f308390b09385d9`
 
 ## Purpose
 
@@ -19,7 +20,150 @@ The core contract is:
 
 The subsystem is not allowed to make performance appear better by removing authored entities, hiding off-screen content, reducing collection quantity, silently changing factual state, or substituting decorative animation for a real state transition.
 
-## Source authority and recovery lineage
+## Current authority model
+
+Living Ecology now has two verified authority lanes that must remain distinct.
+
+### Current production implementation: Feature Foundry v24.0.0
+
+The canonical production repository is `Herbertofury/Feature-Foundry`. Current `main` is a complete released TypeScript 7 + Vite 8 + Three.js/WebGL + Tauri 2/Rust application, not a placeholder or recovery shell. Its project-owned build record identifies v24.0.0 as released and records successful V24 contract, data-authority, TypeScript, Rust, production-build, and 1536x1024 browser interaction/screenshot verification.
+
+For current implementation, install, modification, build, package, runtime diagnostics, and release work, use this repository and release line first.
+
+Current production ecology is owned by:
+
+- `src/world/ObjectEcologyLayer.ts` for object spawning, selection, pointer dragging, throwing, keyboard movement, reactions, media/music affordance routing, pulse behavior, and ecology diagnostics;
+- `src/world/ThemeDirector.ts` for the 17 verified V33-derived runtime worlds plus 10 artist worlds, room/weather/object presentation, theme persistence, world switching, Theme Atlas, and object affordance dispatch;
+- `src/world/CinematicWorld.ts` for the continuously rendered Three.js world layer;
+- `src/premium.ts` for cross-system world signals, diagnostics, browser/native snapshot behavior, room/theme/media/music/ecology event routing, fullscreen, and native-shell integration;
+- `src/data/theme-world-packages.json` and `src/world/themeCatalog.ts` for current theme/world/object authority;
+- `src-tauri/` for native persistence, SQLite authority, snapshots, and desktop packaging.
+
+### Historical V33 ecology benchmark
+
+V33 remains a high-confidence runnable non-regression benchmark and preserves ecology capabilities that are more explicitly instrumented than the current v24 production implementation, including Evolution Lab, quality tiers, transition depth, bounded causal-signal history, replay, host-adapter fixtures, material-memory presentation channels, and the older standalone verification matrices.
+
+Current v24 intentionally consumes the V33 runtime catalog authority rather than discarding it. V33 should therefore remain available for regression comparison, but it is no longer the default maintainable production-source authority.
+
+Do not infer that every V33 Evolution Lab control or host-adapter fixture ships unchanged in v24 unless current v24 source or runtime verification proves it. Conversely, do not describe V33 as the newest production source now that the released v24 repository exists.
+
+## Current v24 production ecology
+
+### Verified catalog and world authority
+
+Current repository tests require:
+
+- 17 approved V33-derived theme packages;
+- 34 rooms across those packages;
+- 85 exact ecology objects, five per approved theme;
+- 17 weather systems;
+- 10 current artist worlds across Frawgy, Lightweaverart, Dreamrelicc, Karoline Georges, and saveroom;
+- 27 total worlds in Theme Atlas verification coverage.
+
+The current authority test fails if those counts or approved theme IDs drift. It also verifies the paired artist-world database and native SQLite command surface.
+
+### Object ecology runtime
+
+`ObjectEcologyLayer` materializes every object in the active theme as an interactive button inside the left or right living-world lane. Current source does not use viewport admission, object-count slicing, or a near-viewport render cap for the active theme's ecology actors.
+
+Each actor carries stable object metadata through `data-object-id`, shape and material attributes, an accessible label, visible object name, and the authored affordance list. The runtime supports:
+
+- pointer selection;
+- pointer capture during drag;
+- live x/y movement;
+- velocity tracking;
+- bounded drag positions inside the owning lane;
+- release-to-throw behavior;
+- gravity, damping, wall/floor restitution, and settle detection;
+- keyboard activation with Enter or Space;
+- keyboard movement with arrow keys and a larger Shift step;
+- visual activation/reaction state;
+- media-surface routing for screen/video affordances;
+- Music Hub routing for music/note affordances;
+- generic `ff:object-ecology-action` dispatch for other authored interactions;
+- a world pulse method used by broader living-world reactions;
+- diagnostics reporting the active theme, actor count, selected actor, and moving actor count.
+
+Current source keeps object identity separate from placement state. The actor map is keyed by the authored object record ID, while x/y/velocity/drag state remain runtime placement state.
+
+### Theme and room routing
+
+`ThemeDirector` keeps current theme selection under `ff.premium-theme.v1`, exposes separate V33-runtime and artist-world authority lanes, and populates Theme Atlas from the full current catalog rather than flattening the two sources together.
+
+Applying a theme updates the active premium-theme identity, palette, room list, weather list, object summary, mascot label, soundtrack summary, and room/weather selectors, then emits `ff:premium-theme-change`. Room selection emits `ff:premium-room-change`. The object ecology reloads from the selected theme's exact object list.
+
+Theme Atlas object controls route screen/video objects to Living Screen Studio, music/note objects to Music Hub, and other objects to the ecology action bus. A rendered affordance therefore has a real runtime consumer rather than being a decorative label.
+
+### World reaction bus
+
+The current premium runtime connects ecology to the surrounding world instead of leaving object interactions isolated. Theme changes, room changes, music signals, media signals, and object-ecology actions pulse the Three.js world and the ecology actors through the shared `signalWorld()` path.
+
+`window.render_game_to_text()` exposes current runtime state including theme lineage, world mode/view, object snapshots, ecology diagnostics, selected state, mascots, runtime diagnostics, catalog diagnostics, Theme Director state, Music Hub state, media-surface state, pointer position, last interaction, native profile/catalog state, and snapshot status. This provides a machine-readable qualification surface for agents and automated tests.
+
+### Browser and native snapshots
+
+`Ctrl+S` saves a world snapshot. In the browser build the runtime stores the rendered diagnostic state under `ff.browser-snapshot.v1`. In the Tauri build it invokes the native `save_world_snapshot` command and reports `saving`, `saved`, or `error` state rather than hardcoding success.
+
+The native shell also retrieves runtime-profile and catalog-summary information through Tauri commands when available.
+
+### Current build and verification commands
+
+From the canonical v24 repository:
+
+```powershell
+npm install
+npm run dev
+npm run verify
+npm run desktop:build
+npm run package
+```
+
+For native development:
+
+```powershell
+npm run desktop:dev
+```
+
+The declared `verify` chain runs:
+
+1. exact V24 contract tests;
+2. catalog/artist-world/provider/native-authority tests;
+3. TypeScript type checking;
+4. optimized Vite production build;
+5. `cargo check` against `src-tauri/Cargo.toml`;
+6. the Playwright browser UI test.
+
+The current UI fixture runs at 1536x1024 and verifies the left/center/right living shell, a procedural world canvas at least 1300x850, exactly five active ecology actors for the current V33-derived theme, Frawgy world switching, 27 Theme Atlas cards, Music Hub provider controls, media-surface URL validation, runtime diagnostics, and zero page errors.
+
+### Current v24 source layout
+
+The production ecology-relevant tree is:
+
+```text
+src/
+  premium.ts
+  data/
+    theme-world-packages.json
+    artist-worlds-v4.0.1.json
+  world/
+    CinematicWorld.ts
+    ObjectEcologyLayer.ts
+    ThemeDirector.ts
+    themeCatalog.ts
+  media/
+  music/
+src-tauri/
+  src/
+tests/
+  contract.test.ts
+  authority.test.ts
+  ui.test.ts
+scripts/
+```
+
+The original V24 imperative runtime remains preserved inside the compatibility layer and protected by an exact source-contract test. Current premium ecology code is layered around that contract rather than silently replacing it.
+
+## Historical V33 source authority and recovery lineage
 
 The current verified ecology implementation is V33. Its durable checkpoint records this lineage:
 
@@ -177,7 +321,6 @@ gamesync:feature-foundry:evolution:v33
 Keeping the storage layers separate is intentional. The ecology layer augments the preserved product rather than silently becoming the owner of all Feature Foundry state.
 
 ## Evolution Lab navigation
-
 Evolution Lab is a real top-level workspace, not a modal or decorative overlay. Its verified panels are:
 
 1. Library Ecology
@@ -191,7 +334,7 @@ Deep-link state uses query parameters:
 
 ```text
 ffv33=evolution
-ffv33panel=<panel-id>
+ffv33panel=\<panel-id>
 ```
 
 Browser Back and Forward were verified to leave and restore Evolution Lab without losing the underlying Feature Foundry route. Direct URL entry into a specific Evolution Lab panel is also covered by the runtime test.
@@ -385,7 +528,7 @@ Each theme can persist:
 - selected provider;
 - optional soundtrack URL mapping.
 
-External navigation validates `http:` or `https:` before calling `window.open(..., "noopener,noreferrer")`.
+External navigation validates `http:` or `https:` before calling `window.open(.., "noopener,noreferrer")`.
 
 The verified capability boundary is important: V33 performs real provider navigation and persists real mappings, but it does not claim authenticated remote playback or pretend that a local preview control started a remote music session.
 
@@ -641,14 +784,42 @@ The current Python fixture launches Chromium from `/usr/bin/chromium`. Verify Ch
 
 ## Known boundaries
 
+- v24.0.0 is now the current maintainable production source for Living Ecology. V33 is retained as a historical high-confidence benchmark, not the default source tree.
+- Current v24 verifies the active theme's five ecology actors and the broader production world shell, but its current UI fixture does not independently replay every V33 Evolution Lab quality-tier, causal-history, host-adapter, or transition-depth assertion. Keep those V33 claims historical until equivalent v24 tests prove them.
+- The current production object runtime verifies drag/throw/keyboard/affordance implementation from source and broad browser UI qualification, but source presence alone is not a substitute for adding focused interaction regressions when object-physics behavior changes.
+
 - V33 is the strongest verified runnable ecology artifact, but it is not the newest maintainable Feature Foundry production-source lineage overall. PCX-043 separately tracks the newer V2 recovery source line.
 - The 12-item collection is a normalized host-adapter verification fixture, not a production library-size limit.
 - Five host adapters are verified inside the artifact; they are not proof that five external production applications already consume the ecology engine.
-- Six soundtrack providers are real destinations and persisted mappings; authenticated remote playback is not claimed.
+- Six soundtrack providers ar real destinations and persisted mappings; authenticated remote playback is not claimed.
 - The causal rare-event 1-in-9 cadence is deterministic verification/authoring behavior, not a universal production ranking algorithm.
 - Material memory affects presentation only and must not mutate factual user/library data.
 
-## Current verified checkpoint
+## Current v24 production checkpoint
+
+Current production evidence records:
+
+```text
+canonical repository: Herbertofury/Feature-Foundry
+release: v24.0.0
+repository head: e1ba080b5c7590f1c844a6ed13b3a471709920b9
+package version: 24.0.0
+approved runtime themes: 17
+rooms: 34
+weather systems: 17
+ecology objects: 85
+artist worlds: 10
+Theme Atlas total worlds: 27
+web stack: TypeScript 7 + Vite 8 + Three.js/WebGL
+native stack: Tauri 2 + Rust + bundled SQLite
+browser qualification viewport: 1536x1024
+verification chain: contract + authority + typecheck + Vite build + cargo check + browser UI
+release state: published GitHub release plus mirrored Google Drive release set
+```
+
+Current v24 is the default production source for new Living Ecology engineering. Historical V33 remains the explicit deeper ecology/non-regression benchmark where it still has stronger instrumentation or capability-specific acceptance evidence.
+
+## Historical V33 verified checkpoint
 
 The durable V33 checkpoint records:
 
@@ -671,4 +842,4 @@ The same major gates were independently rerun from the exact downloaded release 
 
 ## Wiki maintenance
 
-Update this page when the verified ecology artifact changes, a newer runnable ecology source supersedes V33, the base-source preservation contract changes, the signal model changes, world modes/quality tiers change, host adapters change, soundtrack ownership changes, persistence keys/schema change, or new regression evidence replaces the current V33 matrix. Preserve historical verified identities rather than overwriting them with unverified newer filenames.
+Update this page when the canonical v24 production ecology changes, a newer released production source supersedes v24, the historical V33 benchmark changes, the base-source preservation contract changes, the signal model changes, world modes/quality tiers change, host adapters change, soundtrack ownership changes, persistence keys/schema change, or new regression evidence replaces the current V33 matrix. Preserve historical verified identities rather than overwriting them with unverified newer filenames.
