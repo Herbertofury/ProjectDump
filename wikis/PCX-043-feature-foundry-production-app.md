@@ -1,366 +1,537 @@
 # Feature Foundry Production App Wiki
 
-**Project Constellation ID:** `PCX-043`
-**Status:** ACTIVE / TRACKED
-**Strongest verified runnable artifact lineage:** `V33 FINAL_READY`
-**Newest remotely byte-verified maintainable source lineage:** `GameSync / Feature Foundry V2-253`
-**Current recovery ledger:** `Feature Foundry Recovery Checkpoint Ledger - V2 Continuity`, Drive document `1AES2lZ6GFfpdBFZdSX4XXy-FbGQxPKGrXFLJjM67Smg`
-**Connected placeholder repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)
+**Project Constellation ID:** `PCX-043`  
+**Status:** ACTIVE / TRACKED  
+**Current canonical product repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)  
+**Current canonical released source line:** `v24.0.0`  
+**Current verified repository head:** `e1ba080b5c7590f1c844a6ed13b3a471709920b9`  
+**Tagged release:** [Feature Foundry v24.0.0](https://github.com/Herbertofury/Feature-Foundry/releases/tag/v24.0.0)  
+**Canonical Drive release folder:** [Feature Foundry v24.0.0](https://drive.google.com/drive/folders/1eU95XQZNq-3mc9HvY08JbClSBTu7tXYY)  
+**Historical runnable benchmark:** `V33 FINAL_READY`  
+**Historical/parallel project-operations recovery line:** `GameSync / Feature Foundry V2-253`
 
 ## Purpose
 
-This project tracks the actual Feature Foundry production application as distinct from historical directives, data-only bundles, generated starters, migration packages, and design-only project-family documents.
+This project tracks the actual Feature Foundry production application, distinct from design-only directives, generated starters, data-only bundles, migration packages, and Project Constellation itself.
 
-The production acceptance contract is a real stateful authoring and project-operations application with professional workspaces, complete persisted state, reversible editing, complete data availability, live project and research workflows, truthful automation, recoverable source lineage, and verified build/runtime evidence.
+The production acceptance contract is a real stateful living-world authoring application with professional workspaces, complete persisted state, reversible editing, complete data availability, live rendered worlds, real media/music integrations, truthful native behavior, recoverable release lineage, and verified build/runtime evidence.
 
-## Source authority: two verified lanes
+## Current authority model
 
-Feature Foundry currently has two important evidence lanes that must not be collapsed into one claim.
+Feature Foundry now has a verified canonical repository and published native/web release. Older continuity evidence remains important, but authority has changed materially.
 
-### Runnable product evidence: V33 FINAL_READY
+### 1. Current canonical source and released product: Feature Foundry v24.0.0
 
-`V33 FINAL_READY` remains the strongest fully runnable production-app artifact with complete recorded browser-runtime evidence. It is the current benchmark for user-facing workspace/ecology behavior and UI non-regression.
+`Herbertofury/Feature-Foundry` is no longer a placeholder. Current `main` contains a complete maintainable application and the project-owned progress record identifies `v24.0.0` as published.
 
-### Maintainable source evidence: GameSync / Feature Foundry V2-253
+Current repository evidence verifies:
 
-The newer V2 recovery lineage is the strongest remotely byte-verified maintainable source line. V2-253 contains the recovered `apps/feature-foundry` React workspace plus the Project Vault daemon, research/radar systems, agent operations, supply-chain and release-integrity intelligence, and machine-computed launch-readiness infrastructure.
+- package version `24.0.0`;
+- TypeScript 7 + Vite 8 web application;
+- Three.js/WebGL living-world renderer;
+- Tauri 2 + Rust native desktop shell;
+- bundled SQLite persistence;
+- V24 compatibility contract preserved in source;
+- V33 runtime catalog authority integrated into the current application;
+- 17 approved theme packages / worlds;
+- 34 rooms;
+- 17 weather systems;
+- 85 exact ecology objects;
+- 10 current artist worlds;
+- browser interaction/screenshot verification at 1536x1024;
+- production web/source/native release artifacts;
+- a published GitHub release and mirrored Google Drive release set.
 
-V2-253 is **not** currently allowed to supersede V33 as the strongest verified runnable product because its exact production TypeScript/Vite build, browser smoke, and desktop smoke remain blocked by unavailable toolchain/package infrastructure in the recorded execution environment. The source checkpoint itself is remotely byte-verified and fresh-recovery verified.
+This is the current default implementation authority for install, build, package, modification, and release work.
 
-This distinction is intentional:
+### 2. V33 FINAL_READY: preserved behavior/data benchmark
 
-- use V33 for strongest current runnable behavior evidence;
-- use V2-253 for newest maintainable source/recovery architecture;
-- never describe V2-253 as production-ready while its hard launch gates remain incomplete;
-- never discard V33 behavior or data when V2 becomes fully buildable.
+`V33 FINAL_READY` remains valuable as a historical high-confidence runnable benchmark. Current v24 explicitly imports the V33 theme/world authority instead of discarding it.
 
-## Canonical repository boundary
+Use V33 when checking for regressions in the richer historical living-world behavior set, but do not treat its standalone artifact as newer source authority than the current Feature-Foundry repository.
 
-The connected `Herbertofury/Feature-Foundry` GitHub repository remains a minimal placeholder and is not the authoritative production source tree.
+### 3. GameSync / Feature Foundry V2-253: preserved project-operations and recovery architecture
 
-The current maintainable source is preserved through the verified GameSync/Feature Foundry Drive recovery lineage. Broad implementation work must therefore begin from the exact remotely verified V2 source checkpoint, not by scaffolding a replacement repository or treating the placeholder README as current application source.
+The V2 recovery lineage remains valid continuity evidence for Project Vault, Improvement Radar, agent operations, repository/supply-chain intelligence, launch-readiness modeling, and exact recovery history.
 
-## V2 source recovery lineage
+That line is not the current canonical v24 application tree. Do not silently claim that every V2-253 Project Vault/agent subsystem ships inside the standalone v24 repository unless current source proves it.
 
-The durable recovery ledger starts from `GameSync-V2-239-contracts` and records additive remotely verified checkpoints through V2-253.
+Use the two lines deliberately:
 
-Important milestones:
+- v24 repository/release for current application source, runtime, build, native package, media/music, world rendering, and release operations;
+- V2-253 continuity for preserved project-operations architecture and recovery evidence not represented in the current v24 source tree;
+- V33 for historical runnable behavior and data non-regression evidence.
 
-| Version | Verified material increment |
-| --- | --- |
-| V2-239 | newest complete recovery base at the start of the reconstruction pass |
-| V2-242 | corruption-resistant Project Vault daemon, research radar, Feature Drops, agent runners, project history/recovery UI |
-| V2-243 | evidence-bound machine-readable Feature Drop synthesis and multiple custom local agent profiles |
-| V2-244 | native ACP v1 stdio bridge with tool policy, permission decisions, cancellation, and filesystem escape protection |
-| V2-245 | OpenHands Agent Server bridge |
-| V2-246 | live ACP Registry discovery/import with provenance and fail-closed binary handling |
-| V2-247 | checksum-verified ACP binary install/update/rollback lifecycle and adversarial archive hardening |
-| V2-248 | autonomous GitHub repository discovery with durable candidate inventory and watch/dismiss state |
-| V2-249 | capability-change intelligence, complete evidence retention, history-rewrite detection, and removed application-level evidence/display caps |
-| V2-250 | repository health/trust intelligence with GitHub/community/Actions/OpenSSF evidence and explicit unknown states |
-| V2-251 | dependency inventory, OSV vulnerability intelligence, CycloneDX 1.7 export, provenance-rich direct dependency graph |
-| V2-252 | release integrity, digest, attestation, verifier-identity, and cryptographic-verification evidence |
-| V2-253 | 13-gate launch-readiness model, safe toolchain recovery, production smoke harnesses, and exact dependency/toolchain correction |
+## Current v24 release identity
 
-Later V2-254 Aesthetic Vault artifacts are verified subsystem evidence and should be documented under the Aesthetic Vault project. They do not by themselves establish a newer complete production-app source checkpoint than the V2-253 recovery ledger state described here.
+Current project-owned repository head:
 
-## V2-253 exact source checkpoint
+`e1ba080b5c7590f1c844a6ed13b3a471709920b9`
 
-The recovery ledger records the following V2-253 identities:
+The release implementation was introduced by commit:
 
-- full local checkpoint size: `278,378,882` bytes;
-- full checkpoint SHA-256: `a74d90679015cb5da01777bca9e32578d639bbbf299861a6a6cecf86db6b2c07`;
-- exact source fingerprint: `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`;
-- exact source tree: `6,379` files / `485,619,841` source bytes;
-- exact V2-252 -> V2-253 incremental ZIP: `136,149` bytes;
-- incremental ZIP SHA-256: `4c35d6087548378451401e9fe7748ec8ef0afb60625a5a88c800f08fe8f78efc`;
-- Drive exact-byte delta document: `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk`.
+`7dced5c61b83ce2478acee135b784abdbc5b3df5` - `feat: ship Feature Foundry living-world v24`
 
-Fresh recovery proof applied the exact V2-253 incremental ZIP to canonical V2-252 and reproduced source fingerprint `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d` exactly. The recovered tree independently passed launch-readiness, daemon, Feature Foundry, and runtime-integrity gates.
+The complete-release bundle behavior was finalized by:
 
-## Exact recovery procedure
+`f6ee83bdea159b1409954399a4b54cb1442dc104` - `build: add complete release bundle`
 
-Use the recovery ledger as the authority. For the V2-253 increment specifically:
+The project-owned release record then published the v24 release and Drive mirror.
 
-1. Restore canonical V2-252 from its own verified recovery chain.
-2. Export Drive document `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk` as text.
-3. Remove the UTF-8 BOM and Base64 formatting whitespace.
-4. Base64-decode the payload.
-5. Require SHA-256 `4c35d6087548378451401e9fe7748ec8ef0afb60625a5a88c800f08fe8f78efc`.
-6. Extract the incremental paths at repository root.
-7. Do not leave the embedded delta metadata artifact as canonical source content when the recovery record says to exclude it.
-8. Recompute the source fingerprint and require `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`.
-9. Re-run the Feature Foundry, daemon, runtime-integrity, and launch-readiness verification lanes before editing.
+### Drive artifacts
 
-Do not rebuild from memory or from an older V33 HTML artifact when maintainable source is required.
+| Artifact | Drive file ID | Size | SHA-256 |
+| --- | --- | ---: | --- |
+| `Feature-Foundry-v24.0.0-source.zip` | `1tKvfMHe4bYV_tlZy_WLe4vaDeMECTkrq` | 6,998,572 bytes | `b8701b37328277667820af9f6ea630f33d13d1c9ffaa9827b914328895fc97c2` |
+| `Feature-Foundry-v24.0.0-web.zip` | `1SsDrkQxct_-DCB_qqWDrsBgA6rDsdt7y` | 328,556 bytes | `99f3714e5cae72e726711ebed0821ed09dbc1cadd7ab470afa2c3ad5f9f48726` |
+| `Feature-Foundry-v24.0.0-windows-x64-setup.exe` | `1TH-uZzg6r4ef0Qos6AjR5ZFjuSn10kV7` | 2,003,721 bytes | `b4ac90edf1213f3e5a9a1a8724184ae2e97bc30da3f69f877aadfe71819dc49a` |
+| `Feature-Foundry-v24.0.0-windows-x64.msi` | `1S7bOwzr3by8vAbEYiqxKE62vKy7ze5-g` | 2,633,728 bytes | `29a42693cc630d3aec72d137297063eab8f7c08ec21828cb8efd3871e025b157` |
+| `Feature-Foundry-v24.0.0-complete-release.zip` | `1PvBdu6sD8bm3AYnLmCnR4Hdo_HUNCbF2` | 11,716,663 bytes | `593b3e0be60ab694ddd8fbe9e3bc48c3b2c443a542d0eb41390b09596707f54b` |
+| `SHA256SUMS.txt` | `18c325aHLh9Kue8oTz0_KS4yNTtXShRxC` | 533 bytes | contains the five published artifact digests above |
 
-## Restored production workspace foundation
+The complete-release ZIP includes the release-facing artifacts plus the checksum manifest. The packaging script computes SHA-256 directly from artifact bytes and fails if the native Tauri bundles are absent.
 
-The V2 reconstruction restored `apps/feature-foundry` as a real React workspace consuming production-owned `@gamesync/core` theme/world data.
+## Product systems in v24
 
-Verified state recorded during the reconstruction includes:
+Current source and README describe these implemented product systems.
 
-- local persistence;
-- bounded undo/redo history;
-- complete workspace JSON import/export;
-- theme-package export;
-- saved layouts with restore/delete;
-- safe reset;
-- density and reduced-motion settings;
-- mute state;
-- left/right/floating inspector docking;
-- resizable rail/inspector widths;
-- living, focus, and performance modes;
-- complete 16-world registry rendering;
-- all five authored objects per active world;
-- draggable and reversible object placement;
-- no viewport admission or item caps;
-- real World Explorer, Runtime Evidence, and Inspector workspace tabs;
-- distinct Press, Drag Field, Collision, and Recover behavior paths.
+### Theme and world catalog
 
-The production theme data boundary was moved into `packages/core/src/theme-foundry.ts`, and the recovery ledger explicitly records no production dependency on migration-only `@gamesync/feature-runtime` data.
+- 17 approved V33 theme packages;
+- 17 theme worlds;
+- 34 rooms;
+- 17 weather systems;
+- 85 exact ecology objects;
+- 10 current artist worlds across Frawgy, Lightweaverart, Dreamrelicc, Karoline Georges, and saveroom;
+- 27 total catalog worlds in current verification coverage.
 
-## Project Vault and continuous project operations
+The older 16-theme / 80-object recovery summary is historical and is not current runtime authority.
 
-V2-242 and later checkpoints materially expand Feature Foundry beyond visual authoring into a persistent project-operations system.
+### Living world rendering
 
-The schema-v2 Project Vault foundation records:
+The premium runtime uses Three.js/WebGL for a continuously animated world with:
 
-- atomic project-state writes;
-- append-only SHA-bound event history;
-- exact source/recovery manifests;
-- version and artifact history;
-- dependency history;
-- research and idea history;
-- Feature Drop history;
-- agent-run history;
-- backups and recovery points;
-- corruption recovery;
-- source fingerprinting;
-- scheduler state;
-- HTTP API;
-- Project Home, Radar, Drops, Agents, History, and Recovery UI.
+- water shaders;
+- particles;
+- time and weather response;
+- reflections;
+- volumetric light;
+- parallax;
+- music and interaction pulses;
+- procedural environment geometry and decoration.
+
+The runtime keeps the canonical V24 body/CSS/imperative behavior contract protected while layering typed premium systems around it.
+
+### Workspaces and world controls
+
+The current V24 interface includes the canonical living-world shell with:
+
+- Home;
+- Explorer;
+- Vault;
+- Rooms;
+- Theme Lab;
+- undo/redo;
+- theme selection;
+- district selection;
+- weather and time controls;
+- animated environment controls;
+- soundtrack controls;
+- world-state controls;
+- focus/canvas-oriented modes;
+- settings;
+- left, center, and right living regions;
+- activity, soundtrack, quick-action, room-routing, weather, dock, chrome-mode, and history surfaces.
+
+A visible control remains a product promise. Do not treat a rendered button, selector, or workspace tab as complete without the real behavior behind it.
+
+### Object ecology and mascots
+
+Current source preserves real direct-manipulation behavior including:
+
+- draggable and throwable objects;
+- restitution/physics behavior;
+- selection;
+- keyboard movement;
+- reactions;
+- room-aware placement;
+- media and music affordances;
+- mascot registry;
+- mascot direct manipulation;
+- pinning;
+- mascot physics;
+- autonomy;
+- UI awareness;
+- speech;
+- weather/music reactions;
+- independent behavior controls.
+
+### Living Screen Studio
+
+Current v24 supports:
+
+- local video files;
+- direct HTTPS media;
+- privacy-enhanced YouTube playback;
+- room TV mirroring;
+- an animated procedural idle channel.
+
+The Tauri CSP allows local/app assets, blob/data media, HTTPS media, and `youtube-nocookie.com` frame content while keeping the broader application CSP explicit.
+
+### Music Hub
+
+Music Hub supports per-theme/per-room mapping and six provider adapters:
+
+- Spotify;
+- Apple Music;
+- Deezer;
+- SoundCloud;
+- TIDAL;
+- YouTube Music.
+
+All six providers support search, room mapping, and external handoff without bundling user credentials.
+
+Account-controlled behavior is provider-specific:
+
+- Spotify uses Authorization Code with PKCE. Configure the Spotify developer application for loopback callback use and enter the Client ID in Feature Foundry settings. The native app creates a dynamic `127.0.0.1` callback port, validates OAuth state, emits the result back to the application, and manages current-session token behavior.
+- Apple Music uses MusicKit v3 and expects a server-issued developer token. Keep the signing private key off the client.
+- Deezer, SoundCloud, TIDAL, and YouTube Music use validated external provider URLs/handoff unless a current source revision proves deeper embedded control.
+
+Do not advertise provider capabilities beyond the current adapter implementation.
+
+## Native desktop architecture
+
+The current native shell is Tauri 2.
+
+### Application identity
+
+- product name: `Feature Foundry`;
+- package/native version: `24.0.0`;
+- Tauri identifier: `com.featurefoundry.livingworld`;
+- primary window: 1536x1024;
+- minimum window: 1120x720;
+- resizable, centered, undecorated application window;
+- native bundling enabled.
+
+### Rust/native stack
+
+`src-tauri/Cargo.toml` currently declares:
+
+- Rust edition 2024;
+- minimum Rust `1.88`;
+- Tauri `2.11.5`;
+- `tauri-plugin-opener` `2.5.4`;
+- `rusqlite` `0.40.2` with bundled modern SQLite;
+- `serde` / `serde_json`;
+- `url`.
+
+### Native commands
+
+The current native command layer includes:
+
+- runtime profile reporting;
+- save world snapshot;
+- load world snapshot;
+- dynamic Spotify loopback callback startup;
+- catalog summary;
+- music-route listing;
+- room soundtrack assignment;
+- room soundtrack lookup;
+- native history recording.
+
+World snapshots are validated as JSON and written under the application data directory as `living-world-snapshot.json`.
+
+### SQLite ownership
+
+The native database initializes during Tauri setup. Current project-owned documentation describes SQLite ownership for:
+
+- verified catalog seeding;
+- room soundtrack assignments;
+- history;
+- integrity diagnostics;
+- runtime profiles/catalog status as exposed through native commands.
+
+When changing persistent schemas, add explicit migration and restart verification. Do not silently replace or discard user state.
+
+## Current source layout
+
+```text
+Feature-Foundry/
+|-- README.md
+|-- progress.md
+|-- package.json
+|-- package-lock.json
+|-- index.html
+|-- vite.config.ts
+|-- tsconfig.json
+|-- src/
+|   |-- main.ts
+|   |-- main.css
+|   |-- prototype-v24.ts
+|   |-- premium.ts
+|   |-- data/
+|   |-- world/
+|   |-- music/
+|   |-- media/
+|   |-- styles/
+|   `-- types/
+|-- src-tauri/
+|   |-- Cargo.toml
+|   |-- Cargo.lock
+|   |-- tauri.conf.json
+|   |-- capabilities/
+|   |-- icons/
+|   `-- src/
+|       |-- main.rs
+|       |-- lib.rs
+|       `-- database.rs
+|-- tests/
+|   |-- contract.test.ts
+|   |-- authority.test.ts
+|   |-- ui.test.ts
+|   `-- actions/
+|-- scripts/
+|   `-- package-release.ps1
+`-- reference/
+```
+
+### Source ownership guide
+
+- `index.html`: canonical V24 body markup and module entry.
+- `src/prototype-v24.ts`: protected compatibility runtime for the original V24 behavior contract.
+- `src/styles/prototype-v24.css`: protected V24 style contract.
+- `src/premium.ts`: typed premium application layer.
+- `src/world/`: current living-world render/runtime ownership.
+- `src/music/`: provider and soundtrack ownership.
+- `src/media/`: Living Screen Studio/media ownership.
+- `src/data/`: verified runtime and artist-world authority exports.
+- `src-tauri/src/database.rs`: native SQLite ownership.
+- `src-tauri/src/lib.rs`: Tauri commands, snapshots, Spotify loopback, runtime integration.
+- `tests/contract.test.ts`: exact V24 source-contract guard.
+- `tests/authority.test.ts`: data/catalog authority guard.
+- `tests/ui.test.ts`: real browser interaction/render verification.
+- `scripts/package-release.ps1`: deterministic release staging, native artifact collection, ZIP assembly, and SHA-256 manifest generation.
+
+## Web development workflow
+
+Prerequisites:
+
+- Node.js/npm able to install the current lockfile;
+- a browser capable of running the Vite/Three.js application.
+
+From the repository root:
+
+```powershell
+npm install
+npm run dev
+```
+
+The dev server binds to loopback.
+
+Production web build:
+
+```powershell
+npm run build
+```
+
+Local production preview:
+
+```powershell
+npm run preview
+```
+
+## Native desktop development workflow
+
+Additional prerequisites:
+
+- Rust toolchain meeting the current `rust-version = 1.88` floor;
+- platform prerequisites required by Tauri 2;
+- npm dependencies installed.
+
+Run the native app in development:
+
+```powershell
+npm run desktop:dev
+```
+
+Tauri runs the frontend dev server on loopback port 1420 through the configured `beforeDevCommand`/`devUrl` path.
+
+Build native installers/bundles:
+
+```powershell
+npm run desktop:build
+```
+
+The current release folder contains verified Windows x64 MSI and NSIS-style setup artifacts.
+
+## Verification workflow
+
+Primary full verification command:
+
+```powershell
+npm run verify
+```
+
+Current `verify` expands to:
+
+```text
+npm run test
+npm run typecheck
+npm run build
+cargo check --manifest-path src-tauri/Cargo.toml
+npm run test:ui
+```
+
+The test scripts are:
 
-The project contract requires project state to remain corruption-resistant and version-aware. A partial write, stale proposal, timeout, or failed agent run must never silently become the canonical project state.
+```powershell
+npm run test
+npm run test:ui
+npm run typecheck
+```
 
-## Continuous Improvement Radar
+Project-owned `progress.md` records the current release as passing:
 
-The V2 source includes a persistent Improvement Radar intended to convert current external evidence into traceable Feature Drop opportunities without blindly copying competitors.
+- exact V24 source contract;
+- data authority checks;
+- TypeScript verification;
+- Rust verification;
+- optimized production build;
+- 1536x1024 browser interaction/screenshot verification.
 
-Verified evolution includes:
+The README additionally states verification covers:
 
-- configurable monitored sources;
-- source cadence and change fingerprints;
-- last-checked state;
-- meaningful-change filtering;
-- evidence history;
-- source-linked opportunity scoring;
-- approval state;
-- GitHub repository discovery;
-- dedicated watched repositories;
-- candidate dismiss/reopen state;
-- release/commit cursor tracking;
-- explicit branch-history rewrite records;
-- capability-change records;
-- repository health/trust history;
-- supply-chain and vulnerability history;
-- release-integrity/attestation history.
+- exact V24 markup/CSS/runtime contract;
+- database authority counts and IDs;
+- full-width procedural rendering;
+- both reference themes;
+- all 27 catalog worlds;
+- Music Hub provider behavior;
+- the real media-surface flow.
 
-V2-249 explicitly removes the earlier 50 KB observation-evidence truncation and application-level repository/topic and UI display caps. Raw evidence remains complete while summaries stay derivative.
+Do not convert repository text into a fresh current-run pass if the exact current head has not actually completed the command in the environment performing the change. Preserve the project-owned release evidence and add new evidence when requalified.
 
-## Agent Operations
+## Release packaging workflow
 
-The V2 source records real integration foundations for:
+Before packaging, create the optimized web build and native release bundles:
 
-- Hermes Agent;
-- goose;
-- OpenCode;
-- Aider;
-- Gemini CLI;
-- OpenHands / Agent Server;
-- standards-based Agent Client Protocol (ACP);
-- Custom Local Agent profiles.
+```powershell
+npm run verify
+npm run desktop:build
+npm run package
+```
 
-Uninstalled or unconfigured agents must report unavailable/disconnected truthfully. Feature Foundry must not invent execution evidence.
+`npm run package` invokes `scripts/package-release.ps1`.
 
-### ACP bridge
+The packaging script:
 
-V2-244 adds native ACP v1 execution using newline-delimited UTF-8 JSON-RPC over stdio with:
+1. resolves the project and artifact roots;
+2. refuses an artifact path outside the repository;
+3. creates isolated web/source staging directories;
+4. copies the built web output;
+5. copies source, tests, scripts, reference material, native source/configuration, and root project files;
+6. creates web and source ZIPs;
+7. requires installable native Tauri artifacts;
+8. copies native artifacts into release-facing names;
+9. computes SHA-256 for all release files;
+10. writes `SHA256SUMS.txt` without a BOM;
+11. creates a complete release ZIP containing the release artifacts plus checksum manifest;
+12. hashes that complete release ZIP and appends the digest to the checksum manifest;
+13. removes the temporary stage.
 
-- initialize/version negotiation;
-- optional advertised authentication;
-- `session/new`;
-- `session/prompt`;
-- streamed `session/update`;
-- `session/cancel`;
-- optional `session/close`;
-- persisted permission decisions;
-- bounded filesystem tools;
-- atomic writes;
-- read-only/workspace-write/isolated-auto policy;
-- output/message/time limits;
-- isolated workspaces before canonical apply.
+A package run must fail rather than quietly create a partial release when the native Tauri bundles are missing.
 
-Adversarial evidence includes rejected parent-path escape and rejected symlink escape to locations outside the isolated workspace.
+## Installing the released Windows application
 
-### OpenHands bridge
+Use the current Drive/GitHub v24 release rather than an older prototype HTML.
 
-V2-245 records a real OpenHands Agent Server adapter covering profile discovery, session-key references, isolated workspace mapping, conversation creation, run/event dispatch, terminal-state polling, evidence capture, cancellation through `/interrupt`, and the existing canonical apply/recovery gate.
+Choose one verified Windows artifact:
 
-### ACP Registry and binary lifecycle
+- `Feature-Foundry-v24.0.0-windows-x64-setup.exe`;
+- `Feature-Foundry-v24.0.0-windows-x64.msi`.
 
-V2-246 adds official ACP Registry discovery/import while preserving repository/license/version provenance and user scheduling/settings. Binary-only registry entries remain visible but fail closed until a checksum-verified installation path exists.
+Before treating an artifact as canonical, compare its SHA-256 to the release manifest in this page.
 
-V2-247 adds checksum-verified binary lifecycle support including safe staging, download, hash verification, archive validation, version probing, atomic promotion, retained prior versions, deep verification, and rollback. Archive hardening rejects traversal, absolute/ADS paths, symlink/device/FIFO entries, duplicate/case collisions, unsupported ZIP features, excessive expanded size, and high compression-ratio bombs.
+After installation:
 
-## Evidence-bound Feature Drops
+1. launch Feature Foundry;
+2. confirm the application reports/behaves as the v24 native product;
+3. open theme/world controls;
+4. exercise at least one world/room switch;
+5. exercise object/mascot interaction;
+6. verify media and soundtrack surfaces appropriate to the local configuration;
+7. save a world snapshot with `Ctrl+S`;
+8. restart the application and confirm persisted/native state remains available;
+9. inspect visible errors instead of accepting silent fallback.
 
-V2-243 defines a strict `FEATURE_FOUNDRY_OPPORTUNITY_JSON` contract. Analysis agents may supply fit, novelty, impact, effort, risk, and next recommendation only when the record is bound to the exact project and real observation/evidence IDs provided to the run.
+The current Windows artifacts are release-optimized but are not recorded as Authenticode-signed by the project-owned progress file.
 
-An adversarial fixture deliberately supplied an invented observation ID. Feature Foundry rejected the synthesis and made zero Feature Drop mutation. A valid evidence-bound subprocess result then updated the existing candidate and retained the originating agent-run linkage.
+## Daily use and configuration
 
-This fail-closed behavior is foundational. Agent output is analysis evidence, not authority to invent project history or bypass source preconditions.
+### Theme/world operation
 
-## Repository discovery and capability intelligence
+Use the theme, district, weather, time, room, world, and workspace controls to move between authored world states. Preserve full content availability when changing performance/presentation behavior.
 
-V2-248 introduces configurable GitHub Search sources that create durable discovery inventories. Baseline discovery creates candidates without fabricating changes. Newly discovered repositories can produce evidence-linked evaluation opportunities. Users can promote candidates into dedicated monitors, dismiss/reopen them, and retain those states through restart.
+### Fullscreen and snapshot shortcuts
 
-V2-249 adds capability-change records for releases, commits, and branch history rewrites. Overlapping monitors converge on content identity while preserving every source/project/evidence relationship. Raw evidence is retained completely and compact agent context references exact evidence IDs.
+Current README documents:
 
-## Repository health and trust intelligence
+- `F`: fullscreen toggle;
+- `Ctrl+S`: persist a native world snapshot.
 
-V2-250 adds historical `RepositoryHealthProfile` snapshots based on available GitHub repository/community/Actions evidence plus published OpenSSF Scorecard results.
+### Music provider setup
 
-Important truth rules:
+Spotify account-controlled behavior requires a configured provider Client ID and loopback callback support. Apple Music account-controlled behavior requires a valid developer token. Other listed providers must remain truthful to their current external-handoff behavior.
 
-- stars/forks are discovery metadata, not health score authority;
-- missing Scorecard or automation evidence remains unknown rather than negative;
-- low-scoring or archived repositories remain visible;
-- overlapping monitors converge on identical evidence identity;
-- changed evidence creates history instead of overwriting the previous snapshot;
-- health context is review evidence, not an automatic acceptance/rejection rule.
+### Media surface setup
 
-## Dependency, vulnerability, and SBOM intelligence
+Living Screen Studio accepts supported local video files, direct HTTPS media, and privacy-enhanced YouTube sources. Keep media fidelity and user choice intact; do not replace this with lower-quality proxy content merely for performance.
 
-V2-251 adds a schema-v5 dependency/supply-chain lane.
+## Modification map
 
-Verified behavior includes:
+### Change canonical V24 interface behavior
 
-- exact npm/workspace/Cargo dependency declarations with provenance;
-- explicit lockfile/completeness state;
-- no invented transitive relationships when lockfiles are absent;
-- OSV exact package/version queries for npm and crates.io;
-- complete pagination through `next_page_token`;
-- raw vulnerability record retention;
-- aliases, severity, references, and fixed range events;
-- unavailable providers represented as unknown rather than safe;
-- evidence-linked remediation Feature Drops without automatic package mutation;
-- CycloneDX 1.7 JSON export;
-- direct observed dependency graph only when transitive proof is unavailable.
+Edit `index.html`, `src/prototype-v24.ts`, and `src/styles/prototype-v24.css` only with great care. The project intentionally protects the V24 contract with exact tests. Any change to that contract must be explicit and must update the acceptance evidence rather than weakening the test.
 
-A provider-reported fixed version is only a candidate. Compatibility remains unverified until dependency-latest, typecheck, tests, production build, and runtime gates pass.
+### Change premium rendering/world behavior
 
-## Release integrity and attestation intelligence
+Use `src/premium.ts` and `src/world/`. Preserve authored content, runtime data, input behavior, performance tiers, and world-state semantics.
 
-V2-252 introduces schema-v6 historical release-integrity profiles.
+### Change theme/world authority data
 
-The model separates:
+Use `src/data/` and the corresponding authority tests. Preserve the 17-theme V33 authority and the separate artist-world authority instead of flattening them into an unverified merged source.
 
-- immutable-release state;
-- provider-published asset digests;
-- structural in-toto/SLSA attestation evidence;
-- actual cryptographic verification.
+### Change media behavior
 
-Fetching or parsing an attestation does not become cryptographic success.
+Use `src/media/` plus the relevant UI/runtime tests. Verify local file, direct HTTPS, YouTube privacy mode, TV mirroring, and failure feedback where affected.
 
-The verifier path records exact GitHub CLI version and executable SHA-256. A below-floor or unversioned verifier fails closed. Signed bundle fetching is HTTPS-only, redirect-revalidated, bounded, and stored without signed URL query credentials. Subject mismatch, mutable release state, missing attestations, verifier absence, and failed verification remain visible review/unknown states.
+### Change music/provider behavior
 
-## V2-253 launch-readiness model
+Use `src/music/`, native OAuth support in `src-tauri/src/lib.rs`, and native persistence/routes in `src-tauri/src/database.rs` where applicable. Provider capability must remain truthful and provider credentials/secrets must never be bundled into release artifacts.
 
-V2-253 adds schema-v7 machine-computed launch readiness. `READY` is impossible unless all **13 hard gates** pass.
+### Change native persistence or commands
 
-The hard-gate model covers:
+Use `src-tauri/src/database.rs` and `src-tauri/src/lib.rs`. Add migration, restart, and corruption/error-path proof for stateful changes.
 
-- toolchain availability;
-- lockfile state;
-- exact dependency evidence;
-- strict parity;
-- runtime integrity;
-- daemon contract;
-- UI contract;
-- fresh checkpoint evidence;
-- remote publication evidence;
-- complete release verification;
-- production browser smoke;
-- production desktop smoke;
-- the remaining production qualification evidence represented by the launch-readiness schema.
+### Change packaging
 
-The recorded real GameSync/Feature Foundry state after the Drive recovery receipt is **BLOCKED, 6/13 hard gates**.
+Use `scripts/package-release.ps1`, Tauri configuration, and package metadata. Preserve deterministic file naming, checksum generation, complete-release assembly, and fail-closed native-bundle requirements.
 
-Passing at that checkpoint:
+## Production-app non-regression rules
 
-- exact dependency evidence;
-- runtime integrity;
-- daemon contract;
-- UI contract;
-- fresh checkpoint;
-- remote publication.
+- Preserve all verified theme, world, room, weather, object, artist-world, soundtrack, history, snapshot, and user-authored state unless an explicit migration proves equivalence.
+- Never reintroduce the old 16-theme/80-object summary as current runtime authority.
+- No viewport culling, hidden off-screen admission, artificial item/data caps, reduced result quantity, or lower-fidelity modes that remove authored content.
+- Performance/presentation modes may reduce rendering cost only when authored state and functionality remain available.
+- Every top-level workspace/tab must open distinct real functionality.
+- Every visible control must be wired end-to-end with truthful success/error state.
+- Stateful operations require persistence and restart verification.
+- Provider/API/tool absence remains explicit unavailable/unsupported state, never synthetic success.
+- Preserve the exact V24 contract unless a deliberate successor contract is implemented and fully reverified.
+- Preserve V33 behavior/data evidence until a successor explicitly proves equal-or-better coverage.
+- Preserve V2-253 recovery/project-operations history even though it is not the current canonical v24 product tree.
 
-Blocking at that checkpoint:
-
-- Node `26.7.0` unavailable in the recorded sandbox;
-- pnpm `11.21.0` unavailable;
-- `pnpm-lock.yaml` absent;
-- strict parity incomplete;
-- exact full production build proof unavailable;
-- production browser smoke unavailable;
-- production desktop smoke unavailable.
-
-Do not weaken or relabel these blockers to manufacture READY.
-
-## Current source toolchain contract
-
-V2-253 records these exact source-side floors/corrections:
-
-- Node: `>=26.7.0`;
-- pnpm: `11.21.0`;
-- Vite: `8.1.5`;
-- `@vitejs/plugin-react`: `6.0.4`;
-- exact dependency evidence: all 18 cataloged external npm packages passed.
-
-The recorded recovery attempt used NVM for exact Node recovery and Corepack for exact pnpm recovery. Both failed because the execution environment could not reach required remote package/release channels. Lockfile generation and frozen install remained safely skipped and the canonical source fingerprint stayed unchanged.
-
-No dependency downgrade was used to fabricate a build.
-
-## Production smoke harnesses
-
-V2-253 contains explicit production smoke harness expectations.
-
-### Browser production smoke
-
-The browser lane requires the real Feature Foundry production `dist`, serves it over loopback, loads it through installed Chromium, and requires real rendered Feature Foundry/Project Vault DOM.
-
-### Desktop production smoke
-
-The desktop lane requires the built Tauri executable and a real GameSync window under the recorded Linux Xvfb/wmctrl path.
-
-Synthetic fixtures can validate the readiness engine itself, but they do not substitute for these exact product smoke lanes.
-
-## Strict parity blocker
-
-Strict parity remains intentionally unresolved and is a hard launch blocker.
-
-V2-253 records:
-
-- `433` discovered identifiers;
-- `417` high-confidence candidates;
-- `239` migrated request contracts;
-- `178` pending candidates;
-- `16` ambiguous identifiers.
-
-The next V2 source action is evidence-driven contract adjudication: distinguish executable requests/commands from events, notifications, responses, and constants using immutable donor call sites, preserve separate event-contract coverage, implement genuinely missing typed routes/bridges with real behavior, and keep ambiguous/unadjudicated evidence blocking readiness.
-
-## V33 runnable production benchmark
+## Historical V33 runnable benchmark
 
 Drive contains `Feature Foundry V33 FINAL_READY Checkpoint`, status `FINAL_READY`, built forward from the verified V25 runnable base plus V30/V31 verification lineage and V32 interaction/ecology specification without overwriting preserved base bytes.
 
@@ -378,116 +549,180 @@ V33 records:
 - verified HTML SHA-256 `83aac630afa4e6522d28452bb6a7c0ebe183eee6812b89b6d742662876af06ec`;
 - remote Drive artifact ID `1_mLbBXiS0yL7g2cKP7qQJxqyyRHP4RSY` with matching remote SHA-256.
 
-V33 includes:
+V33 includes Theme-aware Library Ecology Lab, Ecology Director world modes, transition depth 0-5, Efficient/Balanced/High/Ultra/Cinematic presentation tiers with content parity, a causal world-signal bus, chronological/interaction/authored-world memory channels, advanced optical/spatial composition, six soundtrack/provider mappings, five host adapters, persistent state, and reduced-motion/performance equivalence.
 
-- Theme-aware Library Ecology Lab;
-- Ecology Director world modes and transition depth 0-5;
-- Efficient/Balanced/High/Ultra/Cinematic presentation tiers with content parity;
-- causal world-signal bus and replay history;
-- chronological, interaction, and authored-world memory channels;
-- advanced optical/spatial depth composition;
-- soundtrack/provider mapping hub with six provider mappings;
-- five host adapters;
-- persistent state;
-- reduced-motion/performance equivalence.
+Current v24 uses the V33 theme/world authority as an explicit source input. Keep the stronger historical interaction evidence available for regression comparison.
 
-When V2 reaches full production build/runtime qualification, regression testing must prove these user-facing V33 capabilities remain intact or are intentionally superseded by equally verified behavior.
+## Historical/parallel V2-253 continuity
 
-## Architecture map
+The V2 recovery ledger starts from `GameSync-V2-239-contracts` and records additive checkpoints through V2-253.
 
-The V2 recovery ledger identifies the following important ownership boundaries:
+Important milestones:
 
-```text
-GameSync / Feature Foundry source
-|
-+-- apps/feature-foundry
-| +-- production React authoring/project-operations UI
-| +-- workspace state, layouts, project views, Radar/Drops/Agents/History/Recovery
-|
-+-- packages/core/src/theme-foundry.ts
-| +-- production-owned theme/world data contract
-| +-- complete 16-theme / 80-object registry baseline
-|
-+-- Feature Foundry daemon / Project Vault services
-| +-- durable project state and append-only evidence history
-| +-- monitoring/discovery/health/dependency/release intelligence
-| +-- scheduler and HTTP API
-| +-- agent execution, ACP, OpenHands, binary lifecycle
-| +-- recovery points and source fingerprinting
-|
-+-- verification tooling
- +-- Feature Foundry static/runtime gates
- +-- daemon static/runtime/adversarial fixtures
- +-- runtime-integrity gate
- +-- no-culling/UI audit
- +-- launch-readiness gates
- +-- production browser smoke
- +-- production desktop smoke
-```
+| Version | Verified material increment |
+| --- | --- |
+| V2-239 | complete recovery base for the reconstruction line |
+| V2-242 | corruption-resistant Project Vault daemon, research radar, Feature Drops, agent runners, history/recovery UI |
+| V2-243 | evidence-bound Feature Drop synthesis and custom local agent profiles |
+| V2-244 | native ACP v1 stdio bridge with permissions, cancellation, bounded filesystem tools, and escape protection |
+| V2-245 | OpenHands Agent Server bridge |
+| V2-246 | ACP Registry discovery/import with provenance and fail-closed binary handling |
+| V2-247 | checksum-verified agent binary install/update/rollback lifecycle and archive hardening |
+| V2-248 | autonomous GitHub repository discovery with durable candidate inventory |
+| V2-249 | capability-change intelligence, complete evidence retention, and removal of application-level evidence/display caps |
+| V2-250 | repository health/trust intelligence |
+| V2-251 | dependency inventory, OSV intelligence, CycloneDX 1.7 export |
+| V2-252 | release-integrity, digest, attestation, verifier-identity, and cryptographic-verification evidence |
+| V2-253 | 13-gate launch-readiness model and production smoke harnesses |
 
-This is a source-evidence map, not permission to rename/reorganize modules before a fresh V2 recovery and source inspection.
+### V2-253 recovery identity
 
-## Production-app non-regression rules
+The durable ledger records:
 
-- Preserve every verified theme, world, object, project record, evidence record, agent run, recovery point, and user-authored state unless an explicit migration proves equivalence.
-- No viewport culling, hidden off-screen admission, artificial data caps, reduced result quantity, or lower-fidelity modes that change semantic content.
-- Lower presentation tiers may reduce rendering cost only when authored content/state/functionality remain available.
-- Every top-level workspace/tab must open distinct real functionality.
-- Every visible control must be wired end-to-end with truthful success/error state.
-- Stateful operations require persistence and restart verification.
-- Agent proposals never bypass source fingerprint/precondition, approval, and recovery gates.
-- Provider/API/tool absence remains explicit unavailable/unknown state, never synthetic success.
-- Repository health, popularity, vulnerability, attestation, or agent scoring is evidence, not automatic acceptance authority.
-- Do not mutate dependency manifests merely because an external vulnerability source reports a fixed version.
-- Do not mark launch readiness READY while any hard gate is blocked or unproven.
-- Do not replace production-owned theme/world data with migration-only packages.
-- Keep the stronger runnable V33 behavior baseline until V2 production build/runtime qualification proves an equal-or-better successor.
+- full local checkpoint: `278,378,882` bytes;
+- full checkpoint SHA-256: `a74d90679015cb5da01777bca9e32578d639bbbf299861a6a6cecf86db6b2c07`;
+- exact source fingerprint: `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`;
+- source tree: `6,379` files / `485,619,841` source bytes;
+- V2-252 -> V2-253 incremental ZIP: `136,149` bytes;
+- incremental ZIP SHA-256: `4c35d6087548378451401e9fe7748ec8ef0afb60625a5a88c800f08fe8f78efc`;
+- Drive exact-byte delta document: `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk`.
 
-## Troubleshooting and recovery
+### V2-253 project-operations capabilities
 
-### Placeholder GitHub repository appears empty
+That line records Project Vault atomic state, append-only SHA-bound history, version/artifact/dependency/research/Feature Drop/agent-run history, backups/recovery points, source fingerprinting, scheduler state, HTTP API, Improvement Radar, GitHub repository discovery, repository health/trust history, dependency/vulnerability intelligence, release-integrity/attestation intelligence, evidence-bound agent proposals, ACP/OpenHands integration, and machine-computed launch readiness.
 
-Treat this as expected current source-authority state. The production source is in the verified Drive V2 recovery chain. Do not initialize a replacement application in the placeholder repository.
+### V2-253 launch-readiness result
 
-### V2 source cannot be rebuilt from the latest incremental delta alone
+The recorded GameSync/Feature Foundry state was `BLOCKED, 6/13 hard gates`.
 
-Incremental checkpoints depend on their recorded predecessor. Follow the recovery ledger in order and require every documented SHA/source fingerprint. Do not apply a later delta to an arbitrary older tree.
+Passing:
 
-### Source fingerprint differs after recovery
+- exact dependency evidence;
+- runtime integrity;
+- daemon contract;
+- UI contract;
+- fresh checkpoint;
+- remote publication.
 
-Stop before implementation. Check predecessor identity, exact delta document, BOM/whitespace normalization, decoded delta SHA, excluded metadata paths, and extraction root. A mismatched fingerprint means the working tree is not the verified source.
+Blocking:
 
-### Node or pnpm recovery fails
+- exact Node `26.7.0` unavailable in that environment;
+- pnpm `11.21.0` unavailable;
+- `pnpm-lock.yaml` absent;
+- strict parity incomplete;
+- exact full production build proof unavailable;
+- production browser smoke unavailable;
+- production desktop smoke unavailable.
 
-Keep launch readiness blocked. V2-253 already records failed exact Node/pnpm recovery caused by unreachable remote channels and intentionally skips lock/install steps that would be unsafe without prerequisites. Preserve version floors rather than downgrading.
+Do not rewrite this historical blocked state as if it were the current v24 release status. The current standalone v24 repository has its own successful build, browser verification, native release, lockfile, and release artifacts.
 
-### UI appears to work from an old HTML artifact
+### V2 strict parity history
 
-Confirm loaded artifact identity. V33 HTML proves its own runnable lineage, not that the V2 maintainable source has built successfully.
+V2-253 recorded:
 
-### Browser smoke is unavailable
+- `433` discovered identifiers;
+- `417` high-confidence candidates;
+- `239` migrated request contracts;
+- `178` pending candidates;
+- `16` ambiguous identifiers.
 
-Do not convert static/daemon tests into a browser pass. The readiness model explicitly requires the real production `dist` and rendered Feature Foundry/Project Vault DOM through Chromium.
+Preserve this as GameSync/V2 continuity evidence if those cross-product contracts are resumed.
 
-### Desktop smoke is unavailable
+## Troubleshooting
 
-Keep the desktop production gate blocked until the built Tauri executable launches a real window in the target smoke environment.
+### Repository still described elsewhere as a placeholder
 
-### Strict parity remains below completion
+That statement is obsolete for the current production-app source. `Herbertofury/Feature-Foundry` now contains the complete v24 source and is the canonical product repository. Older recovery/checkpoint documents may still preserve the placeholder-era history.
 
-Do not bulk-classify ambiguous donor identifiers to raise the score. Adjudicate executable contracts from immutable first-party call sites, preserve event/notification contracts separately, and implement missing routes with real behavior.
+### Running the wrong Feature Foundry artifact
 
-### Agent or source provider is unavailable
+Verify the loaded source/release identity. Historical V33 HTML, GameSync/V2 recovery checkpoints, generated starter bundles, and current v24 are different evidence lanes.
 
-Persist truthful unavailable/unknown state. Do not fabricate observations, Feature Drops, health profiles, dependency safety, release verification, or agent completion.
+For current production-app work, start from the current Feature-Foundry repository or the verified v24 source ZIP.
 
-## Exact next action
+### `npm run verify` fails before browser UI testing
 
-Recover V2-253 exactly from the durable lineage, verify source fingerprint `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`, then continue the recorded V2-254 strict-parity adjudication path without weakening the 13-gate readiness contract.
+Fix the failing contract, authority, typecheck, production build, or Rust check first. Do not skip an earlier gate and count `test:ui` alone as release verification.
 
-In parallel, retry the exact Node `>=26.7.0` / pnpm `11.21.0` toolchain path only when package/release infrastructure is actually reachable. Once prerequisites are available, generate/verify the lockfile, perform the frozen install, run the real production build, execute the production browser and desktop smoke lanes, and compare the result against the V33 runnable non-regression baseline before promoting a newer runnable authority.
+### Tauri build succeeds but packaging fails
 
-## Evidence
+`npm run package` requires native installable files under the Tauri release bundle directory. Run `npm run desktop:build`, confirm the platform prerequisites, then package again. The packager is intentionally fail-closed if no MSI/EXE/DMG/AppImage/DEB/RPM is present.
+
+### Release hash differs from the manifest
+
+Stop using that artifact as canonical. Re-download the expected release file, confirm exact filename/version, and compare against the SHA-256 values documented above. Do not overwrite a known-good release with an unmatched same-name file.
+
+### World snapshot does not persist
+
+Confirm the native Tauri build is running, the application data directory is writable, the state sent to `save_world_snapshot` is valid JSON, and restart from the same native application identity. Browser-only Vite sessions do not prove native snapshot persistence.
+
+### Spotify callback never arrives
+
+Confirm the native application can bind a loopback port, the provider application accepts the loopback callback form, the returned OAuth state matches the initiating state, and the callback is not being tested from a browser-only build that lacks the Tauri command.
+
+### Apple Music playback/account control is unavailable
+
+Confirm a valid server-issued developer token and MusicKit configuration. Keep the signing private key on the protected server; do not embed it in Feature Foundry.
+
+### A media URL does not render
+
+Check whether the source is a supported local file, direct HTTPS media URL, or privacy-enhanced YouTube path, and inspect the Tauri CSP/media/frame restrictions. Do not widen CSP indiscriminately just to make an unrelated URL load.
+
+### A V33 feature appears absent in v24
+
+Treat that as a regression candidate, not permission to delete the V33 record. Reproduce the exact V33 behavior, identify whether v24 intentionally replaced it, and require equal-or-better verified behavior before marking the old capability superseded.
+
+### Project Vault or V2 agent features are absent from v24
+
+That is currently an authority-lane distinction, not proof of a broken v24 release. Those capabilities live in the preserved GameSync/Feature Foundry V2 continuity line unless a later current Feature-Foundry repository revision integrates them.
+
+## Contribution and change qualification
+
+For a normal production-app change:
+
+1. resolve current `main` and record the exact starting commit;
+2. run the current baseline workflow before broad edits;
+3. change the narrowest owning module;
+4. preserve the V24 contract unless intentionally superseding it;
+5. update/extend authority or UI tests for changed behavior;
+6. run `npm run verify`;
+7. when native behavior changed, run the real native application;
+8. when stateful behavior changed, restart and verify persistence;
+9. when release packaging changed, run `npm run desktop:build` and `npm run package`;
+10. verify generated artifact hashes and fresh extraction/install where applicable;
+11. compare affected user-facing behavior against the V33 non-regression benchmark where relevant;
+12. publish only after exact-source and exact-artifact evidence agree.
+
+## Exact next actions
+
+The production application is no longer blocked on recovering a canonical repository. Current next work should start from `Herbertofury/Feature-Foundry` v24.0.0 and focus on evidence-backed product evolution rather than repository reconstruction.
+
+Highest-value qualification actions are:
+
+1. preserve v24 as the known-good release baseline and record the exact starting source commit before new work;
+2. re-run `npm run verify` and native smoke on the exact current head when modifying the product;
+3. keep release artifact SHA-256 and Drive/GitHub publication identity synchronized;
+4. run explicit restart/state tests for snapshot, SQLite soundtrack/history, and provider configuration changes;
+5. compare any world/ecology/workspace changes against the preserved V33 behavior baseline;
+6. reconcile selected V2-253 Project Vault/Improvement Radar/agent-operation capabilities only through explicit product decisions and current-source implementation, never by merely claiming they are present.
+
+## Evidence index
+
+Current source/release:
+
+- [Feature Foundry repository](https://github.com/Herbertofury/Feature-Foundry)
+- [Feature Foundry v24.0.0 release](https://github.com/Herbertofury/Feature-Foundry/releases/tag/v24.0.0)
+- current release record: repository `progress.md`
+- current product/run/configuration overview: repository `README.md`
+- package/version/scripts/dependency contract: repository `package.json`
+- native product/window/security contract: `src-tauri/tauri.conf.json`
+- native Rust/dependency contract: `src-tauri/Cargo.toml`
+- native commands/snapshot/OAuth integration: `src-tauri/src/lib.rs`
+- deterministic release packaging: `scripts/package-release.ps1`
+- canonical Drive release folder: `1eU95XQZNq-3mc9HvY08JbClSBTu7tXYY`
+- Drive checksum manifest: `18c325aHLh9Kue8oTz0_KS4yNTtXShRxC`
+
+Historical continuity:
 
 - Feature Foundry V2 Continuity recovery ledger: Drive document `1AES2lZ6GFfpdBFZdSX4XXy-FbGQxPKGrXFLJjM67Smg`
 - V2-253 exact delta document: Drive document `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk`
@@ -495,16 +730,20 @@ In parallel, retry the exact Node `>=26.7.0` / pnpm `11.21.0` toolchain path onl
 
 ## Wiki maintenance
 
-Update this page whenever:
+Update this page when any of the following changes materially:
 
-- a newer complete Feature Foundry source checkpoint is remotely byte-verified;
-- V2-254 or later source becomes the verified complete production-app checkpoint rather than a subsystem/delta-only artifact;
-- Node/pnpm/lock/install state changes;
-- strict parity counts materially change;
-- production build/browser/desktop smoke evidence changes;
-- launch-readiness hard gates change;
-- the canonical production GitHub repository becomes authoritative;
-- Project Vault schema, agent/runtime ownership, recovery procedure, or source fingerprint changes;
-- a newer runnable product artifact supersedes V33 with equal-or-stronger runtime evidence.
+- canonical Feature-Foundry repository head/release identity;
+- product version;
+- V24 successor contract;
+- V33 authority counts or their current-source integration;
+- artist-world authority;
+- runtime/render architecture;
+- media or Music Hub providers;
+- native commands, SQLite schema, snapshot behavior, or OAuth flow;
+- Node/TypeScript/Vite/Three/Tauri/Rust floors;
+- verification commands or observed release evidence;
+- release artifacts, hashes, or Drive/GitHub publication location;
+- Project Vault/V2 continuity becomes integrated into current Feature-Foundry source;
+- a newer runnable release supersedes v24 with equal-or-stronger verified behavior.
 
-Preserve both source and runnable evidence lanes until one verified artifact legitimately satisfies both.
+Preserve current-source facts, V33 benchmark evidence, and V2 continuity as separate authority lanes until a later verified implementation legitimately unifies them.
