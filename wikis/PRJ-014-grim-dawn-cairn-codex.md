@@ -5,8 +5,8 @@
 **Confidence:** Medium  
 **Historical latest artifact:** `Grim_Dawn_Cairn_Codex_Ultimate_v6_1.html`  
 **Current source boundary:** Project Constellation preserves the v6.1 artifact identity, but the exact HTML bytes have not been recovered from the currently connected GitHub or Google Drive evidence.  
-**Current official game baseline checked:** 2026-08-19  
-**Latest official Grim Dawn patch line resolved:** `v1.3.0.5`, published as the hotfix to the `v1.3.0.4` patch notes topic.
+**Current official game baseline checked:** 2026-08-20  
+**Latest official Grim Dawn patch line resolved:** `v1.3.0.6`, published by Crate Entertainment on 2026-08-07.
 
 ## Purpose
 
@@ -30,11 +30,12 @@ A filename such as `v6_1` is useful lineage evidence but does not prove current 
 
 ### Latest verified official patch line
 
-As of 2026-08-19, the official Crate Entertainment **Patch Notes** index identifies the `v1.3.0.4 + v1.3.0.5` topic as the newest Grim Dawn patch-notes thread. The same official topic records **v1.3.0.5** as the hotfix following v1.3.0.4.
+As of 2026-08-20, the official Crate Entertainment patch-notes stream identifies **Grim Dawn v1.3.0.6** as the newest published game patch. Crate published it on 2026-08-07. The prior `v1.3.0.4 + v1.3.0.5` topic remains important predecessor evidence because several Codex-relevant bugs were fixed there, but it is no longer the current baseline.
 
 Primary sources:
 
 - [Current Grim Dawn Patch Notes index](https://forums.crateentertainment.com/c/grimdawn/patch-notes/28)
+- [Grim Dawn v1.3.0.6 patch notes](https://forums.crateentertainment.com/t/grim-dawn-version-1-3-0-6/157907/1)
 - [Grim Dawn v1.3.0.4 + v1.3.0.5 patch notes](https://forums.crateentertainment.com/t/grim-dawn-version-v1-3-0-4-hotfixes/157189/1)
 - [Grim Dawn v1.3.0.0 + hotfixes](https://forums.crateentertainment.com/t/grim-dawn-version-v1-3-0-0-hotfixes/155979/1)
 - [Official Grim Dawn site](https://www.grimdawn.com/)
@@ -51,7 +52,24 @@ The later v1.3.0.4 patch includes additional balancing and Fangs of Asterkarn ad
 - a missing cauldron in **Ugdenbog**;
 - inconsistent spawning of Aetherial and Aetherial Vanguard Nemeses.
 
-These are not merely engine-level changes. They can affect Codex domains such as locations, bounties, named enemies, encounter troubleshooting, labels, and route guidance. A historical Codex that predates the 1.3 line therefore cannot be described as current without a domain-by-domain audit.
+The newer v1.3.0.6 patch adds further Codex-relevant changes:
+
+- fixes a rare Shattered Realm infinite-loading case;
+- fixes Crucible score progression that could block the score-based loot chest;
+- changes several Crucible encounter behaviors;
+- changes rendering/performance behavior for skill FX on Medium settings or lower and fixes additional shader/target-outline issues;
+- lets **The Secrets of Ugdenbog** and **Cleansing Fire of a Forgotten God** complete retroactively for eligible veteran characters using Difficulty Merits or Multiplayer;
+- increases monster and treasure density in multiple Fangs of Asterkarn areas, especially **Frostveil Highlands**;
+- significantly increases the spawn rate of **Frozen Aster**;
+- changes **Noktukari's bounty** reputation rewards by difficulty;
+- resets **A Dreadful Encounter** so it can appear again on Ascendant difficulty and complete again by speaking to the remnant;
+- fixes Fangs of Asterkarn breadcrumb/intro and questline start problems for multiplayer clients;
+- fixes **Kurn Solutions** not unlocking Alteration for all eligible multiplayer players;
+- fixes missing Lore Notes that could not spawn;
+- changes Soul Echo/Soul Fragment multiplayer drop behavior and multiple Ascension Altar values/loot-bias rules;
+- updates several item and mastery/skill behaviors, including summon templates and Berserker Onslaught/Endless Rage behavior.
+
+These are not merely engine-level changes. They can affect Codex domains such as locations, bounties, named enemies, encounter troubleshooting, quest progression, multiplayer notes, loot/crafting guidance, skill descriptions, labels, and route guidance. A historical Codex that predates the 1.3 line therefore cannot be described as current without a domain-by-domain audit.
 
 ## Current artifact recovery status
 
@@ -259,9 +277,18 @@ Verify:
 - branching outcomes where relevant;
 - bounty targets;
 - bounty availability and broken/fixed state;
-- exact world and local-area references.
+- exact world and local-area references;
+- multiplayer and Difficulty Merit progression behavior where the guide mentions it.
 
-The v1.3.0.5 **Yura Voideye bounty** fix is a concrete regression/audit case: if the recovered Codex contains that bounty, confirm its description and troubleshooting notes match current game behavior.
+Concrete current audit cases now include:
+
+- the v1.3.0.5 **Yura Voideye bounty** fix;
+- v1.3.0.6 retroactive completion for **The Secrets of Ugdenbog** and **Cleansing Fire of a Forgotten God**;
+- v1.3.0.6 difficulty-scaled **Noktukari bounty** reputation;
+- v1.3.0.6 **A Dreadful Encounter** reset/recompletion behavior;
+- v1.3.0.6 fixes for Fangs of Asterkarn multiplayer breadcrumb/questline start and **Kurn Solutions** Alteration unlock.
+
+If the recovered Codex contains those records, confirm its descriptions and troubleshooting notes match current behavior.
 
 ### Areas, maps, and route guidance
 
@@ -273,9 +300,10 @@ Verify:
 - dungeon/interior relationships;
 - quest-object locations;
 - current expansion areas;
-- route text after UI/map changes.
+- route text after UI/map changes;
+- density/spawn advice that can become stale after content patches.
 
-The v1.3.0.5 Frostveil Highlands crash fix is useful as a current-version boundary. Historical troubleshooting that tells users to avoid a specific crash location must be marked stale if it only applied to v1.3.0.4.
+Concrete current checks include the v1.3.0.5 Frostveil Highlands crash fix, the v1.3.0.6 Frostveil Highlands density increase, and the v1.3.0.6 **Frozen Aster** spawn-rate increase.
 
 ### Monsters and bosses
 
@@ -289,7 +317,7 @@ Verify:
 - expansion-specific enemies;
 - difficulty-sensitive notes.
 
-The v1.3.0.5 Aetherial/Aetherial Vanguard Nemesis spawning fix should be checked against any Codex encounter guidance.
+The v1.3.0.5 Aetherial/Aetherial Vanguard Nemesis spawning fix and v1.3.0.6 Frozen Aster spawn change should be checked against any Codex encounter guidance.
 
 ### Items, crafting, and interactables
 
@@ -300,9 +328,10 @@ Verify:
 - set/item references;
 - quest items;
 - interactable locations;
-- crafting/stash terminology.
+- crafting/stash terminology;
+- Ascension Altar and multiplayer-drop guidance where present.
 
-The v1.3.0.5 Ugdenbog cauldron fix is a concrete test case for any interactable/location guidance covering that area.
+Current concrete cases include the v1.3.0.5 Ugdenbog cauldron fix plus v1.3.0.6 changes to Soul Echo/Soul Fragment instanced drops, Ascension Altar drop-chance and Nemesis-count bonuses, Ascended Affix reroll scaling, Legendary Helm blueprint behavior under loot bias, and Lightning bias behavior.
 
 ### Masteries, skills, and devotions
 
@@ -312,6 +341,8 @@ Verify:
 - skill names and mechanics used by the Codex;
 - devotion names and references;
 - any numerical values shown to users.
+
+The v1.3.0.6 baseline changes summon templates for Occultist Familiar/Hellhound and Shaman Briarthorn and changes Berserker Onslaught/Endless Rage behavior, plus Wereraven conversion visuals and Primal Strike animation timing. Treat any matching Codex skill guidance as version-sensitive.
 
 Do not copy balance numbers from old guides without source/version provenance.
 
@@ -415,7 +446,11 @@ Record the current Grim Dawn version, expansion, difficulty, quest state, and ex
 
 ### A bounty or enemy behavior differs from the Codex
 
-Check whether the behavior changed in the v1.3 hotfix line. The v1.3.0.5 Yura Voideye bounty and Aetherial Nemesis fixes are explicit examples of game behavior changing after the historical Codex line.
+Check whether the behavior changed anywhere in the current 1.3 patch line. The v1.3.0.5 Yura Voideye bounty/Aetherial Nemesis fixes and the v1.3.0.6 Noktukari/Frozen Aster/Fangs progression changes are explicit examples of game behavior changing after the historical Codex line.
+
+### Multiplayer quest progression differs from the Codex
+
+Check v1.3.0.6 before changing guide logic. That patch specifically adjusts retroactive quest completion, Fangs breadcrumb/intro starts, Fangs questline starts for clients, and Kurn Solutions Alteration unlock in multiplayer.
 
 ### A map or item link opens a generic page
 
@@ -480,21 +515,21 @@ A new Codex release should not be described as current until all applicable gate
 
 Recover the exact v6.1 HTML and add the **Content Freshness Manifest** without changing user-facing guide data.
 
-Classify every major data domain against the current official **v1.3.0.5** baseline as `VERIFIED_CURRENT`, `STALE`, `UNKNOWN`, or `NOT_APPLICABLE`. Then run the unchanged v6.1 browser workflow to prove the classification layer did not alter navigation, filtering, state, or data quantity.
+Classify every major data domain against the current official **v1.3.0.6** baseline as `VERIFIED_CURRENT`, `STALE`, `UNKNOWN`, or `NOT_APPLICABLE`. Then run the unchanged v6.1 browser workflow to prove the classification layer did not alter navigation, filtering, state, or data quantity.
 
 ### Acceptance
 
 - original v6.1 bytes and SHA-256 are preserved;
 - every major domain has explicit source/version status;
-- current baseline is recorded as v1.3.0.5 unless a later official patch supersedes it before execution;
+- current baseline is recorded as v1.3.0.6 unless a later official patch supersedes it before execution;
 - no content is deleted during freshness classification;
 - Fangs of Asterkarn gaps become explicit;
-- the Yura Voideye bounty, Frostveil Highlands, Ugdenbog cauldron, and Aetherial Nemesis examples are checked if present in the recovered dataset;
+- the v1.3.0.5 Yura Voideye/Frostveil/Ugdenbog/Aetherial-Nemesis cases and the v1.3.0.6 quest, bounty, Frozen Aster, Fangs multiplayer, lore-note, Ascension Altar, and mastery/skill changes are checked if present in the recovered dataset;
 - browser navigation/state behavior remains unchanged until a separately verified content migration is ready.
 
 ## Exact current next action
 
-Recover `Grim_Dawn_Cairn_Codex_Ultimate_v6_1.html`, preserve and hash the original bytes, browser-test the exact artifact, then run the domain freshness audit against Grim Dawn **v1.3.0.5** and Fangs of Asterkarn before changing guide content.
+Recover `Grim_Dawn_Cairn_Codex_Ultimate_v6_1.html`, preserve and hash the original bytes, browser-test the exact artifact, then run the domain freshness audit against Grim Dawn **v1.3.0.6** and Fangs of Asterkarn before changing guide content.
 
 If the file still cannot be recovered, continue searching by embedded titles, localStorage keys, prior version markers, and content fingerprints rather than scaffolding a replacement Codex.
 
@@ -504,7 +539,7 @@ Update this page when:
 
 - the historical artifact or canonical source is recovered;
 - the artifact hash/browser status is proven;
-- Crate publishes a newer patch than v1.3.0.5;
+- Crate publishes a newer patch than v1.3.0.6;
 - current-game data is reconciled;
 - a new Codex artifact supersedes v6.1;
 - persistence/migration behavior is verified or repaired;
