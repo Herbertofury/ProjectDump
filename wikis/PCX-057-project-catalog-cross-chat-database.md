@@ -1,8 +1,8 @@
 # Project Catalog / Cross-Chat Database Wiki
 
 **Project Constellation ID:** `PCX-057`  
-**Status:** ACTIVE / TRACKED, current catalog publication debt  
-**Current authority:** the valid 63-record Google Drive catalog plus current project-owned repository/runtime evidence  
+**Status:** ACTIVE / TRACKED, dual-publication catalog integrity verified  
+**Current authority:** the converged 63-record catalog in GitHub and Google Drive plus newer project-owned repository/runtime evidence where verified  
 **Goal:** Maintain the durable cross-project locator, version lineage, artifact hashes, and exact next actions without promoting stale copies by filename or timestamp alone.
 
 ## Purpose
@@ -18,65 +18,39 @@ The catalog must preserve same-name different-content artifacts, predecessor/suc
 
 ## Current verified catalog state
 
-Project Constellation still has a valid **63-record catalog**, but the two durable catalog copies are **not currently byte-identical**. The current machine-readable integrity receipt records a split state that supersedes the older wiki claim that GitHub and Drive contain the exact same bytes.
+The standalone Project Constellation catalog is again in a healthy dual-publication state.
 
-### Google Drive: current complete catalog authority
+The current verified catalog identity is:
 
-The current Drive object is:
+```text
+Path: project-constellation/Project-Constellation-Project-Catalog.json
+Drive file ID: 1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq
+Bytes: 116737
+SHA-256: 79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab
+Git blob SHA: 0cbd23ef565c5ea61c26c978142d2b1f434c6bbf
+JSON parse: pass
+Project count: 63
+Project array length: 63
+Unique project IDs: 63 / 63
+```
 
-- file: `Project-Constellation-Project-Catalog.json`
-- Drive file ID: `1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq`
-- size: **116,737 bytes**
-- SHA-256: `79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab`
-- JSON parse: **pass**
-- `projectCount`: **63**
-- project array length: **63**
-- unique project IDs: **63 / 63**
-- every project has a non-empty `goal`: **pass**
-- every project has a non-empty `requirements` array: **pass**
-- every project has `recoveryHistory`: **pass**
+The Google Drive catalog was re-downloaded during the current verification pass. Its raw SHA-256 is `79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab` and its exact byte size is 116,737 bytes.
 
-The current Drive catalog ends with `PCX-059`, `PCX-060`, `PCX-061`, `PCX-062`, and `PCX-063`, which is consistent with a complete 63-record set rather than a partial export.
+The same re-downloaded Drive bytes produce Git blob SHA `0cbd23ef565c5ea61c26c978142d2b1f434c6bbf` when passed through `git hash-object`. That equals the blob currently stored at the GitHub catalog path, so the GitHub and Drive objects are not merely semantically similar: they are the same promoted catalog bytes.
 
-### GitHub: current malformed/truncated mirror
+The catalog parses successfully and preserves all 63 tracked project objects. The last five IDs are `PCX-059`, `PCX-060`, `PCX-061`, `PCX-062`, and `PCX-063`, which confirms the file reaches the complete tail of the tracked-project set rather than stopping inside an earlier record.
 
-The current repository path is:
+Required continuity-field checks currently pass for every project:
 
-- path: `project-constellation/Project-Constellation-Project-Catalog.json`
-- current Git blob SHA: `297284ad1417e5b8b9dd8f6d16fbb3a28906e6ed`
-- size recorded by the current integrity receipt: **48,132 bytes**
-- SHA-256 recorded by the current integrity receipt: `e222fc0aadf0c653c1f87af2d790994235d9f30fb350b77a51274a7ad6ab5a45`
-- current receipt parse status: `pre-existing malformed catalog preserved; retired references removed`
+- non-empty `goal`;
+- non-empty `requirements`;
+- `recoveryHistory`;
+- `nextAction`;
+- `stopPoint`.
 
-A direct repository read confirms the GitHub file ends in the middle of the `PRJ-019` record, inside the USVFS research text, and does not contain the remainder of the 63-project document or closing JSON structure. Therefore the current GitHub copy must **not** be treated as the complete catalog authority even though its top-level header still says `projectCount: 63`.
+## Machine-readable integrity receipt
 
-This is a real publication-integrity defect. A header count is not proof that the complete record set is present.
-
-## Catalog publication history and the current split
-
-The standalone catalog was previously restored to GitHub from a verified Drive copy at commit:
-
-`eb99a193c08b9f2ca370dbcf85c75c2f997eafa6`
-
-An initial machine-readable integrity receipt was added at:
-
-`ab071e23eecb9c658ad6b50f62c9c2b73b3a4c68`
-
-The catalog documentation was then expanded at:
-
-`fe70193796934db22f31dffd4ccc5fbacc139974`
-
-Later cleanup work at commit:
-
-`057aa34c9b691b7898a0596a7fde0093da81a966`
-
-removed retired-project references across ProjectDump. The current integrity receipt deliberately records that the malformed GitHub catalog was **pre-existing and preserved** by that cleanup rather than claiming the cleanup produced a new valid catalog.
-
-The current integrity receipt was checked at `2026-08-18T16:20:00Z` and now records different Drive and GitHub byte identities. That receipt is stronger evidence than the older wiki text, so the wiki must reflect the divergence rather than repeat the earlier exact-match claim.
-
-## Machine-readable catalog integrity receipt
-
-The current receipt is:
+The durable integrity receipt is:
 
 `project-constellation/Project-Constellation-Catalog-Integrity.json`
 
@@ -86,105 +60,49 @@ Schema:
 project-constellation.catalog-integrity/1
 ```
 
-Current recorded identities:
+The current receipt was refreshed at `2026-08-20T03:50:00Z` and records:
 
 ```text
-Drive file ID: 1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq
 Drive bytes: 116737
 Drive SHA-256: 79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab
+Drive JSON parse: pass
 
-GitHub blob: 297284ad1417e5b8b9dd8f6d16fbb3a28906e6ed
-GitHub bytes: 48132
-GitHub SHA-256: e222fc0aadf0c653c1f87af2d790994235d9f30fb350b77a51274a7ad6ab5a45
-GitHub JSON parse: pre-existing malformed catalog preserved; retired references removed
+GitHub blob: 0cbd23ef565c5ea61c26c978142d2b1f434c6bbf
+GitHub bytes: 116737
+GitHub SHA-256: 79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab
+GitHub JSON parse: pass
+Git blob matches re-downloaded Drive bytes: true
+Exact byte match: true
+
+Project count: 63
+Project array length: 63
+Unique IDs: true
+Goal coverage: pass
+Requirements coverage: pass
+Recovery-history coverage: pass
+Next-action coverage: pass
+Stop-point coverage: pass
+Dual publication: PASS
 ```
 
-Current semantic invariants recorded by the receipt are:
+The receipt was committed as a new evidence checkpoint at ProjectDump commit `7e9791beeb4546a2230c8029724b3fe08e899ca0`.
 
-- `projectCount: 63`
-- unique project IDs
-- every project has a goal
-- every project has requirements
-- every project has recovery history
+## Historical publication-integrity incident
 
-Those semantic invariants describe the recovered 63-record continuity state and the complete Drive catalog. They do **not** make the current truncated GitHub file a valid 63-record JSON document.
+PCX-057 previously had a real split-publication defect and that history remains important.
 
-### Important interpretation of publication status fields
-
-The receipt currently says:
+The complete Drive catalog stayed valid at 116,737 bytes and SHA-256 `79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab`, while the GitHub mirror temporarily regressed to:
 
 ```text
-github: RESTORED_AND_FETCH_VERIFIED
-googleDrive: SOURCE_REDOWNLOADED_AND_SHA256_VERIFIED
+Git blob: 297284ad1417e5b8b9dd8f6d16fbb3a28906e6ed
+Bytes: 48132
+SHA-256: e222fc0aadf0c653c1f87af2d790994235d9f30fb350b77a51274a7ad6ab5a45
+Condition: malformed/truncated inside PRJ-019
 ```
 
-These labels mean the individual remote objects were fetched and identified. They do **not** mean the two remote objects currently match each other. The recorded byte counts and SHA-256 values prove that they do not.
+The truncated file retained a top-level `projectCount: 63` header but did not physically contain the complete 63-record document. That incident proved why a header count alone is insufficient integrity evidence.
 
-For PCX-057, a healthy dual-publication state requires one promoted catalog byte identity on both destinations, not two independently fetchable but different files.
-
-## Safe catalog recovery procedure
-
-The current defect is recoverable without reconstructing the project list or discarding continuity history.
-
-### 1. Freeze authority correctly
-
-Until the GitHub mirror is repaired, treat the verified Drive catalog as the complete standalone catalog authority. Project-specific repositories and project-owned memory can still supersede individual stale record fields when verified, but the malformed GitHub catalog must not supersede the complete Drive record set.
-
-### 2. Re-download and verify the Drive source
-
-Before any repair, verify all of the following against Drive file `1-ks_2aRKgKQ-O7Y9LHte7w_Xk5t16egq`:
-
-- exact byte size `116737`;
-- SHA-256 `79c43dde274c7e4420a27d35ff58fdea4b7bdfc4c5cc412ad527c995eb8977ab`;
-- JSON parses;
-- `projectCount == 63`;
-- exactly 63 project objects;
-- 63 unique project IDs;
-- every record retains goal, requirements, recovery history, next action, and stop point.
-
-If any of those fail, stop promotion and resolve the stronger source before writing either destination.
-
-### 3. Capture the broken GitHub identity before replacement
-
-Record the current GitHub blob, byte count, and hash before repair so the malformed state remains traceable:
-
-```text
-blob: 297284ad1417e5b8b9dd8f6d16fbb3a28906e6ed
-bytes: 48132
-sha256: e222fc0aadf0c653c1f87af2d790994235d9f30fb350b77a51274a7ad6ab5a45
-```
-
-Do not try to merge the truncated tail into the valid Drive JSON line by line. Preserve the malformed blob in Git history and promote one verified complete catalog.
-
-### 4. Replace the GitHub catalog only with verified complete bytes
-
-The safe repair is a scoped replacement of `project-constellation/Project-Constellation-Project-Catalog.json` using the verified complete catalog bytes, after confirming there is no newer valid catalog checkpoint that supersedes the Drive object.
-
-Do not regenerate from `USER-PROJECTS-DATABASE.md`, the Quick View HTML, filenames, timestamps, or partial GitHub records. Those are supporting continuity evidence, not substitutes for the verified complete catalog.
-
-### 5. Verify the repaired GitHub copy independently
-
-After replacement, fetch the repository file again and require:
-
-- byte size equal to Drive;
-- raw SHA-256 equal to Drive;
-- JSON parse pass;
-- 63 project objects;
-- 63 unique IDs;
-- required continuity fields intact;
-- no accidental truncation, encoding damage, or dropped history.
-
-### 6. Refresh the integrity receipt only after convergence
-
-`Project-Constellation-Catalog-Integrity.json` should then be rewritten with one shared promoted catalog identity and a new `checkedAt` value. The receipt should distinguish:
-
-- exact-byte equality across GitHub and Drive;
-- JSON parse result for each destination;
-- semantic invariant results;
-- the commit/blob identity that published the GitHub copy;
-- the Drive file ID and re-download verification result.
-
-A receipt must not label publication healthy merely because both destinations are separately readable.
+The incident is now **resolved**, not erased. The previous malformed blob remains preserved in Git history and in the integrity receipt's `historicalDivergence` section. Current GitHub and Drive catalog bytes converge on the complete 116,737-byte object.
 
 ## Authority and conflict resolution
 
@@ -193,12 +111,12 @@ Use this order when catalog records conflict:
 1. Current explicit user correction.
 2. Current canonical project repository/runtime evidence.
 3. Current project-owned memory / Project Compass evidence.
-4. The complete current Project Constellation catalog authority.
+4. The complete current Project Constellation catalog.
 5. Older handoffs, exports, File Library artifacts, and historical cross-chat database copies.
 
 A newer timestamp alone is never enough to win a conflict.
 
-The historical `USER-PROJECTS-DATABASE.md` remains valuable for lineage and detailed recovery history, especially for the original 25 project families, but it is historical evidence rather than authority over the current 63-record catalog.
+The historical `USER-PROJECTS-DATABASE.md` remains valuable for lineage and detailed recovery history, especially for the original project families, but it is historical evidence rather than authority over the current 63-record catalog.
 
 ## Required catalog record fields
 
@@ -223,46 +141,156 @@ A durable project record should preserve at least:
 
 Do not collapse `discovered`, `build passed`, `packaged`, `installed`, `real workflow passed`, and `restart persistence passed` into one `done` flag.
 
+## Version and artifact trust order
+
+When several copies claim to be current, resolve them in this order:
+
+1. explicit user correction;
+2. canonical repository and real runtime evidence;
+3. embedded version/changelog tied to exact bytes;
+4. content hash and verified predecessor/successor lineage;
+5. validation report tied to the same artifact identity;
+6. durable catalog/checkpoint metadata;
+7. upload or filesystem timestamp;
+8. filename alone.
+
+A numerically higher filename or newer modification time does not automatically supersede a known-good artifact.
+
+## Safe catalog update workflow
+
+### 1. Resolve the current promoted source
+
+Before modifying the catalog, identify the strongest verified current catalog object. Do not regenerate from the Quick View HTML, Wiki pages, filenames, or historical 25-project database when a complete stronger catalog already exists.
+
+### 2. Preserve the previous identity
+
+Before replacement, record:
+
+```text
+remote/source identity
+byte size
+SHA-256
+Git blob or Drive file ID
+project count
+checkpoint/revision
+```
+
+This keeps rollback and same-name-different-content history recoverable.
+
+### 3. Apply only verified record changes
+
+Project-owned evidence may refine a project name, repository, version, latest state, requirements, blocker, next action, or stop point. Preserve unaffected fields and recovery history. Do not regenerate all records just because one project changed.
+
+### 4. Validate the candidate locally
+
+Require:
+
+- JSON parse pass;
+- `projectCount == 63`;
+- exactly 63 project objects;
+- exactly 63 unique project IDs;
+- non-empty goal/requirements/recovery-history/next-action/stop-point coverage;
+- no retired/removed target accidentally reintroduced;
+- no unexpected truncation or encoding damage.
+
+### 5. Publish to both durable destinations
+
+The current catalog contract requires publication to:
+
+- `Herbertofury/ProjectDump` at `project-constellation/Project-Constellation-Project-Catalog.json`;
+- the canonical Project Constellation Google Drive location.
+
+An acknowledgement from one destination is insufficient.
+
+### 6. Re-read both remote objects independently
+
+After publication:
+
+- re-fetch GitHub and identify the current blob;
+- re-download Drive;
+- compare raw byte size;
+- compare SHA-256;
+- parse both copies;
+- rerun the 63-record semantic invariants.
+
+For GitHub/Drive exact-mirror verification, computing `git hash-object` on the re-downloaded Drive bytes is a useful independent cross-check against the GitHub content blob SHA.
+
+### 7. Refresh the integrity receipt last
+
+The receipt is the result of verification, not a prediction. Update it only after both remote copies are confirmed.
+
+The receipt should record:
+
+- checked time;
+- GitHub commit/blob;
+- Drive file ID;
+- exact byte size and SHA-256 for both;
+- parse result for both;
+- exact-byte equality;
+- project count and unique-ID result;
+- required-field coverage;
+- any historical divergence being closed or newly opened.
+
 ## Integrity layers
 
-### Exact byte identity
+### Raw byte identity
 
-Raw SHA-256 plus exact byte size is the primary publication identity when verifying that GitHub and Drive carry the same promoted catalog bytes.
+Exact byte size plus SHA-256 is the primary publication identity when GitHub and Drive are intended to mirror one promoted catalog file.
 
-### JSON parsing and semantic invariants
+### Git blob identity
 
-Exact bytes are not sufficient if the promoted object is malformed. Both remote copies should parse independently and satisfy the 63-project invariant set.
+Git's blob SHA is content-derived. Comparing the repository blob with `git hash-object` of the independently re-downloaded Drive file adds a useful provider-independent equality check.
+
+### JSON parsing
+
+A byte-complete object that does not parse is not a healthy catalog.
+
+### Semantic invariants
+
+The catalog must still contain 63 records, unique IDs, and required continuity fields after every update. Exact bytes alone do not prove the document remains meaningful.
 
 ### Optional schema validation
 
-A formal JSON Schema can be added as an extra contract for field types, required properties, enums, and nested structures. Schema validation is additive and must not discard existing continuity detail simply to make validation easier.
+A formal JSON Schema can add field-type and enum validation. It is additive. It must not delete valid continuity detail simply to simplify the schema.
 
 ### Optional canonical semantic digest
 
-A canonicalized JSON digest can be useful to detect semantic equality across harmless formatting differences. It is additive evidence only. It must not replace raw-byte equality when the publication requirement is exact remote-byte identity.
+A canonicalized JSON digest can help compare meaning across harmless formatting changes. It is additive evidence only and does not replace raw-byte equality where exact publication identity is required.
 
-## Publication-integrity contract
+## Publication-debt conditions
 
-Treat any of these conditions as publication debt:
+Treat any of these as catalog publication debt:
 
 - the GitHub catalog path is missing;
-- either remote copy is truncated or malformed;
-- GitHub and Drive byte size or SHA-256 differ when exact mirror publication is expected;
+- the Drive catalog is missing;
+- either copy is truncated or malformed;
+- GitHub and Drive differ in byte size or SHA-256 when they are expected to mirror one promoted object;
 - project count is not 63;
-- the project array does not contain 63 records;
+- the project array does not physically contain 63 records;
 - project IDs are not unique;
 - required continuity fields disappear;
 - a historical 25-project database is promoted over stronger current evidence;
-- the integrity receipt describes an older catalog rather than the promoted catalog;
-- the receipt reports both destinations as individually fetched but does not surface that their bytes diverge.
+- an integrity receipt describes older bytes than the currently promoted catalog;
+- a receipt claims success while one destination is only partially verified.
 
-The minimal integrity receipt for a healthy checkpoint should record both remote destinations, exact byte size, raw SHA-256, parse result, Git blob or commit identity, project count, unique-ID result, required-field coverage, and the checkpoint at which the comparison was performed.
+## Recovery procedure for future divergence
+
+If the catalog diverges again:
+
+1. freeze writes until the strongest complete authority is identified;
+2. re-download every plausible candidate and compare bytes, hashes, parse state, record count, and project IDs;
+3. preserve every divergent blob/file identity before replacing anything;
+4. choose the complete verified candidate using the authority order above;
+5. replace only the stale/broken destination;
+6. re-read both remote destinations independently;
+7. require exact-byte equality plus JSON and semantic-invariant passes;
+8. refresh the integrity receipt only after convergence.
+
+Do not merge a truncated tail into a complete catalog line-by-line and do not invent missing records.
 
 ## Optional indexed mirror
 
-SQLite can be useful as a **derived index** for fast cross-project search, relationship lookup, artifact-hash lookup, and research-freshness queries. It must not become the sole authority or silently rewrite canonical project records.
-
-If added, the mirror should be reproducible from the canonical JSON and disposable without data loss.
+SQLite can be useful as a derived index for fast cross-project search, relationship lookup, artifact-hash lookup, and research-freshness queries. It must remain disposable and reproducible from canonical JSON. It must not become the sole authority or silently rewrite canonical project records.
 
 ## Anti-degradation rules
 
@@ -293,4 +321,4 @@ The standalone catalog is durable only when:
 
 ## Exact current next action
 
-Restore `project-constellation/Project-Constellation-Project-Catalog.json` from the verified complete Drive catalog only after confirming that no newer valid catalog checkpoint supersedes it. Then re-fetch both destinations, require exact byte/hash equality plus independent JSON/63-record validation, and refresh `Project-Constellation-Catalog-Integrity.json` so it records one converged catalog identity. Schema validation and semantic canonicalization should wait until the publication debt is closed.
+Keep the converged 116,737-byte catalog and its integrity receipt synchronized whenever a future verified project-record change is promoted. On every catalog publication, re-read both GitHub and Drive, require exact size/SHA-256 equality plus independent JSON and 63-record validation, then refresh the integrity receipt last. If any destination diverges, reopen publication debt immediately and repair the stale side without reconstructing or flattening the catalog history.
