@@ -32,20 +32,20 @@ Recovered authoritative artifacts include:
 
 The preview is a visual/interaction reference. Its simulated process list, meters, CPU, and latency values are not runtime evidence.
 
-## Current stack freshness, checked 2026-08-17
+## Current stack freshness, checked 2026-08-20
 
 The recovered Auralis stack is unusually current and should **not** be churned merely to look newer:
 
-- [Rust 1.97.1](https://blog.rust-lang.org/2026/07/16/Rust-1.97.1/) is the current stable point release as of this review. Rust 1.98 is scheduled after this checkpoint, so the master directive is already on the current stable compiler line.
-- [Slint 1.17](https://slint.dev/blog/slint-1.17-released) is the current stable Slint release line. It adds desktop-relevant capabilities including system tray icons, drag/drop, tooltips, model-row two-way binding, and an embeddable MCP server for accessibility-tree inspection/input/screenshot-driven UI automation.
-- [`windows` 0.62.2](https://docs.rs/crate/windows/latest) remains the current documented Rust-for-Windows crate line.
-- [Rubato 4.0.0](https://docs.rs/rubato/latest/rubato/) remains the current major release and explicitly documents real-time-safe processing without allocations during processing.
+- [Rust 1.97.1](https://blog.rust-lang.org/releases/latest/) remains the current stable Rust point release as of this review. The master directive is already on the current stable compiler line.
+- The recovered directive pins **Slint 1.17.0**, but the current stable patch release is [Slint 1.17.1](https://github.com/slint-ui/slint/releases/tag/v1.17.1), released July 7, 2026. It fixes several startup/runtime crashes and UI correctness issues, including `TextEdit` cursor scrolling, conditional `Timer.restart()` panic, struct-field two-way binding crashes, and other rendering/windowing defects. Treat 1.17.1 as a **patch-level qualification candidate** once the canonical Auralis source is recovered. Do not rewrite the recovered 1.17.0 lockfile baseline before first proving the existing build.
+- [`windows` 0.62.2](https://docs.rs/crate/windows/latest) remains the current documented Rust-for-Windows crate line used by the recovered directive.
+- [Rubato 4.0.0](https://github.com/HEnquist/rubato) remains the current major release and explicitly documents real-time-safe processing without allocations during processing.
 
 ### Decision
 
-Keep the pinned Auralis stack as the baseline until the canonical source is recovered and built. There is currently no evidence-backed reason to replace Rust, Slint, windows-rs, or Rubato.
+Preserve the recovered Rust 1.97.1 / Slint 1.17.0 / windows-rs 0.62.2 / Rubato 4.0 pins as the **recovery baseline** until the canonical source is found and built. After that baseline succeeds, qualify Slint 1.17.1 as the first low-risk patch candidate because it fixes concrete runtime/UI defects without changing the intended Slint major/minor architecture.
 
-Slint 1.17's new MCP accessibility/input/screenshot capability is a useful **test/debug adapter candidate**, not part of the audio signal path. If adopted, it should be isolated to development/verification surfaces and must never be required for real-time audio operation.
+Slint 1.17's MCP accessibility/input/screenshot capability remains a useful **test/debug adapter candidate**, not part of the audio signal path. If adopted, isolate it to development/verification surfaces and never require it for real-time audio operation.
 
 ## Capture and routing contract
 
@@ -178,14 +178,15 @@ Required proof includes:
 Once the canonical source repository/worktree is resolved:
 
 1. verify Rust/Slint/windows-rs/Rubato lockfile identity against this recovered directive;
-2. build without changing dependencies;
+2. build the recovered 1.17.0 Slint baseline without changing dependencies;
 3. enumerate active Core Audio sessions;
 4. implement or verify one process-tree loopback capture path;
 5. exercise default-device switching and process relaunch;
 6. record latency, underruns, recovery time, and exact build hash;
-7. only then evaluate the virtual-endpoint routing layer.
+7. qualify Slint 1.17.1 as a separate patch-only build and rerun the same UI/runtime checks;
+8. only then evaluate the virtual-endpoint routing layer.
 
-This isolates the riskiest Windows audio fundamentals before DSP or UI expansion.
+This isolates the riskiest Windows audio fundamentals and keeps the Slint patch decision evidence-based before DSP or broader UI expansion.
 
 ## Current blocker
 
@@ -195,7 +196,7 @@ Do not initialize a replacement Auralis repository merely because the connected 
 
 ## Exact next action
 
-Resolve the canonical Auralis source repository/worktree and reconcile it against `MASTER_BUILD_PROMPT.md`, `IMPLEMENTATION.md`, and the interactive preview. Preserve the recovered stack pins as the baseline and run the capture/routing baseline before any architecture migration.
+Resolve the canonical Auralis source repository/worktree and reconcile it against `MASTER_BUILD_PROMPT.md`, `IMPLEMENTATION.md`, and the interactive preview. Preserve the recovered stack pins as the first baseline, then qualify the Slint 1.17.1 patch separately before considering any larger dependency or architecture migration.
 
 ## Wiki maintenance
 
