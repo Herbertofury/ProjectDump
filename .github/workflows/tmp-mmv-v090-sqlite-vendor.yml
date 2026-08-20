@@ -1,6 +1,6 @@
 # Temporary public runner workflow for Minecraft Mod Vault v0.9.0.
 # The artifacts are independently verified before use and this branch is never merged.
-name: MMV v0.9.0 modernc SQLite and Go toolchain bundle
+name: MMV v0.9.0 modernc SQLite, Go toolchain, and mcmeta seed bundle
 
 on:
   pull_request:
@@ -88,6 +88,22 @@ jobs:
           tar --sort=name --mtime='2026-08-20 00:00:00 UTC' --owner=0 --group=0 --numeric-owner -czf mmv-v090-modernc-vendor.tar.gz -C bundle .
           sha256sum mmv-v090-modernc-vendor.tar.gz > mmv-v090-modernc-vendor.tar.gz.sha256
 
+      - name: Download and validate mcmeta version facts
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/mmv-mcmeta-seed"
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT"
+          cd "$ROOT"
+          curl --fail --location --retry 5 --retry-all-errors \
+            https://raw.githubusercontent.com/misode/mcmeta/summary/versions/data.json \
+            --output mcmeta-versions.json
+          jq -e 'type == "array" and length >= 300' mcmeta-versions.json >/dev/null
+          jq -e 'all(.[]; (.id|type=="string") and (.data_version|type=="number") and (.protocol_version|type=="number") and (.data_pack_version|type=="number") and (.resource_pack_version|type=="number") and (.sha1|type=="string"))' mcmeta-versions.json >/dev/null
+          jq '{count:length, latest:.[0], oldest:.[-1]}' mcmeta-versions.json > MCMETA-SEED-SUMMARY.json
+          sha256sum mcmeta-versions.json MCMETA-SEED-SUMMARY.json > SHA256SUMS.txt
+
       - name: Upload modernc vendor bundle
         uses: actions/upload-artifact@v4
         with:
@@ -104,6 +120,18 @@ jobs:
         with:
           name: go1.27.0-linux-amd64
           path: ${{ runner.temp }}/mmv-toolchain/go1.27.0.linux-amd64.tar.gz
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+      - name: Upload mcmeta version seed
+        uses: actions/upload-artifact@v4
+        with:
+          name: mmv-v090-mcmeta-versions-seed
+          path: |
+            ${{ runner.temp }}/mmv-mcmeta-seed/mcmeta-versions.json
+            ${{ runner.temp }}/mmv-mcmeta-seed/MCMETA-SEED-SUMMARY.json
+            ${{ runner.temp }}/mmv-mcmeta-seed/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
