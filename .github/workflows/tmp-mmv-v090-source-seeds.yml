@@ -3,6 +3,11 @@
 name: MMV v0.9.0 official loader, mapping, API, and build-tool seeds
 
 on:
+  push:
+    branches:
+      - tmp-mmv-v090-sqlite-vendor
+    paths:
+      - .github/workflows/tmp-mmv-v090-source-seeds.yml
   pull_request:
     branches:
       - main
