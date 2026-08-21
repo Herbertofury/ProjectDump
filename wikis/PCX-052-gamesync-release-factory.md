@@ -1,68 +1,77 @@
 # GameSync Release Factory Wiki
 
-**Project ID:** PCX-052
-**Project Constellation goal:** Create reproducible GameSync application/extension release artifacts from canonical source.
-**Documentation status:** Current source-grounded release/build contract
-**Primary shipping repository:** `Herbertofury/Gamesync`
+**Project ID:** PCX-052  
+**Project Constellation goal:** Create reproducible GameSync application and extension release artifacts from canonical source.  
+**Documentation status:** Current source-grounded release/build contract  
+**Primary shipping repository:** `Herbertofury/Gamesync`  
 **Primary migration repository:** `Herbertofury/GameSync-Next`
 
 ## Purpose
 
-GameSync Release Factory is the release-discipline track around GameSync rather than a separate application repository. Its job is to turn the current canonical GameSync sources into reproducible build outputs, run the checks that protect extension identity and user state, exercise the generated extension in Opera GX where the verifier supports it, and keep generated artifacts distinct from editable source.
+GameSync Release Factory is the release-discipline track around GameSync rather than a separate product repository. Its job is to turn canonical GameSync source into reproducible build outputs, prove that the candidate being tested is the candidate being packaged, exercise the actual browser/application workflows that matter, preserve extension identity and user state, keep generated artifacts separate from editable source, and publish the final tested bytes durably.
 
-The most important rule is that a successful source edit is not itself a release. A release candidate must be built from the canonical source, checked using the repository's current validation paths, and identified by the exact source revision and generated artifact being tested.
+A successful source edit is **not** a release. A release candidate is complete only when the exact source revision, dependency state, generated output, runtime verification, final packaged artifact, and remote publication can be tied together with evidence.
 
-## Current source baselines
+## Current production authorities
 
 ### Shipping JavaScript extension
 
-Repository: `Herbertofury/Gamesync`
+Repository: `Herbertofury/Gamesync`  
+Current `main`: `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
 Current package version: **0.6.3**
-Current observed `main` head used for this wiki: `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`
 
-The repository explicitly separates:
+The shipping repository separates:
 
 - `app/` - canonical editable extension source;
 - `dist/` - generated production extension;
 - `vite.config.ts` and `package.json` - build tooling;
 - `scripts/`, `dev/`, `rust/`, `docs/`, and `reference/` - supporting development material.
 
-`dist/` is the folder intended to be loaded unpacked in Opera GX. It is regenerated from `app/` by the build and must not be mistaken for the authoritative editable source.
+`dist/` is the unpacked Opera GX runtime target. It is generated from `app/` and must not be treated as the editable source of truth.
 
 ### GameSync Next / Extension V2
 
-Repository: `Herbertofury/GameSync-Next`
-Current observed `main` head used for this wiki: `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`
+Repository: `Herbertofury/GameSync-Next`  
+Current `main`: `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`  
 Extension V2 package version: **0.8.0**
 
-GameSync Next is a workspace-based migration repository. The Extension V2 workspace is `apps/extension-v2`; it uses WXT, TypeScript, React, and shared GameSync packages. The generated Chromium Manifest V3 build is referenced by the repository's verification tools at:
+The migration repository is workspace-based. Extension V2 lives under `apps/extension-v2` and uses WXT, TypeScript, React, and shared GameSync packages. The generated Chromium Manifest V3 build used by current verification lives at:
 
-`apps/extension-v2/.output/chrome-mv3`
+```text
+apps/extension-v2/.output/chrome-mv3
+```
 
-This generated directory is a release/test input, not the canonical source tree.
+That generated directory is a test/release input, not canonical source.
 
-The current GameSync Next head is two commits ahead of the previous release-factory documentation baseline `9e337c720f0180cffa577f140b181c699f0a1650`. The merged delta materially expands the extension release surface with Universal Game Tracker, Bounty, Animation Tracker, new import/export dependencies, background alarms/message routing, UI routes, parity-matrix changes, and substantially expanded Opera verification.
+Current `main` includes the verified Universal Game Tracker, Bounty, and Animation Tracker recovery merge and therefore has a materially broader release surface than the earlier `9e337c720f0180cffa577f140b181c699f0a1650` baseline.
 
-## Shipping extension build pipeline
+## Source versus generated output
 
-Run from the shipping extension repository root used by its `package.json`:
+Release work must preserve this separation:
+
+| Lane | Canonical source | Generated runtime/output |
+| --- | --- | --- |
+| Shipping extension | `Gamesync/app/` | `Gamesync/dist/` |
+| Extension V2 | `GameSync-Next/apps/extension-v2/` plus shared packages | `apps/extension-v2/.output/chrome-mv3` |
+| Extension V2 packaged artifact | same source as above | output from `wxt zip` |
+| Desktop/server | their workspace source | built workspace artifacts |
+
+Never repair a release by editing a generated folder directly. Fix the source/build configuration, rebuild, and re-verify the regenerated product.
+
+## Shipping GameSync build and validation
+
+From the shipping repository root:
 
 ```powershell
 npm ci
 npm run build
 ```
 
-The build command is `vite build`.
+`npm run build` executes `vite build`. The Vite configuration uses `app/` as the root, clears `dist/`, builds the popup/options/panel/full/offscreen/background/content entry points, and runs the repository runtime-closure logic that copies required non-bundled runtime material.
 
-The Vite configuration uses `app/` as its root, empties `dist/`, builds the popup, options, panel, full view, offscreen document, background service worker, and content entry points, then runs a runtime-closure plugin that copies required runtime directories and files that were not emitted by Rollup/Vite.
+The runtime closure includes the manifest, locales, packs, themes, extension surfaces, mascot/shimeji assets, voice/WASM/template/test assets, and other explicitly enumerated runtime files. Because `dist/` is cleared first, release validation must target the newly generated `dist/`, not a stale unpacked copy.
 
-The runtime closure currently preserves entries including `_locales`, assets, background/content/full/panel/popup/options modules, packs, themes, third-party assets, the Shimeji Browser Engine, voice packs, WASM, templates, test assets, the manifest, `Mascot_Engine.js`, and other explicitly enumerated runtime files.
-
-Because `dist/` is emptied and regenerated, release verification must be performed against the newly generated `dist/`, not an older unpacked directory left from a previous build.
-
-## Shipping extension development and validation commands
-
-The shipping repository currently exposes these commands:
+Current shipping commands include:
 
 ```powershell
 npm run dev
@@ -73,143 +82,235 @@ npm run build:wasm:legacy-accel
 npm run preview
 ```
 
-Their verified meanings from `package.json` are:
+`build:wasm:legacy-accel` additionally requires the Rust/`wasm-pack` toolchain and should be run only when that subsystem is actually part of the change.
 
-- `dev`: run Vite in development mode;
-- `build`: generate the production extension with Vite;
-- `test:bounty`: execute the Bounty Node test suite under `app/test/bounty/`;
-- `benchmark:bounty`: run the Bounty benchmark script;
-- `build:wasm:legacy-accel`: rebuild the legacy acceleration WASM package with `wasm-pack` into `app/wasm/gs-legacy-accel`;
-- `preview`: run Vite preview.
+### Shipping Opera target
 
-Only run the WASM rebuild when that subsystem is actually part of the change; it requires the external Rust/wasm-pack toolchain in addition to npm dependencies.
-
-## Shipping extension Opera install target
-
-After `npm run build`, load this generated directory as the unpacked Opera GX extension:
+After a successful build, load:
 
 ```text
 <clone-directory>\dist
 ```
 
-The repository README states that this generated directory is the only folder intended to be loaded unpacked. Loading `app/` directly bypasses the production build contract and is not equivalent release evidence.
+as the unpacked Opera GX extension. Loading `app/` directly bypasses the production build contract and does not prove the shipping artifact works.
 
 ## GameSync Next build pipeline
 
-At the GameSync Next repository root, the workspace package exposes a broad build graph. The main aggregate build is:
+At repository root:
 
 ```powershell
 npm ci
 npm run build
 ```
 
-The root `build` script first builds shared packages and then builds the server and desktop workspaces. `build:packages` currently builds schema, shared, engine, core, Pixi game, and UI packages in sequence.
-
-Feature Foundry and HyperBowl have separate build commands and should not be treated as automatically covered by the root build unless their named command is run.
+The root build covers the shared package graph and the named application workspaces included by that script. Feature Foundry, HyperBowl, Extension V2, or another independently named workspace must not be assumed covered unless its command actually runs.
 
 ### Extension V2 build
-
-Build Extension V2 directly with:
 
 ```powershell
 npm --workspace apps/extension-v2 run build
 ```
 
-The workspace `build` script runs:
+The workspace build runs:
 
 1. `wxt build`;
 2. `verify:offscreen-runtime`.
 
-A release candidate that bypasses the second step is not equivalent to the repository's declared Extension V2 build.
+A candidate that skips the second step is not equivalent to the repository-declared build.
 
-### Extension V2 ZIP packaging
-
-The Extension V2 workspace exposes:
+### Extension V2 ZIP
 
 ```powershell
 npm --workspace apps/extension-v2 run zip
 ```
 
-This delegates to `wxt zip`. Treat the ZIP generated by that command as a packaging artifact. Do not infer a stable filename or publish destination unless the actual current output is inspected in the build environment.
+This delegates to `wxt zip`. Record the actual produced filename, byte size, and digest from the environment that created it rather than assuming a historical filename.
 
-## Extension V2 manifest and identity contract
+## Extension identity and upgrade safety
 
-Extension V2 is currently Manifest V3 and declares version **0.8.0**. Its WXT configuration embeds a public extension identity key and provides a dedicated same-ID upgrade verifier.
+Extension V2 is Manifest V3 and currently declares version **0.8.0**. The current same-ID verifier expects extension ID:
 
-The release factory must preserve identity deliberately because changing the extension ID can sever access to existing browser-managed extension data.
+```text
+piihebkkniekgkehlpkjdmhnhndccaai
+```
 
-The repository's same-ID verifier expects extension ID:
-
-`piihebkkniekgkehlpkjdmhnhndccaai`
-
-The verifier tests an upgrade from the current JavaScript extension to the generated V2 build using a dedicated Opera GX profile. It writes sentinels into:
-
-- `chrome.storage.local`;
-- `chrome.storage.sync`;
-- IndexedDB.
-
-It then loads the V2 build, verifies that the extension ID is unchanged, verifies V2 reports version 0.8.0, confirms all three sentinel stores survived the upgrade, restarts Opera with the V2 build, and confirms identity/version again after restart.
-
-Run it with:
+Run:
 
 ```powershell
 npm --workspace apps/extension-v2 run verify:same-id-upgrade
 ```
 
-The script locates the legacy JavaScript extension from supported sibling/workspace layouts or from `GAMESYNC_LEGACY_EXTENSION_PATH`. It uses `OPERA_GX_PATH` when the default Opera GX executable cannot be resolved.
+The verifier writes sentinels into `chrome.storage.local`, `chrome.storage.sync`, and IndexedDB under the legacy extension, loads the V2 build, verifies the same extension ID and expected version, confirms those stores survived the upgrade, restarts Opera, and checks identity/version again.
 
-A successful build without this test does not prove migration safety.
+A clean build without this test does not prove upgrade safety.
 
-## Extension V2 Opera verification
+Useful environment input includes `GAMESYNC_LEGACY_EXTENSION_PATH` when the shipping source is not in a supported sibling layout and `OPERA_GX_PATH` when Opera GX is not discoverable automatically.
 
-The repository exposes two related commands:
+## Current Opera verification
+
+GameSync Next exposes:
 
 ```powershell
 npm run verify:extension-v2:opera
 npm --workspace apps/extension-v2 run verify:opera
 ```
 
-The root command first rebuilds Extension V2 and then executes `scripts/verify-extension-v2-opera.js`. The workspace command invokes that verifier directly and therefore assumes a suitable generated build already exists.
+The root command rebuilds Extension V2 before calling `scripts/verify-extension-v2-opera.js`. The workspace command invokes the verifier directly and therefore assumes a suitable generated build already exists.
 
-The verifier is explicitly tied to the generated path:
+The verifier targets:
 
-`apps/extension-v2/.output/chrome-mv3`
+```text
+apps/extension-v2/.output/chrome-mv3
+```
 
-It can launch Opera GX, stage a smoke-specific copy of the generated extension, connect through Chrome DevTools Protocol, exercise extension/runtime surfaces, and write reports/traces under the repository `output` area.
+and can launch Opera GX, stage a smoke copy, connect through Chrome DevTools Protocol, exercise extension/runtime surfaces, and preserve reports/traces.
 
-Important environment controls currently include:
+Relevant environment controls include:
 
-- `OPERA_GX_EXE` - Opera GX executable path;
-- `GAMESYNC_V2_TARGET_URL` - target site for the smoke flow;
-- `GAMESYNC_V2_EXTENSION_ID` - use a configured installed extension identity/profile path;
-- `GAMESYNC_V2_OPERA_PROFILE` - override the profile used by verification;
-- `GAMESYNC_V2_ARTIFACT_DIR` - verification artifact directory;
-- `GAMESYNC_V2_REPORT` - JSON report path;
-- `GAMESYNC_V2_TRACE` - Playwright trace path;
-- `GAMESYNC_V2_OPERA_DEBUG_PORT` - CDP port;
-- `GAMESYNC_VERIFY_TRANSFORMERS` - enable deeper transformer/WASM smoke validation;
-- `GAMESYNC_V2_PRESERVE_PROFILE` - preserve the verification profile;
-- `GAMESYNC_V2_USE_LOAD_EXTENSION_FLAGS` - control whether a staged unpacked extension is loaded with browser flags.
+- `OPERA_GX_EXE`;
+- `GAMESYNC_V2_TARGET_URL`;
+- `GAMESYNC_V2_EXTENSION_ID`;
+- `GAMESYNC_V2_OPERA_PROFILE`;
+- `GAMESYNC_V2_ARTIFACT_DIR`;
+- `GAMESYNC_V2_REPORT`;
+- `GAMESYNC_V2_TRACE`;
+- `GAMESYNC_V2_OPERA_DEBUG_PORT`;
+- `GAMESYNC_VERIFY_TRANSFORMERS`;
+- `GAMESYNC_V2_PRESERVE_PROFILE`;
+- `GAMESYNC_V2_USE_LOAD_EXTENSION_FLAGS`.
 
-Do not report Opera verification as passed unless the verifier actually completes successfully and its generated evidence corresponds to the exact candidate being released.
+Do not report Opera verification as passed unless the exact candidate completed the verifier and its evidence can be tied to the candidate source/build identity.
 
-## Parity gate between shipping GameSync and GameSync Next
+## Current `test:e2e-opera` compatibility defect
 
-GameSync Next contains an executable parity audit:
+Current `main` still declares:
+
+```text
+node opera-extension/app/tests/e2e.opera-gx.test.js
+```
+
+for `test:e2e-opera`, but that file is absent on current `main`. Therefore:
+
+```powershell
+npm run test:e2e-opera
+```
+
+must **not** be represented as a working release gate on current `main`.
+
+Draft GameSync Next PR #15 stages a compatibility entrypoint that delegates to the maintained `verify:extension-v2:opera` path, but the PR remains unmerged and fail-closed pending exact-head execution. Until it is actually merged and reverified, use the maintained verifier and present Playwright lanes for real evidence and record the legacy entrypoint as unresolved.
+
+## Parity gate
+
+GameSync Next contains an executable shipping-to-V2 parity audit:
 
 ```powershell
 npm run audit:gamesync-parity
 ```
 
-The migration repository's recent history includes a fix specifically making the parity audit rebuild Extension V2 before examining generated manifest output in a clean checkout. This is important release-factory behavior: parity checks must not accidentally read stale generated output.
+The current audit rebuilds Extension V2 before reading generated manifest output in a clean checkout. The machine-readable parity contract is `docs/gamesync-parity-matrix.json`.
 
-The root README also identifies `docs/gamesync-parity-matrix.json` as the machine-readable parity contract and `scripts/audit-gamesync-parity.mjs` as the executable parity audit.
+Treat parity as a distinct release gate. Compilation does not prove feature parity, and structural audit success must not be confused with every runtime capability being fully equivalent.
 
-For a V2 migration release, treat parity as a distinct gate from compilation. A V2 build can compile while still omitting shipping-extension behavior.
+## Current merged Extension V2 release surface
 
-## Regression and browser test commands in GameSync Next
+Current `main` materially expands the release surface with three verified feature groups.
 
-Available current commands include:
+### Universal Game Tracker
+
+The merge adds typed tracker records, Dexie persistence, schema/record editors, relationships, worker-owned import/export, DOCX/XLSX/XLS/CSV/TSV/JSON handling, Google Docs/Sheets export-URL handling, Word dropdown extraction, and binary image handling.
+
+Current direct portability dependencies include:
+
+- `docx` `^9.7.1`;
+- `linkedom` `^0.18.12`;
+- `mammoth` `^1.12.0`;
+- SheetJS `xlsx` from the explicit `0.20.3` CDN tarball.
+
+Project-owned merge evidence records isolated Opera imports from both a 43 MB local DOCX and a live Google Doc path, each producing 181 active records, 75 relationships, and 124 schema-bound images, with editable state and JSON/XLSX/DOCX/CSV export checks. Preserve those results as project-owned evidence, not as tests rerun by this wiki-maintenance pass.
+
+### Bounty
+
+The merge adds typed Bounty contracts, service/background routing, reminder alarms, UI routing, and persistence. Project-owned evidence records a clean isolated Opera synchronization of 107 live GamerPower records with a rendered calendar and healthy source state.
+
+A release touching shared background/bootstrap/storage code must re-qualify Bounty message routing, alarms, persisted state, source failure visibility, and the built route.
+
+### Animation Tracker
+
+The merge adds creator/pack contracts, HTTPS source validation, version detection/comparison, polling state, alarm handling, UI routes, and persistence. Project-owned evidence records a real HTTPS poll, semantic-version detection, and an available update rendered without remounting the React root.
+
+A release touching shared background/bootstrap/storage code must re-qualify the Animation Tracker polling/alarm/persistence lifecycle.
+
+## Current package-manager security proposal: npm 12
+
+A new coordinated release-engineering proposal appeared after the previous Release Factory checkpoint. It is **draft, branch-only, and unmerged**; it is not current production behavior.
+
+### GameSync Next proposal
+
+PR: `Herbertofury/GameSync-Next#23`  
+Base: current `main` `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`  
+Exact proposal head observed for this wiki: `14d35f4f7dea811af2b3e7a4056a676e217f0072`  
+Proposed npm: **12.0.2**
+
+The proposal deliberately treats npm 12 as a security-policy migration, not a version-only bump. It stages:
+
+- `engines.npm = 12.0.2`;
+- fail-closed `devEngines` for npm 12.0.2 and Node `^24.15.0 || >=26.0.0`;
+- root-workspace `allowScripts` as the single project policy;
+- exact install-script approvals derived from the committed lockfile;
+- `.npmrc` with `strict-allow-scripts=true`;
+- `allow-git=none`;
+- `allow-remote=root` because Extension V2 directly declares the reviewed SheetJS CE tarball URL;
+- verification that rejects missing, stale, overbroad, or unexpected install-script/remote-source permissions.
+
+The current proposal lists only lockfile identities requiring install-script approval, including Playwright browser Chromium, BabylonJS, better-sqlite3, optional canvas, esbuild, fsevents, onnxruntime-node, protobufjs, nested sharp, and wasm-pack identities present in that graph.
+
+### Shipping GameSync paired proposal
+
+PR: `Herbertofury/Gamesync#5`  
+Base: current shipping `main` `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`  
+Exact proposal head observed for this wiki: `2990dad9134d066bcc5593ee0f9c10751a8e4a97`  
+Proposed npm: **12.0.2**
+
+The shipping proposal applies the same Node/npm policy but deliberately uses:
+
+```text
+allow-git=none
+allow-remote=none
+strict-allow-scripts=true
+```
+
+because the current shipping direct graph does not require the GameSync Next SheetJS remote tarball. Its present install-script approval is limited to the exact `fsevents@2.3.3` identity in the committed graph.
+
+### Why this matters to Release Factory
+
+npm 12 changes release reproducibility and supply-chain acceptance. Current npm 12.0.2 documentation exposes `allowScripts`, `strict-allow-scripts`, `allow-git`, and `allow-remote` controls; `strict-allow-scripts=true` makes an unreviewed dependency install script a hard install failure instead of silently normalizing trust.
+
+As of this checkpoint, Node **26.7.0 Current** still ships npm **11.19.0**, so selecting npm 12.0.2 is a deliberate project toolchain decision rather than merely inheriting the npm bundled with the newest Node binary.
+
+If the proposal is eventually promoted, the release ledger must record all of the following separately:
+
+1. exact Node version;
+2. exact npm version;
+3. exact lockfile digest;
+4. exact `allowScripts` policy and zero pending approvals;
+5. `allow-git` / `allow-remote` policy;
+6. frozen `npm ci` result;
+7. proof that `npm ci` did not mutate the committed lockfile;
+8. security audit result;
+9. affected builds/runtime gates;
+10. exact final artifact digest and publication proof.
+
+Do **not** use `dangerously-allow-all-scripts`, `allow-remote=all`, hand-edited lock metadata, skipped install scripts, or reduced browser/runtime coverage as a way to make a candidate pass.
+
+### Required severe acceptance before promotion
+
+The coordinated proposal requires npm 12.0.2 verification on Node 24.19.0 and Node 26.7.0, frozen install, zero pending script approvals, immutable lockfile, security audit, affected product builds, parity checks, exact-build Ferrum acceptance, and real Opera GX fresh/restart evidence. GameSync Next additionally covers its broader workspace build graph and fresh standalone parity audit.
+
+Until those exact-head gates actually execute and the PRs merge, **current main remains npm-11-era production source** for release documentation purposes.
+
+## Regression and browser commands in GameSync Next
+
+Current root commands include:
 
 ```powershell
 npm run lint
@@ -222,266 +323,201 @@ npm run pw:test:opera-extension
 npm run test:mo2-regression
 npm run test:intel-regression
 npm run test:intel-ui-smoke
-npm run test:e2e-opera
 npm run test:extension-regression
+npm run verify:extension-v2:opera
 ```
 
-Use the checks relevant to the changed release surface. For broad extension changes, `test:extension-regression` combines the current MO2 and intelligence regression groups; the root package also exposes Playwright web, Chromium-extension, and Opera-extension smoke paths.
+Use the checks relevant to the changed release surface. A single green build is not a substitute for affected regression, parity, restart, persistence, or real-browser checks.
 
-### Current `test:e2e-opera` boundary
+## Security and credential boundary
 
-`package.json` still declares:
+The shipping repository and GameSync Next both carry secret-scanning workflows. Record the exact repository and exact source revision that supplied security evidence; a sibling repository's passing scan is not interchangeable proof.
 
-```text
-node opera-extension/app/tests/e2e.opera-gx.test.js
-```
+Steam, Nexus Mods, Twitch, and other user credentials belong in browser-managed/runtime storage and must not be bundled into source or generated release artifacts. The public Manifest key is extension identity material, not a private signing credential.
 
-but that target file is absent at current main `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`. Therefore `npm run test:e2e-opera` must **not** be represented as a currently working release gate until its entrypoint is repaired or intentionally redirected to a maintained equivalent.
+Before publication, inspect the exact archive/directory being shipped rather than assuming `.gitignore` or CI alone prevents local material from entering the artifact.
 
-For current Extension V2 release qualification, use the maintained `verify:extension-v2:opera` / `verify:opera` path and the Playwright extension lanes that resolve to present files. A missing legacy entrypoint is a release-factory defect to fix, not a reason to mark that check passed.
+## Artifact attestations and provenance
 
-A single passing build is not a substitute for the affected regression and runtime checks.
+GitHub artifact attestations can be an additive release layer for final GameSync ZIPs/binaries. When used, bind the attestation to the exact final publishable file and keep its subject digest in the release ledger.
 
-## Current merged Extension V2 release surface
+A suitable workflow can:
 
-The current main merge `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` materially broadens what an Extension V2 release must preserve compared with the previous wiki baseline.
+1. build the final artifact from the exact source revision;
+2. compute SHA-256 and byte size;
+3. generate GitHub build provenance for that exact file;
+4. optionally generate and attest SPDX/CycloneDX SBOM data;
+5. download the artifact in a fresh environment;
+6. run `gh attestation verify` against the owning repository;
+7. compare the verified subject digest to the release ledger;
+8. publish the same bytes to GitHub and Drive;
+9. re-download/hash both remote copies.
 
-### Universal Game Tracker
+Attestation does not replace functional browser/application acceptance. A cryptographically proven broken build is still broken.
 
-The merge adds a typed Game Tracker feature, Dexie-backed data model, UI routes, schema editor, record editor, relationship handling, and worker-owned import/export paths. Supported import/export code now includes DOCX, XLSX/XLS, CSV/TSV, JSON, Google Docs/Sheets export URLs, native Word dropdown extraction, and binary image handling.
+## Required release ledger
 
-Extension V2 now directly depends on additional portability libraries including:
-
-- `docx` `^9.7.1`;
-- `linkedom` `^0.18.12`;
-- `mammoth` `^1.12.0`;
-- SheetJS `xlsx` from the explicit `0.20.3` CDN tarball.
-
-The lockfile changed with this merge. A release candidate must therefore be installed from the candidate lockfile and must not silently reuse a dependency tree from the earlier 9e337 baseline.
-
-Project-owned merge evidence records a clean isolated Opera run that imported both the supplied 43 MB local DOCX and a live Google Doc path independently. Each produced 181 active records, 75 relationships, and 124 schema-bound images; the UI exposed imported dropdown options and persisted an inline edit; JSON, XLSX, DOCX, and CSV exports completed and passed content checks. Treat these as project-owned verification evidence for the merged source, not as tests executed by this wiki-maintenance pass.
-
-### Bounty
-
-The merge adds typed Bounty contracts, service/background routing, reminder alarms, UI routing, and persistence. Project-owned merge evidence records a clean isolated Opera synchronization of 107 live GamerPower records with a healthy source state and rendered calendar.
-
-A release touching background bootstrap, alarms, runtime messaging, storage, or Bounty UI must preserve:
-
-- `BOUNTY_*` message routing;
-- reminder alarm creation and handling;
-- persisted Bounty state;
-- real source synchronization and visible failure state;
-- the exact runtime route in the built extension.
-
-### Animation Tracker
-
-The merge adds creator and pack contracts, HTTPS source validation, version detection/comparison, polling state, alarm handling, UI routes, and persistence. Project-owned merge evidence records an exact HTTPS source poll, semantic-version detection, and an available installed-pack update rendered without remounting the React root.
-
-A release touching the background bootstrap, route shell, storage, or network behavior must preserve the Animation Tracker alarm and polling lifecycle in addition to ordinary compilation.
-
-### Release-factory consequence
-
-The same merge modifies `apps/extension-v2/src/background/bootstrap.ts`, `App.tsx`, `docs/gamesync-parity-matrix.json`, the extension lockfile/dependency graph, and `scripts/verify-extension-v2-opera.js`. Release qualification for current main therefore needs to bind the candidate source SHA to all of the following rather than relying on an older 0.8.0 smoke result:
-
-1. fresh `npm ci` from the current lockfile;
-2. fresh Extension V2 build plus offscreen-runtime verification;
-3. current parity audit after generated output is rebuilt;
-4. current Opera verifier against the generated `.output/chrome-mv3` candidate;
-5. import/export round-trip evidence for Game Tracker when that surface is in scope;
-6. Bounty source/alarm/persistence evidence when Bounty or shared background code is in scope;
-7. Animation Tracker poll/alarm/persistence evidence when Animation or shared background code is in scope;
-8. extension identity and same-ID upgrade proof for migration releases;
-9. final ZIP hash/size and dual-destination remote byte verification when a release artifact is published.
-
-## Secret scanning and credential boundary
-
-The shipping repository currently has a GitHub Actions `Secret scan` workflow that runs on push, pull request, and manual dispatch. It checks out full history and runs Gitleaks using `.gitleaks.toml`.
-
-GameSync Next current main also contains a `secret-scan.yml` workflow. Release bookkeeping should record which repository and exact source commit supplied the security scan evidence instead of treating a passing scan from the sibling repository as interchangeable.
-
-The repository README also states that Steam, Nexus Mods, Twitch, and other user-provided credentials are stored at runtime in browser-managed extension storage and are not bundled into `app/` or `dist/`.
-
-The public manifest `key` is extension identity material, not a private signing key. Private signing keys, local environment files, credential exports, registry authentication, and local browser profiles must remain outside release artifacts.
-
-Before publication, inspect the exact candidate archive/directory rather than assuming `.gitignore` or CI alone guarantees that no local material was packaged.
-
-## Signed build provenance and artifact attestations
-
-GitHub's current artifact-attestation path can add cryptographically signed build provenance to GameSync release artifacts without replacing any existing release gate. GitHub Actions currently documents `actions/attest@v4` with `id-token: write`, `contents: read`, and `attestations: write`; the final publishable ZIP or binary is supplied as the attestation subject. GitHub also supports signed SPDX or CycloneDX SBOM attestations for the same artifact.
-
-For public repositories, GitHub-backed attestations use the Sigstore Public Good Instance and are intended to let consumers verify where and how the artifact was built. The corresponding verification command is:
-
-```text
-gh attestation verify PATH/TO/ARTIFACT -R OWNER/REPOSITORY
-```
-
-This should be an **additive provenance layer**, not a substitute for SHA-256, exact source revision, reproducible build identity, same-ID upgrade verification, parity audit, Opera/runtime tests, remote Drive/GitHub byte verification, or regression suites. An attested artifact can still be functionally broken if the workflow built broken source, so runtime acceptance remains mandatory.
-
-### Proposed attested-release experiment
-
-For one Extension V2 release candidate after all existing build/runtime gates pass:
-
-1. produce the final ZIP in GitHub Actions from the exact source commit under test;
-2. compute and record its SHA-256 and byte size;
-3. generate build provenance for that exact ZIP with `actions/attest@v4`;
-4. optionally generate an SPDX or CycloneDX SBOM and attest it against the same ZIP;
-5. download the workflow artifact into a fresh environment and run `gh attestation verify` against the owning repository;
-6. compare the verified attestation subject digest to the release ledger SHA-256;
-7. publish the exact same bytes to the intended GitHub release and Google Drive destination;
-8. re-download both remote copies and verify their SHA-256/size still match the attested subject.
-
-This ties source commit, workflow identity, final bytes, remote publication, and consumer verification together without weakening any existing GameSync acceptance gate.
-
-## Recommended release ledger
-
-For every candidate, record at least:
+Record at least:
 
 | Field | Required evidence |
 | --- | --- |
-| Project lane | shipping GameSync, Extension V2, desktop/server, or another named workspace |
+| Project lane | shipping GameSync, Extension V2, desktop/server, or named workspace |
 | Repository | exact `owner/name` |
 | Source revision | full commit SHA |
 | Declared version | exact package/manifest version |
+| Node version | exact runtime used by the candidate |
+| npm version | exact package manager used by the candidate |
+| Lockfile identity | digest and no-mutation/frozen-install evidence |
+| Install-script policy | exact `allowScripts` and pending-approval result when applicable |
+| Remote-source policy | exact `allow-git` and `allow-remote` policy when applicable |
 | Build command | exact command actually executed |
 | Generated output | exact path/file tested |
-| Build result | observed exit/result |
-| Regression checks | exact suites and results |
-| Runtime check | exact Opera/browser/app workflow and result |
-| Identity check | extension ID/version and migration result when applicable |
+| Build result | observed result |
+| Regression checks | exact suites/results |
+| Runtime check | exact Opera/browser/app workflow/result |
+| Identity check | extension ID/version and migration result where applicable |
 | Packaging command | exact command used |
-| Artifact digest | SHA-256 of the final publishable file when a file artifact exists |
-| Artifact size | final byte size |
-| Attestation subject | exact subject path/name and SHA-256 digest when provenance is generated |
-| Attestation verification | observed `gh attestation verify` result and owning repository |
-| SBOM attestation | predicate/type and verification result when produced |
-| Publication destination | exact release/Drive/repository object |
-| Remote verification | remote size/digest or complete re-download/hash |
-| Known exclusions | tests/workspaces not exercised |
+| Artifact digest | SHA-256 of final publishable file |
+| Artifact size | final bytes |
+| Attestation | subject digest/verification result when used |
+| Publication destination | exact GitHub/Drive/release object |
+| Remote verification | provider digest/size or complete re-download/hash |
+| Known exclusions | relevant gates not exercised |
 
-This prevents a source commit, generated folder, ZIP, attestation, and remotely published artifact from being conflated as though they were the same thing.
+This prevents source, lockfile, generated folder, ZIP, attestation, and remote publication from being conflated.
 
-## Release procedure: shipping GameSync extension
+## Release procedure: shipping GameSync
 
-1. Resolve the canonical `Herbertofury/Gamesync` `main` revision and confirm the intended version in `package.json`/manifest.
-2. Install dependencies with the lockfile-compatible npm workflow, normally `npm ci`.
-3. Run the regression or feature-specific tests relevant to the change.
-4. Run `npm run build`.
-5. Confirm `dist/` was freshly regenerated and contains the expected manifest/runtime closure.
-6. Load the generated `dist/` into the real target Opera GX environment for the affected workflow when release confidence depends on browser behavior.
-7. Inspect console/service-worker/runtime errors relevant to the changed feature.
-8. Package the tested generated output using the project's actual chosen release packaging procedure. Do not substitute an untested source archive for the tested runtime.
-9. Hash the final publishable file when packaging produces one.
-10. When the candidate is built in GitHub Actions, generate and verify an artifact attestation for the exact final publishable file without replacing the existing runtime gates.
-11. Publish the intended bytes to the durable destinations and verify each remote object before recording the release complete.
+1. Resolve current canonical `Gamesync/main` and intended version.
+2. Resolve the project's declared Node/npm policy for that exact source revision; do not apply a draft npm 12 branch policy to current `main` by assumption.
+3. Install from the candidate lockfile using the exact supported package manager, normally frozen `npm ci`.
+4. Run affected regression/security checks.
+5. Run `npm run build`.
+6. Confirm `dist/` was freshly regenerated and contains the expected runtime closure.
+7. Load the new `dist/` in the real target Opera GX environment for the affected workflow.
+8. Inspect service-worker/content/page console/runtime failures relevant to the change.
+9. Package the tested generated product using the project's real release path.
+10. Record final file size/SHA-256.
+11. Generate/verify provenance when using the attested GitHub Actions lane.
+12. Publish the same tested bytes to the intended durable destinations.
+13. Re-download or provider-verify both destinations before recording publication complete.
 
 ## Release procedure: Extension V2
 
-1. Resolve the canonical `Herbertofury/GameSync-Next` revision.
-2. Run `npm ci`.
-3. Build required shared dependencies and the Extension V2 workspace as needed by the selected command path.
-4. Run `npm --workspace apps/extension-v2 run build`.
-5. Run lint/typecheck checks relevant to the extension surface.
-6. Run `npm run audit:gamesync-parity` for migration/parity-sensitive releases.
-7. Run `npm --workspace apps/extension-v2 run verify:same-id-upgrade` when claiming a safe upgrade from the shipping extension.
-8. Run `npm run verify:extension-v2:opera` for the real Opera build/runtime lane when available.
-9. Run relevant Playwright and extension regression suites. Do not count the currently broken `test:e2e-opera` legacy entrypoint as a pass.
-10. For current main, add the Game Tracker/Bounty/Animation feature-specific qualification described above when the candidate touches those features or shared background/UI/storage code.
-11. If packaging a release ZIP, run `npm --workspace apps/extension-v2 run zip` only after the candidate build and checks correspond to the source revision being released.
-12. Record the final ZIP hash/size, generate and verify build provenance for those exact bytes when using the GitHub Actions release lane, and keep the attestation subject digest in the release ledger.
-13. Publish the same verified bytes to the intended GitHub and Drive destinations and re-download/hash both before declaring the release durable.
+1. Resolve current canonical `GameSync-Next/main`.
+2. Resolve the exact Node/npm/lockfile policy for that source revision.
+3. Run the supported frozen install.
+4. Build affected shared packages/workspaces.
+5. Run `npm --workspace apps/extension-v2 run build`.
+6. Run relevant lint/type/regression suites.
+7. Run `npm run audit:gamesync-parity` for migration/parity-sensitive releases.
+8. Run `verify:same-id-upgrade` when claiming a safe legacy-to-V2 upgrade.
+9. Run `npm run verify:extension-v2:opera` and relevant Playwright extension lanes.
+10. Do not count the current missing-file `test:e2e-opera` compatibility path as passing until its repair is actually merged and verified.
+11. Add current feature-specific Game Tracker/Bounty/Animation qualification when shared background/UI/storage or those features are affected.
+12. Run `npm --workspace apps/extension-v2 run zip` only after the candidate being packaged matches the candidate tested.
+13. Hash the final ZIP and record bytes.
+14. Generate/verify provenance when used.
+15. Publish the exact tested bytes to GitHub and Drive.
+16. Re-download/hash both remote copies before declaring the release durable.
 
 ## Modifying the release factory
 
-### Adding a release check
+### Add a release check
 
-Prefer a deterministic command that can run from a clean checkout and fails with a non-zero status when the acceptance condition is not met. If the check consumes generated output, make the dependency explicit so stale output cannot create a false pass.
+Prefer a deterministic command that runs from a clean checkout, fails non-zero when the acceptance condition is unmet, and either produces evidence itself or points to a machine-readable result. If it consumes generated output, make the build dependency explicit so stale artifacts cannot create false passes.
 
-### Adding a generated artifact
+### Add a generated artifact
 
-Document:
+Document its canonical inputs, generator command, output location, reproducibility expectations, consumer runtime, validation checks, source-control status, packaging role, and final publication identity.
 
-- canonical source inputs;
-- command that generates it;
-- exact output location;
-- whether the output is reproducible;
-- runtime that consumes it;
-- checks that validate it;
-- whether it is source-controlled, ignored, or release-only.
+### Change extension identity
 
-### Changing extension identity
+Treat any manifest identity change as migration-sensitive. Update and rerun same-ID expectations deliberately. Never dismiss an accidental extension-ID change as packaging noise.
 
-Treat any change to manifest identity material as a migration-sensitive release. Update and rerun same-ID/upgrade expectations deliberately. Never treat an accidental ID change as harmless packaging churn.
+### Change workspace version
 
-### Changing workspace versions
+Update package/manifest versions together with verifier expectations that intentionally assert them. The current same-ID verifier expects V2 version 0.8.0.
 
-Update the package/manifest version and any verifier expectations that intentionally assert that version. The current same-ID verifier explicitly expects Extension V2 version 0.8.0; a future version bump requires the verifier to be updated together with the release contract.
+### Change package manager
+
+Treat it as release infrastructure and supply-chain behavior, not cosmetic tooling. Version, engine policy, lockfile format/identity, install-script approvals, remote-source policy, CI images, developer instructions, security gates, and generated product qualification must move coherently.
 
 ## Troubleshooting
 
-### `dist/` behaves differently from `app/`
+### `dist/` differs from `app/`
 
-This is expected to be possible because `dist/` is a generated production closure. Rebuild and debug the generated runtime. Do not ship `app/` as a workaround.
+Expected: `dist/` is generated. Fix source/build closure and rebuild; do not ship `app/` as a workaround.
 
-### Extension V2 Opera verifier cannot find Opera GX
+### Opera GX is not found
 
-Set the supported Opera executable environment variable used by the selected verifier. `verify-same-id-upgrade.mjs` uses `OPERA_GX_PATH`; `verify-extension-v2-opera.js` uses `OPERA_GX_EXE`.
+Use the environment variable expected by the selected verifier: same-ID uses `OPERA_GX_PATH`; the maintained Extension V2 verifier uses `OPERA_GX_EXE`.
 
-### Same-ID verifier cannot find the legacy extension
+### Same-ID verification loses storage
 
-Keep the shipping GameSync repository in one of the supported sibling layouts or set `GAMESYNC_LEGACY_EXTENSION_PATH` to the canonical legacy extension source containing its manifest.
+Block the upgrade claim. Check extension identity, loaded profile/build, and migration/storage behavior. Do not weaken sentinel checks.
 
-### Same-ID validation loses storage
+### Parity only fails in a clean checkout
 
-Treat this as a release blocker for an upgrade claim. Determine whether extension identity changed, the wrong profile/build was loaded, or migration behavior modified browser storage. Do not weaken the sentinel test.
+Treat that as a build dependency/stale-generated-output defect. The parity audit should rebuild what it consumes rather than relying on old generated files.
 
-### Parity audit fails only in a clean checkout
+### `npm run test:e2e-opera` reports a missing file
 
-Treat that as a build-dependency defect rather than preserving generated output to make the test pass. The current repository history already hardened the audit to rebuild Extension V2 before reading generated manifest output.
+That is a known current-main compatibility defect. Use the maintained verifier for actual evidence and keep PR #15 fail-closed until its compatibility entrypoint is merged and proven.
 
-### `npm run test:e2e-opera` fails with a missing file
+### `npm ci` fails after npm 12 policy is adopted
 
-At current main this is an expected repository defect because the declared `opera-extension/app/tests/e2e.opera-gx.test.js` entrypoint is absent. Use the maintained current verifier/Playwright paths for actual release evidence, record the legacy gate as unresolved, and repair the package script separately rather than suppressing the failure.
+Do not bypass policy globally. Identify the exact dependency/source that is blocked, confirm it is required and reviewed, add the narrowest identity-scoped approval, regenerate authoritative lock/policy state with the real package manager, and rerun the full severe matrix.
 
-### Game Tracker import/export passes locally but fails after packaging
+### Game Tracker works before packaging but fails after packaging
 
-Verify that the candidate was installed from the exact current lockfile, that worker-owned portability modules are present in the generated extension, and that the build being loaded is the exact `.output/chrome-mv3` candidate. The current merge adds `docx`, `mammoth`, `linkedom`, and SheetJS dependencies plus worker-owned DOCX/spreadsheet/export paths, so stale dependency or generated-output reuse can create false local confidence.
+Verify exact lockfile/dependency identity, generated worker/runtime closure, and the exact `.output/chrome-mv3` build loaded. The current merge adds document/spreadsheet parser/export dependencies that stale installs or stale output can omit.
 
-### Bounty or Animation works until browser/service-worker restart
+### Bounty/Animation works only before service-worker restart
 
-Check that the current build preserved background bootstrap message routing, alarm creation, alarm listeners, and persisted state. Treat a release that only works in the initial live service worker as incomplete.
+Check background bootstrap routing, alarm listeners, alarms, and persisted state. Initial-worker-only success is incomplete release evidence.
 
 ### Secret scan fails
 
-Inspect the finding and remove the sensitive material from the candidate/history as appropriate. Do not disable the Gitleaks release guard merely to publish.
+Investigate and remove the sensitive material appropriately. Do not disable the release guard to publish.
 
 ### Attestation verification fails
 
-Treat this as a release-provenance blocker for any release that claims attested provenance. Confirm the artifact bytes match the recorded subject digest, the expected repository owns the attestation, and the tested/downloaded artifact is the same object that the workflow attested. Do not regenerate an attestation over different bytes and present it as proof for the original candidate.
+Treat attested provenance as failed until artifact bytes, subject digest, repository ownership, and tested/downloaded object identity agree.
 
-### A ZIP exists but no tested generated directory can be tied to it
+### A ZIP exists but cannot be tied to the tested generated build
 
-The ZIP is not sufficient release proof. Rebuild from a known source revision, test that exact candidate, then regenerate/package and hash the final artifact.
+Rebuild from a known revision, test that candidate, regenerate the package, and re-hash. The existence of a ZIP is not release proof.
 
 ## Verification boundary for this wiki
 
-This page documents the **current repository-declared release and verification mechanisms**, current merged Extension V2 release-surface evidence, and a sourced GitHub artifact-attestation proposal. During this documentation pass, the repositories were inspected remotely and current GitHub documentation was revalidated; this pass did not execute npm builds, launch Opera GX, generate a new ZIP, create a GameSync artifact attestation, or publish a GameSync product release.
+This page documents the current repository-declared release mechanisms, current merged Extension V2 release surface, the new coordinated npm 12.0.2 security-policy proposals, and current upstream npm/Node behavior relevant to that proposal.
 
-The two source baselines inspected were shipping GameSync 0.6.3 at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` and GameSync Next at `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`, with Extension V2 declaring version 0.8.0.
+This wiki-maintenance pass did **not** merge either npm 12 proposal, execute a GameSync product build, launch Opera GX, publish a GameSync product release, or create a new GameSync artifact attestation. Draft proposal evidence is therefore kept separate from current-main product authority.
 
-Project-owned commit evidence for `cd906ff0831bf7fc33b41fea31b6f0c004cc1562` records the Universal Game Tracker, Bounty, and Animation Tracker isolated-Opera acceptance summarized above. Those are retained as project evidence, not re-labeled as tests executed during this wiki-maintenance pass.
+Current main authorities remain:
+
+- shipping GameSync `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`, version 0.6.3;
+- GameSync Next `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`, Extension V2 version 0.8.0.
+
+Current draft package-manager proposal heads observed for this checkpoint are:
+
+- `Gamesync#5`: `2990dad9134d066bcc5593ee0f9c10751a8e4a97`;
+- `GameSync-Next#23`: `14d35f4f7dea811af2b3e7a4056a676e217f0072`.
+
+Re-read active PRs before executing from a recorded SHA because proposal heads can advance.
 
 ## Wiki maintenance triggers
 
 Update this page when any of the following materially changes:
 
-- shipping GameSync version or build layout;
-- Extension V2 current main head, version, WXT layout, or output directory;
-- Game Tracker, Bounty, Animation Tracker, or another release-critical feature changes the lockfile, background bootstrap, route shell, parity matrix, or Opera verifier;
+- shipping GameSync source/version/build layout;
+- GameSync Next current `main`, Extension V2 version, WXT layout, output directory, or release-critical feature surface;
+- Node/npm/package-manager policy, lockfile format, install-script approval model, or remote dependency policy;
+- paired release/security proposal state or exact head when it materially changes the release contract;
 - extension identity or same-ID migration logic;
-- build, ZIP, parity, lint, regression, Playwright, legacy E2E, or Opera verification commands;
-- artifact-attestation action/version, provenance policy, SBOM predicate, or verification workflow;
-- release/publishing destination;
-- generated artifact naming/layout;
-- secret scanning or credential boundaries;
+- build, ZIP, parity, lint, regression, Playwright, Opera, or compatibility-entrypoint commands;
+- artifact attestation/SBOM/provenance policy;
+- security scanning or credential boundaries;
 - desktop/server packaging flow;
-- remote artifact verification procedure.
+- remote publication and byte-verification procedure.
