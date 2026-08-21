@@ -1,60 +1,309 @@
 # Feature Foundry Wiki
 
 **Project Constellation ID:** `PRJ-002`  
-**Status:** ACTIVE, major production rebuild  
-**Strongest verified runnable lineage:** **V33 FINAL_READY**  
-**Newest remotely byte-verified maintainable source lineage:** **GameSync / Feature Foundry V2-253**  
-**Recovery authority:** `Feature Foundry Recovery Checkpoint Ledger - V2 Continuity`, Drive document `1AES2lZ6GFfpdBFZdSX4XXy-FbGQxPKGrXFLJjM67Smg`  
-**Connected placeholder repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)
+**Status:** ACTIVE, released production application with preserved historical recovery lineages  
+**Current canonical repository:** [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry)  
+**Current canonical released source line:** `v24.0.0`  
+**Current verified repository head:** `e1ba080b5c7590f1c844a6ed13b3a471709920b9`  
+**Tagged release:** [Feature Foundry v24.0.0](https://github.com/Herbertofury/Feature-Foundry/releases/tag/v24.0.0)  
+**Canonical Drive release folder:** [Feature Foundry v24.0.0](https://drive.google.com/drive/folders/1eU95XQZNq-3mc9HvY08JbClSBTu7tXYY)  
+**Historical runnable benchmark:** `V33 FINAL_READY`  
+**Historical project-operations/recovery line:** `GameSync / Feature Foundry V2-253`  
+**Recovery authority for V2 history:** `Feature Foundry Recovery Checkpoint Ledger - V2 Continuity`, Drive document `1AES2lZ6GFfpdBFZdSX4XXy-FbGQxPKGrXFLJjM67Smg`
 
 ## Mission
 
-Feature Foundry is intended to be a professional, deeply moddable authoring application for living theme worlds rather than a static theme generator or prototype gallery. It covers living worlds, UI skins, rooms, objects, weather, time, lighting, soundtracks, UI sounds, mascots, interactions, assets, research, mixing, project operations, automation, packaging, and exports to multiple hosts.
+Feature Foundry is a professional, deeply moddable authoring application for living theme worlds rather than a static theme generator or prototype gallery. It covers living worlds, UI skins, rooms, objects, weather, time, lighting, soundtracks, UI sounds, mascots, interactions, assets, research, mixing, persistent project state, packaging, and exports to multiple hosts.
 
-The continuity rule is strict: database validation, standalone HTML demonstrations, generated starter packages, design directives, source checkpoints, and subsystem test builds are all useful evidence, but they prove different things. None may silently substitute for the real production application and its verified workflows.
+The continuity rule is strict: a database validation report, standalone HTML demonstration, generated starter package, design directive, recovery checkpoint, release artifact, and current repository prove different things. Preserve all of them, but never allow an older recovery artifact to override newer current project-owned source/runtime evidence.
 
 ## Current authority model
 
-Feature Foundry now has two verified authority lanes that must remain separate.
+Feature Foundry now has a real production repository and published v24 release. The earlier umbrella wiki described `Herbertofury/Feature-Foundry` as a placeholder; that is no longer true.
 
-### Runnable-product authority: V33 FINAL_READY
+### 1. Current production source and released application: Feature Foundry v24.0.0
 
-`V33 FINAL_READY` remains the strongest verified standalone runnable artifact lineage. It is the current user-facing behavior benchmark for the living-world application, UI non-regression, runtime ecology, persistence, and performance-equivalence expectations.
+`Herbertofury/Feature-Foundry` is the default authority for current install, operation, source modification, build, native packaging, runtime behavior, media/music integration, persistence, and release work.
 
-### Maintainable-source authority: GameSync / Feature Foundry V2-253
+Current source verifies:
 
-The Drive recovery ledger now resolves a newer maintainable source lineage through **V2-253**. V2-253 restores `apps/feature-foundry` as a real React workspace and adds a persistent Project Vault daemon, Continuous Improvement Radar, Feature Drops, agent operations, repository intelligence, dependency and release-integrity evidence, and machine-computed launch readiness.
+- package version `24.0.0`;
+- TypeScript 7 + Vite 8 web application;
+- Three.js/WebGL living-world renderer;
+- Tauri 2 + Rust native desktop shell;
+- bundled SQLite persistence;
+- the V24 imperative compatibility contract preserved inside the typed source tree;
+- V33-derived theme/world authority integrated into the production application;
+- **17 approved theme packages / worlds**;
+- **34 rooms**;
+- **17 weather systems**;
+- **85 exact ecology objects**;
+- **10 current artist worlds**;
+- six music provider adapters;
+- browser interaction/screenshot verification;
+- production web/source/native release artifacts;
+- GitHub release plus mirrored Google Drive release set.
 
-V2-253 does **not** supersede V33 as the strongest verified runnable product because the recorded exact production TypeScript/Vite build, browser production smoke, and desktop production smoke remain blocked by unavailable exact toolchain/package infrastructure in that execution environment.
+Current repository head:
 
-Use the lanes this way:
+`e1ba080b5c7590f1c844a6ed13b3a471709920b9`
 
-- use **V33** for strongest verified runnable/user-facing behavior;
-- use **V2-253** for newest remotely byte-verified maintainable source and recovery architecture;
-- preserve V23/V24/V11 as historical evidence and regression requirements;
-- treat later V2-254 Aesthetic Vault artifacts as subsystem evidence for [PCX-063 Feature Foundry Aesthetic Vault](https://github.com/Herbertofury/ProjectDump/wiki/PCX-063-feature-foundry-aesthetic-vault), not automatic proof of a newer complete production-app source checkpoint;
-- never relabel V2-253 as production-ready while a hard launch gate remains unproven;
-- never replace V33 behavior simply because V2 source is newer.
+The release implementation was introduced by `7dced5c61b83ce2478acee135b784abdbc5b3df5` (`feat: ship Feature Foundry living-world v24`), the complete release bundle was finalized by `f6ee83bdea159b1409954399a4b54cb1442dc104`, and the current head records the published v24 release.
+
+### 2. V33 FINAL_READY: preserved historical behavior benchmark
+
+`V33 FINAL_READY` remains a high-confidence runnable acceptance benchmark. Current v24 intentionally imports its richer theme/world authority instead of discarding it.
+
+Use V33 to catch regressions in historical living-world behavior, persistence, no-culling guarantees, visual/runtime richness, and interaction contracts. Do **not** treat its standalone artifact as newer source authority than the current Feature-Foundry repository.
+
+### 3. GameSync / Feature Foundry V2-253: preserved project-operations and recovery architecture
+
+The V2 recovery lineage remains important for Project Vault, Improvement Radar, agent operations, repository/supply-chain intelligence, launch-readiness modeling, and exact source-recovery history.
+
+V2-253 is no longer the default application source authority. It is a preserved parallel/historical architecture lane. Do not silently claim that every V2-253 Project Vault or agent subsystem ships in the standalone v24 repository unless current v24 source proves it.
+
+### 4. V11 / V23 / earlier V24: historical schema and executable evidence
+
+V11, V23, and the earlier standalone V24 prototype remain useful regression and data-history evidence. They no longer define current repository ownership.
+
+Use the authority order this way:
+
+1. current `Herbertofury/Feature-Foundry` source and release for current product behavior;
+2. exact current build/runtime evidence for claims about what works now;
+3. V33 for preserved high-confidence runnable/non-regression behavior;
+4. V2-253 for project-operations/recovery architecture that has not yet been proved inside current v24;
+5. V23/V24/V11 for historical schema, interaction, and runtime contracts.
 
 ## Project-family documentation map
 
-Feature Foundry is an umbrella project with several separately tracked implementation areas. Use the project-specific pages when working inside those domains:
+Feature Foundry is an umbrella project with several separately tracked implementation areas. Use the project-specific pages for deeper subsystem work:
 
-- [PCX-043 Feature Foundry Production App](https://github.com/Herbertofury/ProjectDump/wiki/PCX-043-feature-foundry-production-app) - production application, V2 recovery lineage, Project Vault, launch readiness.
+- [PCX-043 Feature Foundry Production App](https://github.com/Herbertofury/ProjectDump/wiki/PCX-043-feature-foundry-production-app) - current v24 application, release artifacts, install/build/package/runtime details.
 - [PCX-044 Feature Foundry Living Ecology](https://github.com/Herbertofury/ProjectDump/wiki/PCX-044-feature-foundry-living-ecology) - interactive living-world behavior and causal ecology.
-- [PCX-045 Feature Foundry Object Intelligence](https://github.com/Herbertofury/ProjectDump/wiki/PCX-045-feature-foundry-object-intelligence) - object identity, affordances, rigs, materials, and behavior intelligence.
-- [PCX-046 Feature Foundry Source Hubs](https://github.com/Herbertofury/ProjectDump/wiki/PCX-046-feature-foundry-source-hubs) - source/provider adapters and evidence.
-- [PCX-047 Favorite Artist Worlds Database](https://github.com/Herbertofury/ProjectDump/wiki/PCX-047-favorite-artist-worlds-database) - source-backed artist/world research data.
+- [PCX-045 Feature Foundry Object Intelligence](https://github.com/Herbertofury/ProjectDump/wiki/PCX-045-feature-foundry-object-intelligence) - object identity, affordances, materials, rigs, behavior intelligence, and V23-to-v24 coverage.
+- [PCX-046 Feature Foundry Source Hubs](https://github.com/Herbertofury/ProjectDump/wiki/PCX-046-feature-foundry-source-hubs) - provider adapters, authentication, provenance, and Music Hub boundaries.
+- [PCX-047 Favorite Artist Worlds Database](https://github.com/Herbertofury/ProjectDump/wiki/PCX-047-favorite-artist-worlds-database) - source-backed artist-world curation/database authority.
 - [PCX-059 Feature Foundry Project Brain Bridge](https://github.com/Herbertofury/ProjectDump/wiki/PCX-059-feature-foundry-project-brain-bridge) - project-brain import/export and continuity bridge.
-- [PCX-063 Feature Foundry Aesthetic Vault](https://github.com/Herbertofury/ProjectDump/wiki/PCX-063-feature-foundry-aesthetic-vault) - Inspiration Vault, browser capture, boards, provenance, cleanup, and V2-254 Aesthetic Vault evidence.
+- [PCX-063 Feature Foundry Aesthetic Vault](https://github.com/Herbertofury/ProjectDump/wiki/PCX-063-feature-foundry-aesthetic-vault) - Asset Vault, Inspiration Vault, capture/provenance, imported-asset durability, and convergence work.
 
-This umbrella page defines the product-wide source authority, history, architecture, recovery, and acceptance contract. Project-specific pages should hold deeper subsystem detail.
+This umbrella page owns product-wide authority, lineage, operating expectations, modification rules, and acceptance boundaries. Keep subsystem implementation detail on its project page rather than duplicating it indefinitely here.
 
-## V33 FINAL_READY runnable lineage
+## Current v24 release identity
 
-The project-owned Drive checkpoint `Feature Foundry V33 FINAL_READY Checkpoint`, created 2026-08-12, records status **FINAL_READY** and the strongest currently verified standalone runnable lineage.
+The current release artifacts are mirrored in Google Drive and recorded by the production-app continuity evidence.
 
-Verified V33 evidence:
+| Artifact | Drive file ID | Size | SHA-256 |
+| --- | --- | ---: | --- |
+| `Feature-Foundry-v24.0.0-source.zip` | `1tKvfMHe4bYV_tlZy_WLe4vaDeMECTkrq` | 6,998,572 bytes | `b8701b37328277667820af9f6ea630f33d13d1c9ffaa9827b914328895fc97c2` |
+| `Feature-Foundry-v24.0.0-web.zip` | `1SsDrkQxct_-DCB_qqWDrsBgA6rDsdt7y` | 328,556 bytes | `99f3714e5cae72e726711ebed0821ed09dbc1cadd7ab470afa2c3ad5f9f48726` |
+| `Feature-Foundry-v24.0.0-windows-x64-setup.exe` | `1TH-uZzg6r4ef0Qos6AjR5ZFjuSn10kV7` | 2,003,721 bytes | `b4ac90edf1213f3e5a9a1a8724184ae2e97bc30da3f69f877aadfe71819dc49a` |
+| `Feature-Foundry-v24.0.0-windows-x64.msi` | `1S7bOwzr3by8vAbEYiqxKE62vKy7ze5-g` | 2,633,728 bytes | `29a42693cc630d3aec72d137297063eab8f7c08ec21828cb8efd3871e025b157` |
+| `Feature-Foundry-v24.0.0-complete-release.zip` | `1PvBdu6sD8bm3AYnLmCnR4Hdo_HUNCbF2` | 11,716,663 bytes | `593b3e0be60ab694ddd8fbe9e3bc48c3b2c443a542d0eb41390b09596707f54b` |
+| `SHA256SUMS.txt` | `18c325aHLh9Kue8oTz0_KS4yNTtXShRxC` | 533 bytes | contains the five published digests above |
+
+The complete-release ZIP includes the release-facing artifacts and checksum manifest. The packaging path fails rather than silently publishing an incomplete native release when expected Tauri bundles are missing.
+
+## Current source toolchain
+
+The current repository `package.json` declares:
+
+- package version: `24.0.0`;
+- TypeScript: `7.0.2`;
+- Vite: `8.2.1`;
+- Three.js: `0.185.1`;
+- `@playwright/test`: `1.62.1`;
+- Tauri CLI: `2.11.4`;
+- Tauri API: `2.11.1`.
+
+The repository also contains `package-lock.json`; the old V2-253 `pnpm-lock.yaml` absence is therefore a **historical V2 launch-readiness fact**, not a current v24 repository blocker.
+
+## Install and run from source
+
+From a clean clone of the current repository:
+
+```powershell
+npm install
+npm run dev
+```
+
+For the native desktop app:
+
+```powershell
+npm run desktop:dev
+```
+
+Current keyboard behavior documented by the project includes:
+
+- `F` toggles fullscreen;
+- `Ctrl+S` persists a native world snapshot.
+
+Use the tagged/native release installer when testing end-user installation rather than treating a Vite development server as release proof.
+
+## Verify and package
+
+Current source defines these gates:
+
+```powershell
+npm run test
+npm run typecheck
+npm run build
+npm run test:ui
+npm run verify
+npm run desktop:build
+npm run package
+```
+
+`npm run verify` chains contract tests, authority tests, TypeScript type checking, optimized Vite build, Rust `cargo check` for `src-tauri/Cargo.toml`, and UI tests.
+
+Verification covers the protected V24 markup/CSS/runtime contract, database authority counts and IDs, TypeScript, optimized production output, native Rust compilation, full-width procedural rendering, reference themes, all 27 catalog worlds, Music Hub providers, and the real media-surface flow.
+
+Passing `npm run build` is intermediate evidence. Release qualification should also exercise the native package, relevant browser/UI workflows, persistence, and restart behavior.
+
+## Current repository structure
+
+Key current ownership boundaries:
+
+```text
+index.html
+package.json
+package-lock.json
+src/
+  prototype-v24.ts
+  styles/prototype-v24.css
+  premium.ts
+  world/
+  music/
+  media/
+  data/
+src-tauri/
+  ... Rust/Tauri desktop shell, SQLite, OAuth loopback, snapshots, installers ...
+reference/
+tests/
+scripts/
+```
+
+Important rules:
+
+- `index.html` preserves the canonical V24 body contract plus module entry;
+- `src/prototype-v24.ts` and `src/styles/prototype-v24.css` protect the V24 compatibility contract;
+- `src/premium.ts`, `src/world/`, `src/music/`, and `src/media/` own the typed premium runtime;
+- `src/data/` owns verified runtime and artist-world authority exports;
+- `src-tauri/` owns native persistence, SQLite, OAuth loopback, desktop snapshots, and packaging;
+- `tests/` owns source-contract, authority, and browser interaction verification;
+- `scripts/` owns deterministic release packaging.
+
+Do not edit generated release artifacts in place as a substitute for editing canonical source.
+
+## Current production systems
+
+### Theme and world catalog
+
+Current v24 verifies:
+
+- 17 approved V33-derived theme packages;
+- 17 theme worlds;
+- 34 rooms;
+- 17 weather systems;
+- 85 exact ecology objects;
+- 10 current artist worlds across Frawgy, Lightweaverart, Dreamrelicc, Karoline Georges, and saveroom;
+- 27 total catalog worlds in current verification coverage.
+
+The old V2-253 16-world / 80-object count is preserved historical evidence. It is **not** a current production theme-count blocker because current v24 has a verified 17-theme/17-world authority.
+
+### Living world rendering
+
+The typed premium runtime uses Three.js/WebGL for a continuously animated world with:
+
+- water shaders;
+- particles;
+- time and weather response;
+- reflections;
+- volumetric light;
+- parallax;
+- music and interaction pulses;
+- procedural environment geometry and decoration.
+
+The environment is rendered from live geometry, shaders, canvas, CSS, and SVG-compatible interface primitives rather than simply displaying the visual references as runtime textures.
+
+### Workspaces and world controls
+
+The current production shell includes Home, Explorer, Vault, Rooms, Theme Lab, theme/district/weather/time controls, soundtrack controls, history, settings, undo/redo, quick actions, world-state controls, dock/chrome modes, and left/center/right living regions.
+
+Every visible workspace or top-level navigation item is a product promise. A tab that only changes selection styling, opens an empty shell, or leaves the same workspace active is incomplete.
+
+### Object ecology and mascots
+
+Current source preserves real direct-manipulation behavior including draggable/throwable objects, restitution/physics behavior, selection, keyboard movement, reactions, room-aware placement, media/music affordances, mascot direct manipulation, pinning, physics, autonomy, UI awareness, speech, and weather/music reactions.
+
+The Object Intelligence page preserves the richer V23 semantic Object Atlas history. Current v24 owns the production ecology set; unported V23 semantic breadth must be tracked explicitly rather than assumed.
+
+### Living Screen Studio
+
+Current v24 supports local video files, direct HTTPS media, privacy-enhanced YouTube playback, room-TV mirroring, and a procedural idle channel.
+
+### Music Hub and provider ownership
+
+Current v24 ships six provider adapters:
+
+- Spotify;
+- Apple Music;
+- Deezer;
+- SoundCloud;
+- TIDAL;
+- YouTube Music.
+
+All six support search, room mapping, and external handoff without bundled user credentials. Embedded/account-controlled playback requires provider authorization where the provider supports it.
+
+Spotify uses Authorization Code with PKCE and a loopback redirect (`http://127.0.0.1/callback`). Apple Music uses MusicKit v3 with a server-issued developer token; signing private keys must stay on the protected server. See PCX-046 for current per-provider implementation and truth boundaries.
+
+### Native persistence
+
+Current v24 has browser snapshots and Tauri-native persistence. The native application owns bundled SQLite catalog seeding, room-soundtrack persistence, history, integrity diagnostics, runtime profiles, and world snapshots.
+
+Do not claim Project Brain parity merely because a world snapshot or generic history table exists; PCX-059 owns that bridge contract.
+
+### Asset Vault / Aesthetic Vault
+
+Current v24 includes a production Asset Vault and floating Object Atlas/Scrapbook/Layers/History/Environment/Room Intelligence surfaces. GameSync Next still contains the stronger browser capture/provenance Inspiration Vault lane.
+
+A source-proven current durability gap remains: arbitrary user imports created as `user-<timestamp>` assets are added to the in-memory catalog while the scrapbook layout persists only the `assetId`; restart restoration skips definitions not rebuilt into the catalog. Built-in assets are durable, but arbitrary imported asset bytes/definitions are not yet restart-proven. PCX-063 owns that exact repair/qualification contract.
+
+## Professional workspace contract
+
+Feature Foundry should behave like a serious authoring application. Preserve and continue toward:
+
+- dockable/resizable/movable/hideable panels;
+- tabbed/floating panels;
+- saved layouts and task-specific workspaces;
+- customizable toolbars and shortcuts;
+- density and inspector controls;
+- safe layout reset/restore;
+- multi-monitor readiness where the host supports it;
+- persistent selected state and layout state;
+- complete real workflows behind top-level navigation.
+
+Historical V2 source proved several workspace foundations such as left/right/floating inspector docking, resizable rails, saved layouts, density, reduced motion, and safe reset. Current v24 should preserve or improve useful professional-workspace behaviors, but do not claim a V2-only feature is present in current v24 without source/runtime proof.
+
+## Living-world and performance contract
+
+Feature Foundry's environments are interactive systems, not decorative backgrounds. Preserve:
+
+- theme-native objects and semantic identity;
+- bounded weather/time/lighting/sound behavior;
+- mascot and actor interaction;
+- deterministic/recoverable authoring state;
+- accessibility variants;
+- user-pinned quality decisions;
+- performance modes that suspend work rather than delete content;
+- no viewport admission/culling or hidden quantity reduction as a speed shortcut.
+
+Historical standalone V24 validation established Runtime Governor evidence that heavy loops can be suspended/resumed without deleting content or object state. Current v24 retains the protected V24 compatibility contract and must not regress that principle.
+
+## Historical V33 FINAL_READY benchmark
+
+The project-owned Drive checkpoint `Feature Foundry V33 FINAL_READY Checkpoint` records a high-confidence standalone runnable lineage.
+
+Preserved evidence includes:
 
 - **101/101 V33 runtime assertions passed**;
 - **117/117 legacy runtime assertions passed**;
@@ -62,314 +311,102 @@ Verified V33 evidence:
 - **59 legacy audited controls, 0 missing handlers**;
 - **0 console errors and 0 page errors**;
 - fresh extraction pass;
-- non-regression guarantee preserved;
 - no-artificial-caps guarantee preserved;
-- verified ZIP SHA-256: `680978a3aa8f16b47e767720ebfdc3b89fda5c148c5f3d4d3f308390b09385d9`;
-- verified HTML SHA-256: `83aac630afa4e6522d28452bb6a7c0ebe183eee6812b89b6d742662876af06ec`;
-- verified Drive artifact size: **2,471,022 bytes**, with remote SHA-256 match recorded true.
+- ZIP SHA-256 `680978a3aa8f16b47e767720ebfdc3b89fda5c148c5f3d4d3f308390b09385d9`;
+- HTML SHA-256 `83aac630afa4e6522d28452bb6a7c0ebe183eee6812b89b6d742662876af06ec`.
 
-The V33 checkpoint also preserves real capability lineage rather than replacing it with a cosmetic rebuild. Its verified feature set includes Theme-aware Library Ecology Lab, Ecology Director world modes and transition depth 0-5, Efficient/Balanced/High/Ultra/Cinematic presentation tiers with content parity, a causal world-signal bus and replay history, chronological/interaction/authored-world memory channels, advanced optical and spatial depth composition, six soundtrack/provider mappings, five host adapters, and persistent-state plus reduced-motion/performance equivalence.
+V33 also preserves acceptance evidence for Theme-aware Library Ecology Lab, Ecology Director world modes, causal world-signal/replay history, authored/interaction memory, soundtrack/provider mappings, host adapters, persistent state, reduced-motion/performance equivalence, and high-detail living-world behavior.
 
-### V33 truth boundary
+Its role now is regression benchmark, not current source repository.
 
-V33 is the strongest verified runnable artifact, but it is not the maintainable-source authority. Do not turn the V33 HTML artifact into an improvised source repository. Its role is acceptance baseline and recoverable executable evidence.
+## Historical GameSync / Feature Foundry V2-253 recovery line
 
-## V2-253 maintainable source lineage
+The durable V2 recovery ledger preserves additive checkpoints from V2-239 through V2-253.
 
-The durable recovery ledger begins from `GameSync-V2-239-contracts` and records additive, remotely verified checkpoints through **V2-253**.
-
-Important milestones:
-
-| Version | Verified material increment |
+| Version | Preserved material increment |
 | --- | --- |
-| V2-239 | complete recovery baseline; `apps/feature-foundry` absence reproduced as a real source defect |
-| V2-242 | corruption-resistant Project Vault daemon, Improvement Radar, Feature Drops, agent runners, project history/recovery UI |
-| V2-243 | evidence-bound machine-readable Feature Drop synthesis and multiple custom local agent profiles |
-| V2-244 | native ACP v1 stdio bridge with permission policy, cancellation, and filesystem escape protection |
+| V2-239 | complete recovery baseline and reproduced `apps/feature-foundry` source defect |
+| V2-242 | Project Vault daemon, Improvement Radar, Feature Drops, agent runners, project history/recovery UI |
+| V2-243 | evidence-bound Feature Drop synthesis and custom local agent profiles |
+| V2-244 | native ACP v1 stdio bridge with permission/cancellation/filesystem boundaries |
 | V2-245 | OpenHands Agent Server bridge |
 | V2-246 | live ACP Registry discovery/import with provenance and fail-closed binary handling |
-| V2-247 | checksum-verified ACP binary install/update/rollback and adversarial archive hardening |
+| V2-247 | checksum-verified ACP install/update/rollback and archive hardening |
 | V2-248 | autonomous GitHub repository discovery with durable candidate/watch/dismiss state |
-| V2-249 | capability-change intelligence, complete evidence retention, history-rewrite detection, removal of application-level evidence/display caps |
-| V2-250 | repository health/trust intelligence with GitHub/community/Actions/OpenSSF evidence and explicit unknown states |
-| V2-251 | dependency inventory, OSV vulnerability intelligence, CycloneDX 1.7 export, direct evidence graph |
-| V2-252 | release integrity, digest, attestation, verifier-identity, and cryptographic-verification evidence |
-| V2-253 | 13-gate launch readiness, safe toolchain recovery, production smoke harnesses, exact dependency/toolchain corrections |
-
-### Exact V2-253 identity
-
-The recovery ledger records:
-
-- full checkpoint size: `278,378,882` bytes;
-- full checkpoint SHA-256: `a74d90679015cb5da01777bca9e32578d639bbbf299861a6a6cecf86db6b2c07`;
-- exact source fingerprint: `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`;
-- source tree: `6,379` files / `485,619,841` source bytes;
-- exact V2-252 -> V2-253 incremental ZIP size: `136,149` bytes;
-- incremental ZIP SHA-256: `4c35d6087548378451401e9fe7748ec8ef0afb60625a5a88c800f08fe8f78efc`;
-- Drive exact-byte delta document: `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk`.
-
-Fresh recovery applied that exact incremental ZIP to canonical V2-252 and reproduced source fingerprint `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d` exactly. The recovered tree independently passed launch-readiness, daemon, Feature Foundry, and runtime-integrity gates.
-
-## Recovering the maintainable V2-253 source
-
-Do not initialize a replacement project. Use the durable recovery chain.
-
-For the V2-253 increment:
-
-1. Restore canonical V2-252 through its verified recovery chain.
-2. Export Drive document `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk` as text.
-3. Strip the UTF-8 BOM and Base64 formatting whitespace.
-4. Base64-decode the payload.
-5. Require SHA-256 `4c35d6087548378451401e9fe7748ec8ef0afb60625a5a88c800f08fe8f78efc`.
-6. Extract the incremental paths at repository root.
-7. Do not retain the embedded delta metadata as canonical source when the recovery manifest says to exclude it.
-8. Recompute the source fingerprint and require `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`.
-9. Re-run the Feature Foundry, daemon, runtime-integrity, and launch-readiness gates before editing.
+| V2-249 | capability-change intelligence, complete evidence retention, history-rewrite detection, cap removal |
+| V2-250 | repository health/trust intelligence with explicit unknown state |
+| V2-251 | dependency inventory, OSV intelligence, CycloneDX 1.7 export |
+| V2-252 | release integrity, digest, attestation, verifier-identity, cryptographic-verification evidence |
+| V2-253 | 13-gate launch readiness, safe toolchain recovery, production smoke harnesses |
 
-The connected [Herbertofury/Feature-Foundry](https://github.com/Herbertofury/Feature-Foundry) repository remains a minimal placeholder and is not the authoritative V2-253 source tree.
+Exact V2-253 recovery identity:
 
-## Restored production workspace foundation
+- full checkpoint size `278,378,882` bytes;
+- full checkpoint SHA-256 `a74d90679015cb5da01777bca9e32578d639bbbf299861a6a6cecf86db6b2c07`;
+- exact source fingerprint `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`;
+- source tree `6,379` files / `485,619,841` bytes;
+- V2-252 -> V2-253 incremental ZIP SHA-256 `4c35d6087548378451401e9fe7748ec8ef0afb60625a5a88c800f08fe8f78efc`;
+- Drive exact-byte delta document `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk`.
 
-The V2 reconstruction restored `apps/feature-foundry` as a real React workspace consuming production-owned `@gamesync/core` theme/world data.
+V2-253's recorded launch-readiness state was **BLOCKED, 6/13 hard gates**, with exact toolchain/browser/desktop/strict-parity blockers. That state is historical V2 evidence. Do not copy its old Node/pnpm/lockfile blockers onto current v24, which has a different repository and a committed npm lockfile.
 
-Verified recovered behavior includes:
+### Historical V2 recovery procedure
 
-- local persistence;
-- bounded undo/redo history;
-- complete workspace JSON import/export;
-- theme-package export;
-- saved layouts with restore/delete;
-- safe reset;
-- density and reduced-motion settings;
-- mute state;
-- left/right/floating inspector docking;
-- resizable rail/inspector widths;
-- living, focus, and performance modes;
-- complete rendering of the recovered 16-world source registry;
-- all five authored objects per active recovered world;
-- draggable and reversible object placement;
-- no viewport admission or item caps;
-- real World Explorer, Runtime Evidence, and Inspector workspace tabs;
-- distinct Press, Drag Field, Collision, and Recover behavior paths.
+If V2 project-operations history itself must be reconstructed, use the verified chain rather than rebuilding from memory:
 
-The production theme data boundary was moved into `packages/core/src/theme-foundry.ts`, and the recovery ledger records no production dependency on migration-only `@gamesync/feature-runtime` data.
+1. restore canonical V2-252;
+2. export Drive document `1vDJ4IDn2FvTS5hYH4-A_HC80VgaNe9poBmIOOo9JGyk` as text;
+3. strip BOM/Base64 formatting whitespace;
+4. Base64-decode it;
+5. require incremental SHA-256 `4c35d6087548378451401e9fe7748ec8ef0afb60625a5a88c800f08fe8f78efc`;
+6. extract at repository root according to the recovery manifest;
+7. require final source fingerprint `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`;
+8. run the recovered daemon/runtime/launch-readiness gates before trusting the reconstruction.
 
-### Current theme-count reconciliation
+This recovery path is for V2 continuity. It is not the normal way to obtain current Feature Foundry; use the current repository/tagged v24 release for that.
 
-The durable V11 product direction preserves **17** approved themes, while the recovered V2 production source gate currently verifies **16** worlds and **80** authored objects, exactly five objects per recovered world.
+## Historical V23 baseline
 
-Treat this as a real reconciliation requirement, not permission to silently delete a durable theme or invent a seventeenth V2 world. Before calling V2 parity complete, identify which durable theme is absent, merged, renamed, or otherwise represented differently and resolve it with source-backed evidence.
+`feature-foundry-v23-validation-report.md` records **142 passed, 0 failed** for the V23 bundle and **28 Chromium runtime checks** with no page or console errors.
 
-## Project Vault and continuous project operations
+Important V23 identities:
 
-V2-242 and later checkpoints expand Feature Foundry beyond visual authoring into a persistent project-operations system.
+- Object Atlas SHA-256 `dcf8e7000b6a32f3a0960e85d2b662d1d0d860e7f228975a35042f785bb56765`;
+- Theme Worlds SHA-256 `ed4a3f97b71e5927e7a191dfc0f6dfc7f67fbc07e012bdbb4b54c8122940c468`;
+- executable prototype SHA-256 `07b529aec512e0572630c802c431d3dd84b15f75a34746773ea726c1c506759d`;
+- master directive SHA-256 `5dbe307e8bd5a1e62d9968ce43f369b6223f0483993a6a2c82d0dd298da2dc5f`.
 
-The recovered Project Vault lineage records:
+V23 preserves richer Object Atlas interaction evidence including duplicate, lock/unlock, bring-to-front, layer reveal, delete/undo/redo, sticker pin/peel, keyboard context invocation, dragging, and persistence checks.
 
-- atomic project-state writes;
-- append-only SHA-bound event history;
-- exact source/recovery manifests;
-- version and artifact history;
-- dependency history;
-- research and idea history;
-- Feature Drop history;
-- agent-run history;
-- backups and recovery points;
-- corruption recovery;
-- source fingerprinting;
-- scheduler state;
-- HTTP API;
-- Project Home, Radar, Drops, Agents, History, and Recovery UI.
+## Historical standalone V24 validation
 
-A partial write, stale proposal, timeout, failed agent run, or corrupted state must never silently become canonical project state.
+The earlier standalone `feature-foundry-v24-final-validation.json` records PASS for `feature-foundry-living-world-prototype-v24.html`, build `24.0.0`, SHA-256 `353e39446238f5ad4a3006fc8eaa91b9a3e0138eb190c7de715ca267c7449403`.
 
-## Continuous Improvement Radar
+Preserved evidence includes 78 internal self-tests, 14 external CDP assertions, zero console/page errors, clean extraction/ZIP/hash checks, Runtime Governor suspend/resume behavior, adaptive quality pressure response, and no content removal as a performance shortcut.
 
-The V2 source contains a persistent Improvement Radar that converts current external evidence into traceable Feature Drop opportunities rather than blindly copying competitors.
+The current repository protects this V24 compatibility contract in source; treat the standalone artifact as historical executable evidence, not current canonical source.
 
-Verified evolution includes:
+## Historical V11 data-platform state
 
-- configurable monitored sources;
-- source cadence and fingerprints;
-- meaningful-change filtering;
-- evidence history;
-- source-linked opportunity scoring;
-- approval state;
-- GitHub repository discovery;
-- watch/dismiss/reopen state;
-- release/commit cursors;
-- explicit branch-history rewrite records;
-- capability-change records;
-- repository health/trust history;
-- dependency/vulnerability history;
-- release-integrity and attestation history.
+V11 established the earlier production data-platform direction. Its preserved validation recorded 61 passed, 0 failed for the supplied schema/data bundle, including:
 
-V2-249 removed the earlier 50 KB observation-evidence truncation and application-level repository/topic and UI display caps. Raw evidence remains complete while summaries stay derivative.
+- 178 object archetypes/families;
+- 52 materials;
+- 178 behavior profiles;
+- 17 themes;
+- 72 districts;
+- 17 room presets;
+- 51 weather profiles;
+- 17 soundtrack profiles;
+- 17 mascot profiles;
+- 170 object-pool members;
+- database integrity, foreign keys, FTS/RTree, cross-database references, and manifest hashes.
 
-## Agent operations
-
-The V2 lineage records real integration foundations for:
-
-- Hermes Agent;
-- goose;
-- OpenCode;
-- Aider;
-- Gemini CLI;
-- OpenHands / Agent Server;
-- standards-based Agent Client Protocol (ACP);
-- Custom Local Agent profiles.
-
-Uninstalled or unconfigured agents must remain visibly unavailable/disconnected. Agent output is evidence and proposal input, not authority to invent project history or bypass source preconditions.
-
-### ACP execution boundary
-
-V2-244 adds native ACP v1 execution over newline-delimited UTF-8 JSON-RPC on stdio with initialization/version negotiation, optional authentication, `session/new`, `session/prompt`, streamed `session/update`, `session/cancel`, and optional `session/close`.
-
-The bridge includes persisted permission decisions, bounded filesystem tools, atomic writes, isolated workspaces, output/message/time limits, and rejection of parent-path and symlink escapes.
-
-### OpenHands boundary
-
-V2-245 adds a real OpenHands Agent Server adapter covering profile discovery, session-key references, isolated workspace mapping, conversation creation, run/event dispatch, terminal-state polling, evidence capture, cancellation through `/interrupt`, and the existing canonical apply/recovery gate.
-
-## Repository, supply-chain, and release intelligence
-
-Later V2 checkpoints add durable evidence rather than one-shot dashboard decoration.
-
-### Repository discovery and health
-
-V2-248 through V2-250 provide configurable GitHub discovery, persistent candidates, watch/dismiss state, capability-change records, branch-history rewrite detection, and historical repository-health profiles. Popularity is discovery metadata only. Missing provider evidence remains unknown rather than negative.
-
-### Dependency and vulnerability intelligence
-
-V2-251 inventories npm/workspace/Cargo declarations with provenance, records absent lockfiles as explicit incompleteness, queries OSV by exact package/version, follows pagination, retains raw vulnerability evidence, and exports CycloneDX 1.7 JSON without inventing transitive edges.
-
-Provider-reported fixed versions are candidates only. Compatibility still requires build/test/runtime proof.
-
-### Release integrity and attestations
-
-V2-252 separates immutable-release state, provider-published asset digests, structural in-toto/SLSA attestation evidence, and actual cryptographic verification. Parsing an attestation is not cryptographic success. Verifier version and executable SHA-256 are part of evidence identity.
-
-## V2-253 launch readiness
-
-V2-253 computes launch readiness from **13 hard gates**. `READY` is impossible unless all hard gates pass.
-
-The model covers real toolchain availability, lockfile state, exact dependency evidence, strict parity, runtime/daemon/UI contracts, fresh checkpoint and publication evidence, release verification, browser production smoke, desktop production smoke, and the remaining production qualification evidence represented by the schema.
-
-The recorded real GameSync / Feature Foundry state after the Drive recovery receipt is **BLOCKED, 6/13 hard gates**.
-
-Passing at that checkpoint:
-
-- exact dependency evidence;
-- runtime integrity;
-- daemon contract;
-- UI contract;
-- fresh checkpoint;
-- remote publication.
-
-Blocking at that checkpoint includes:
-
-- Node `26.7.0` unavailable in the recorded sandbox;
-- pnpm `11.21.0` unavailable;
-- `pnpm-lock.yaml` absent;
-- strict parity incomplete;
-- exact full production build proof unavailable;
-- browser production smoke unavailable;
-- desktop production smoke unavailable.
-
-Strict parity remains intentionally blocking. The recorded V2-253 counts are:
-
-- 433 discovered identifiers;
-- 417 high-confidence candidates;
-- 239 migrated request contracts;
-- 178 pending candidates;
-- 16 ambiguous identifiers.
-
-Do not weaken those gates or counts to manufacture readiness.
-
-## Current source toolchain contract
-
-The V2-253 recovery record preserves these exact source-side floors/corrections:
-
-- Node: `>=26.7.0`;
-- pnpm: `11.21.0`;
-- Vite: `8.1.5`;
-- `@vitejs/plugin-react`: `6.0.4`;
-- exact dependency evidence: all 18 cataloged external npm packages passed.
-
-The recorded recovery attempt used NVM for exact Node recovery and Corepack for exact pnpm recovery. Both failed because the execution environment could not reach the required remote package/release channels. Lockfile generation and frozen install remained safely skipped, and the source fingerprint stayed unchanged. No dependency downgrade was used to fake a build.
-
-When the required toolchain is available, use the source manifests and launch-readiness tooling rather than copying guessed package versions from this wiki.
-
-## Production smoke requirements
-
-V2-253 includes explicit production smoke harness expectations.
-
-### Browser smoke
-
-The browser lane requires the real Feature Foundry `dist`, serves it over loopback, and requires the rendered Feature Foundry / Project Vault DOM through installed Chromium. A dev-server render, static HTML parse, or source inspection is not equivalent.
-
-### Desktop smoke
-
-The desktop lane requires the built Tauri executable and a real GameSync window under the supported desktop test environment. A successful frontend build alone is insufficient.
-
-## V23 verified baseline
-
-`feature-foundry-v23-validation-report.md` records **142 passed, 0 failed** for the V23 bundle. It records schema/build version 23.0.0, extensive Object Atlas and Theme Worlds integrity checks, a static UI audit, and **28 Chromium runtime checks with no page or console errors**.
-
-Important V23 artifact identities:
-
-- Object Atlas SHA-256: `dcf8e7000b6a32f3a0960e85d2b662d1d0d860e7f228975a35042f785bb56765`
-- Theme Worlds SHA-256: `ed4a3f97b71e5927e7a191dfc0f6dfc7f67fbc07e012bdbb4b54c8122940c468`
-- executable prototype SHA-256: `07b529aec512e0572630c802c431d3dd84b15f75a34746773ea726c1c506759d`
-- master directive SHA-256: `5dbe307e8bd5a1e62d9968ce43f369b6223f0483993a6a2c82d0dd298da2dc5f`
-
-The verified V23 runtime includes real object/context operations such as duplicate, lock/unlock, bring-to-front, layer reveal, delete/undo/redo, sticker pin/peel behavior, keyboard context invocation, object dragging, and persistence checks.
-
-## V24 verified runtime hardening
-
-`feature-foundry-v24-final-validation.json` records **PASS** for `feature-foundry-living-world-prototype-v24.html`, build **24.0.0**, 561,462 bytes, SHA-256 `353e39446238f5ad4a3006fc8eaa91b9a3e0138eb190c7de715ca267c7449403`.
-
-The V24 validation records:
-
-- inline JavaScript syntax PASS;
-- **78 internal self-tests passed, 0 failed**;
-- **14 external CDP assertions passed, 0 failed**;
-- zero console errors;
-- zero page exceptions;
-- clean extraction PASS;
-- ZIP integrity PASS;
-- SHA-256 manifest PASS;
-- Performance Mode and Focus UI suspend heavy runtime owners;
-- living mode resumes governed owners;
-- object count is preserved through suspension;
-- moving-object physics state is suspended and resumed rather than discarded;
-- measured adaptive quality responds to sustained frame/long-frame pressure;
-- user-pinned quality modes remain authoritative;
-- no card, object, workflow, or data quantity is removed to gain performance.
-
-V24 centralizes scene lifecycle ownership in a Runtime Governor rather than allowing independent heavy loops to run indefinitely. Clock, ambient/environment/cinematic work, selection-HUD tracking, mascot autonomy, physics, quality monitoring, and long-animation-frame observation are released in suspended modes and restored when appropriate.
-
-## Historical V11 state preserved
-
-V11 established the production data-platform direction and validated the earlier Object Atlas / Theme Worlds bundle.
-
-Recovered V11-era artifacts include:
-
-- `feature-foundry-aesthetic-worlds-codex-master-directive.md`
-- `feature-foundry-codex-final-implementation-directive-v11.md`
-- `feature-foundry-aesthetic-world-guide-v11.md`
-- `feature-foundry-living-world-prototype-v11-bundle-reference.html`
-- `V11-VALIDATION-REPORT.md`
-- Object Atlas SQLite database
-- Theme Worlds SQLite database
-
-The preserved V11 report records 61 passed, 0 failed for the supplied schema/data bundle, including 178 object archetypes/families, 52 materials, 178 behavior profiles, 17 themes, 72 districts, 17 room presets, 51 weather profiles, 17 soundtrack profiles, 17 mascot profiles, 170 object-pool members, database integrity, foreign keys, FTS/RTree, cross-database references, and manifest hashes.
-
-That validation did not prove final artwork, production runtime integration, Blender conversion, provider authentication, complete editor workflows, packaging/export behavior, or the finished application.
+That report did not prove final artwork, full runtime integration, Blender conversion, provider authentication, complete editor workflows, or the finished application.
 
 ## Approved durable theme set
 
-The preserved product direction keeps 17 full themes:
+The durable product direction preserves these 17 approved themes:
 
 1. Frutiger Aero
 2. Utopian Scholastic
@@ -389,170 +426,108 @@ The preserved product direction keeps 17 full themes:
 16. Atomic Age
 17. Jazz / Solo Jazz
 
-The broader aesthetics/research guide must not silently promote every researched aesthetic into a shipping theme. Likewise, the current verified 16-world V2 registry must not silently redefine this durable 17-theme contract without explicit reconciliation.
-
-## Major product subsystems
-
-The durable production direction covers:
-
-- professional application shell and configurable workspace;
-- living world / environment runtime;
-- focused full UI and performance modes;
-- Theme Studio;
-- Aesthetic Explorer and Mixer;
-- Asset / Inspiration Vault;
-- World Studio and Room Studio;
-- Object Studio and semantic affordance/rig system;
-- weather, time, lighting, soundtrack, UI sound, mascot, and interaction studios;
-- package/export system;
-- Object Atlas and Theme Worlds databases;
-- multi-provider Music Hub;
-- Project Vault and recovery;
-- Continuous Improvement Radar;
-- agent operations;
-- repository/supply-chain/release intelligence;
-- GameSync migration and host adapters.
-
-Every top-level workspace is a functional product surface, not a navigation label. A rendered tab without its promised workflow is incomplete.
-
-## Professional workspace contract
-
-Feature Foundry should behave like a serious authoring application. Workspaces and panels should support docking, resizing, moving, hiding, tabs, floating panels, saved layouts, task-specific workspaces, multi-monitor use, customizable toolbars, shortcuts, density, inspectors, and safe layout reset/restore where implemented.
-
-The V2 source now proves several of these foundations, including left/right/floating inspector docking, resizable rail/inspector widths, saved layouts, density, reduced motion, safe reset, and persistent local workspace state. Do not generalize that proof to every professional-workspace capability until the exact production build is exercised.
-
-## Living-world and runtime contract
-
-Feature Foundry's living environments are interactive systems rather than decorative backgrounds. Preserve:
-
-- theme-native objects and semantic identity;
-- bounded weather/time/lighting/sound behavior;
-- mascot and actor interaction;
-- deterministic/recoverable authoring state;
-- accessibility variants;
-- user-pinned quality decisions;
-- performance modes that suspend work rather than deleting content;
-- no hidden quantity/fidelity reduction as a speed shortcut.
-
-V24 establishes verified Runtime Governor evidence for lifecycle release/resume. V33 is the strongest runnable behavior baseline. V2 is the maintainable-source lane that must preserve or improve both contracts.
-
-## Object intelligence contract
-
-The Object Atlas / Object Studio direction requires semantic identity rather than treating assets as anonymous pictures. Preserve:
-
-- object identity and archetype/family;
-- materials;
-- affordances;
-- rigs;
-- behavior profiles;
-- source/provenance;
-- immutable originals;
-- reversible derivation lineage;
-- context-aware actor commands;
-- user-added object/mascot state.
-
-Generated or transformed assets should remain traceable to originals.
-
-## Asset and Inspiration Vault contract
-
-The vault is intended to be a real asset/reference operating system, not an empty drawer. Preserve persistent assets, source provenance, visual DNA, capture flows, search, organization, selected-asset context, placement modes, and reversible operations.
-
-Current GameSync Next source proves a browser-connected **Inspiration Vault** workspace with page/image/link/selection capture, boards, tags, intent/status classification, provenance, local persistence, cleanup controls, palette extraction, and PNG export. Later V2-254 Aesthetic Vault artifacts add subsystem evidence. See the [PCX-063 wiki](https://github.com/Herbertofury/ProjectDump/wiki/PCX-063-feature-foundry-aesthetic-vault) for the detailed current contract.
-
-## Aesthetic Explorer / Mixer contract
-
-The project history identifies prior Explorer implementations as generic/flat and insufficient. A production Explorer should support real discovery, comparison, mixing, source evidence, saved decisions, and promotion into production themes without conflating research with shipping content.
-
-Version number alone is not enough to choose latest-good behavior. Preserve evidence, compare substantive content, and keep source provenance.
-
-## Room Studio contract
-
-Room Studio remains a major production verification target. A valid implementation needs real authoring operations, persistent scene state, object placement/manipulation, environment controls, semantic room intelligence, and proof that saved content can be reopened and modified.
-
-V23/V24/V33 provide executable interaction evidence. V2 provides maintainable source and workspace foundations. Production qualification still requires the exact built V2 application to match or improve the runnable baseline.
-
-## Source Hubs and external providers
-
-External media/asset providers should use explicit source adapters with recorded provider identity, authentication mode, capabilities, limits, cache behavior, fallback behavior, provenance/evidence, and review date.
-
-Provider research is not production integration until the authenticated runtime flow is exercised. See [PCX-046 Feature Foundry Source Hubs](https://github.com/Herbertofury/ProjectDump/wiki/PCX-046-feature-foundry-source-hubs).
+Current v24 verifies 17 approved theme packages/worlds, resolving the old V2 16-world mismatch for the current production app. Do not silently promote every researched aesthetic into a shipping theme.
 
 ## GameSync relationship
 
-Feature Foundry is a source/authoring and project-operations system for content that may be consumed by GameSync hosts. Avoid implementing theme behavior independently in every host. Prefer one source-of-truth theme/content contract plus explicit host adapters and migration/parity evidence.
+Feature Foundry is the authoring/runtime source for content that may be consumed by GameSync hosts. Avoid independently reimplementing theme behavior in every host. Prefer versioned content contracts plus explicit adapters and parity evidence.
 
-The V2 recovery lineage is intentionally named `GameSync / Feature Foundry` because the recovered production source lives inside that project family rather than in the connected placeholder `Feature-Foundry` repository.
+Current GameSync Theme Foundry work has identified a real adapter mismatch between Feature Foundry v24 and the GameSync Next `@gamesync/theme-*` package family: the two sides currently disagree on setting-type names and select-option validation. Do not claim direct package-family interchange until the adapter contract is repaired and regression-tested.
 
 ## Practical modification workflow
 
-Before modifying the maintainable source lane:
+For normal current work:
 
-1. recover the exact V2-253 source through the verified chain;
-2. confirm the source fingerprint matches `de24e9a03470ee397072b2ffcec0b8aee46529abbd9a3422e62cec24f404214d`;
-3. run the daemon, Feature Foundry, runtime-integrity, and launch-readiness gates available in the recovered tree;
-4. record the current 6/13 launch-readiness baseline and strict-parity counts;
-5. create a recoverable checkpoint before broad edits;
-6. change the narrowest owning module rather than generated/recovery metadata;
-7. preserve all worlds, objects, evidence, project history, and user state;
-8. run changed-path gates during iteration;
-9. when the exact toolchain is available, run the production build and real browser/desktop smoke paths;
-10. compare the resulting behavior against V33 and preserved V24/V23 contracts before promotion.
+1. resolve current `Herbertofury/Feature-Foundry` `main` and confirm the intended release/tag;
+2. preserve user work and create a recoverable checkpoint before broad edits;
+3. run `npm run verify` on the clean baseline where the toolchain permits;
+4. identify the owning source module rather than editing release output;
+5. change the narrowest complete implementation;
+6. run changed-path tests during iteration;
+7. run `npm run verify` at convergence;
+8. run native build/package when the change affects desktop/native/release behavior;
+9. exercise the actual affected workspace and persistence path;
+10. restart/reopen for stateful behavior;
+11. compare important living-world behavior against V33/V23/V24 non-regression evidence where relevant;
+12. package and hash the exact release bytes before promotion.
+
+Use the V2 recovery chain only when working on preserved V2 project-operations/recovery architecture that is not represented in current v24.
 
 ## Verification ladder
 
-Maintain separate evidence for:
+Keep separate evidence for:
 
-1. durable source recovery and source fingerprint;
-2. data/schema validation;
-3. executable-reference validation;
-4. daemon/runtime-integrity/static gates;
-5. exact toolchain and lockfile state;
-6. typecheck/build/unit/integration checks;
-7. application launch;
-8. workspace navigation;
-9. real authoring operations;
+1. source repository/head identity;
+2. package/lockfile identity;
+3. source-contract and authority tests;
+4. typecheck/build tests;
+5. Rust/Tauri compilation;
+6. browser/UI interaction tests;
+7. actual application launch;
+8. top-level workspace navigation;
+9. authoring operations;
 10. save/reopen persistence;
 11. source-provider/authenticated flows;
-12. package/export behavior;
-13. host import behavior;
-14. reload/restart persistence;
-15. browser production smoke;
-16. desktop production smoke;
-17. performance/fidelity/no-culling regression checks;
-18. strict parity and launch-readiness status.
+12. native world snapshot/SQLite behavior;
+13. package/export behavior;
+14. GameSync/host import behavior;
+15. reload/restart persistence;
+16. performance/fidelity/no-culling regression checks;
+17. exact release artifact hashes;
+18. remote GitHub/Drive publication verification.
 
-Do not collapse these into one `validated` label.
+Do not collapse these into one `validated` checkbox.
 
 ## Troubleshooting
 
-### The connected Feature-Foundry repository looks empty or incomplete
+### The Feature-Foundry repository looks different from old V2 recovery documentation
 
-That repository is currently a placeholder, not the V2-253 authority. Recover the maintainable source from the verified Drive lineage instead of scaffolding a new app.
+That is expected. The repository is now a real released v24 application and is the current production authority. V2-253 is historical/parallel project-operations recovery evidence, not the default current app tree.
 
-### V2 source is recovered but does not build
+### A document still says the repository is a placeholder
 
-First verify the exact V2-253 source fingerprint. Then inspect the launch-readiness evidence. The recorded source expects Node `>=26.7.0`, pnpm `11.21.0`, Vite `8.1.5`, and `@vitejs/plugin-react` `6.0.4`; the prior environment could not obtain the exact Node/pnpm toolchain. Do not downgrade dependencies merely to create a green build.
+Treat that statement as stale unless it is explicitly describing history. Current repository head `e1ba080b5c7590f1c844a6ed13b3a471709920b9` contains the released v24 source, package lock, TypeScript/Vite/Three runtime, Tauri/Rust native shell, tests, scripts, and release documentation.
 
-### The V2 app has only 16 worlds but the durable product list has 17 themes
+### The current app has 17 worlds but an older V2 checkpoint says 16
 
-Treat this as an explicit parity/reconciliation issue. Identify the missing, renamed, merged, or differently modeled theme from source and historical evidence. Do not silently change either count.
+Use current v24 for production authority. Preserve the V2 16-world count as historical evidence about that recovery branch; do not reopen it as a current production blocker unless a current v24 regression removes or merges a durable theme.
 
-### A workspace passes static checks but fails in the real app
+### Current npm install/build fails
 
-Static, daemon, and parser gates are intermediate evidence. The exact production browser and desktop smoke gates remain authoritative for runtime qualification.
+Use the committed `package.json` and `package-lock.json`; do not transplant V2-253 Node/pnpm requirements into v24. Check the exact failing dependency/tool version, then repair the current repository/toolchain rather than downgrading unrelated packages to manufacture a green build.
+
+### A workspace renders but its controls do nothing
+
+Treat it as incomplete. Top-level navigation, buttons, selectors, context actions, and panels must execute their real workflow, preserve state, report truthful errors, and reload/restart correctly where applicable.
 
 ### A performance change hides or defers content
 
-Treat it as a regression. Feature Foundry's no-artificial-caps/no-culling contract requires complete data and item availability.
+Treat it as a regression. Feature Foundry's no-artificial-caps/no-culling rule requires complete data and item availability. Performance work should reduce real work or schedule it intelligently, not remove user-visible quantity or fidelity.
 
-### Agent or research output proposes a source change
+### Imported Asset Vault content disappears after restart
 
-Require exact project/evidence IDs, source precondition match, isolated execution where applicable, and the canonical apply/recovery gate. Do not let agent output directly rewrite canonical state.
+This is a current known durability gap for arbitrary user imports. See PCX-063. Do not claim restart durability until imported bytes/metadata are durably owned and a clean-restart regression passes.
 
-## Exact current next action
+### Music provider search works but account playback does not
 
-**Continue from the exact remotely byte-verified V2-253 maintainable source, resolve the hard launch-readiness blockers without weakening them, reconcile the 16-world recovered source against the durable 17-theme product contract, complete strict parity, then run the exact production browser and desktop smoke lanes and compare the resulting application against the V33 runnable baseline before promoting V2 as the stronger production authority.**
+External search/handoff and authenticated account playback are different capabilities. Verify provider authorization, token state, and the exact adapter contract. Never ship credentials in the application or wiki.
+
+### A V2 Project Vault / agent feature is needed in current v24
+
+Treat V2-253 as design/recovery evidence and port the capability deliberately into current v24 with current-source ownership, persistence, tests, and migration evidence. Do not imply it already ships because it existed in the historical V2 tree.
+
+## Highest-value current next actions
+
+1. Keep `Herbertofury/Feature-Foundry` v24 as the canonical production source and maintain release/hash parity between GitHub and Drive.
+2. Close the current arbitrary Asset Vault import durability gap with content-addressed durable bytes/metadata plus clean-restart proof.
+3. Build an explicit V2-253 -> v24 coverage ledger for Project Vault, Improvement Radar, agent operations, repository intelligence, dependency/release intelligence, and other valuable project-operations features before porting any of them.
+4. Continue the V23 Object Atlas -> v24 semantic coverage ledger rather than assuming the current 85-object production ecology already includes the full historical 178-object semantic breadth.
+5. Repair and verify the Feature Foundry v24 <-> GameSync Next theme-package adapter mismatch before claiming direct interchange.
+6. Keep current v24 behavior continuously compared against V33/V23/V24 historical non-regression evidence where it still represents useful user-facing capability.
+7. Preserve the no-culling/no-cap rule, professional workspace contract, truthful provider/authentication boundaries, and complete persistence behavior during every future optimization.
 
 ## Wiki maintenance
 
-Update this page when the maintainable source checkpoint advances, the connected repository becomes authoritative, V33 is superseded by stronger runnable evidence, the 16/17 theme reconciliation is resolved, launch-readiness gates change, strict parity changes materially, a production browser/desktop smoke becomes verified, or project-family ownership changes. Preserve V11/V23/V24/V33 history and keep maintainable-source proof separate from runnable-product proof.
+Update this umbrella page when the canonical Feature-Foundry repository or released source line changes, release artifacts/hashes change, current authority counts change, V33 is superseded by stronger behavior evidence, V2 project-operations capabilities are ported into current v24, the Asset Vault durability gap closes, the theme-package adapter contract changes, or project-family ownership materially changes.
+
+Do not regress this page back to describing `Herbertofury/Feature-Foundry` as a placeholder. Preserve historical V11/V23/V24/V33/V2 evidence, but keep current project-owned repository/runtime evidence authoritative for the production application.
