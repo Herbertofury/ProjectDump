@@ -1,7 +1,7 @@
 # Master Desktop Pet Research Wiki
 
 **Project Constellation ID:** `PRJ-020`
-**Status:** RESEARCH BASE
+**Status:** RESEARCH BASE; consolidated master recovered, canonical byte promotion pending
 **Confidence:** High
 **Latest recovered lineage:** consolidated master containing v10, v14, v9 and v7 material
 
@@ -21,9 +21,36 @@ The preserved primary consolidation date is **2026-04-01**. The recovered lineag
 
 The durable rule remains: **append future verified research to this master instead of creating drifting numbered copies**, unless a snapshot is intentionally versioned for archival reasons.
 
+## Recovered consolidated master authority
+
+A deeper source-recovery pass on 2026-08-21 located a consolidated `master desktop pet research.md` artifact whose own internal consolidation notes resolve the previously open source-authority ambiguity.
+
+The recovered master explicitly states that it was built from the latest master pass and checked against every uploaded source file. Its embedded provenance records:
+
+- primary base: `master desktop pet research (2).md`;
+- `desktop-pets-research-2026-04-01-v10-exhaustive.md` merged into the master body;
+- `desktop-pets-research-2026-04-01-v14-ms-agent-buddies.md` merged into the master body;
+- `desktop-pets-research-2026-04-01-v9.md` retained as a source appendix;
+- `desktop-pets-research-2026-04-01-v7.md` retained as a source appendix;
+- KinitoPET addendum research retained in the consolidated master;
+- older numbered passes treated as source drafts or snapshots unless intentionally preserved for completeness.
+
+This is stronger evidence than the earlier wiki statement that the master bytes had not been located at all. The recovered consolidated artifact is now the preferred **content authority candidate** for PRJ-020.
+
+### Remaining canonicalization boundary
+
+The recovered master has not yet been promoted into a project-owned canonical repository/Drive path with a recorded SHA-256 and explicit supersession ledger. Therefore:
+
+- the master **is recovered**;
+- its embedded v10/v14/v9/v7 consolidation lineage **is verified from its own content**;
+- a final canonical byte identity and durable project-owned publication receipt **are still pending**;
+- earlier same-name working copies remain historical candidates and must not silently replace the consolidated artifact by timestamp alone.
+
+Until that promotion is completed, treat the recovered consolidated master as the strongest source-content authority while preserving every earlier same-name copy for lineage comparison.
+
 ## Recovered content map
 
-The preserved master is described as containing:
+The consolidated master contains or explicitly preserves:
 
 - an exhaustive ecosystem catalogue;
 - a host map;
@@ -32,17 +59,17 @@ The preserved master is described as containing:
 - a Microsoft Agent / ACS / Bonzi / Peedy / Clippy / Windows XP Search branch;
 - a KinitoPET addendum;
 - embedded v10 and v14 research passes;
-- retained v9 and v7 appendices.
+- retained v9 and v7 source appendices.
 
-This wiki preserves those categories without inventing missing entries from a master file whose current bytes have not yet been recovered through the connected durable sources.
+The recovered master also makes the ecosystem structure explicit across Petz/PF Magic, Shimeji, Ukagaka/SSP, Creatures, modern moddable desktop companions, browser-pet branches, legacy screenmates and preservation sources.
 
 ## Current evidence boundary
 
-The active Project Constellation lineage still identifies PRJ-020 as a **RESEARCH BASE** and points to the consolidated v10/v14/v9/v7 master. The older cross-chat database independently preserves the same canonical master name, consolidation date and content categories.
+PRJ-020 remains a **RESEARCH BASE**, not a shipping runtime. The recovered consolidated master now resolves the core source-recovery question, but it does not convert every catalogued project, storefront, community claim or historical note into current implementation truth.
 
-The exact current bytes of `master desktop pet research.md` still have not been located in the connected ProjectDump tree or Drive evidence used for this pass. Therefore this page does not claim a current SHA-256, exact line count, complete link inventory or byte-for-byte verification of the master itself.
+Current downstream runtime pages still supersede PRJ-020 whenever they contain newer project-owned evidence. Current web/store/community counts in the master should be revalidated before they drive a present-day product decision because the consolidated research base was assembled on 2026-04-01.
 
-That is a source-recovery boundary, not a reason to split or recreate the research into a new master.
+The remaining source-management task is no longer “find any master.” It is to promote the recovered consolidated master into a durable canonical location with a hash, preserve same-name predecessors, and append current verified deltas without flattening the historical research record.
 
 ## How this research is meant to be used
 
@@ -77,7 +104,7 @@ Downstream pages supersede PRJ-020 whenever they contain newer verified project-
 
 Treat it as a compatibility benchmark, not as the user's canonical PRJ-020 master or the canonical implementation for every mascot host.
 
-## New current architecture benchmark: NeurolingsCE Rust + Flutter
+## Current architecture benchmark: NeurolingsCE Rust + Flutter
 
 A materially newer ecosystem reference appeared in August 2026: [qingchenyouforcc/NeurolingsCE](https://github.com/qingchenyouforcc/NeurolingsCE). The repository was created on 2026-08-14 as a Rust + Flutter rewrite of the maintainer's earlier C++/Qt desktop-pet application.
 
@@ -115,7 +142,7 @@ Acceptance requires parity for the chosen corpus before borrowing architecture, 
 
 ## Research-entry schema
 
-When the canonical master is recovered, new entries should use a consistent evidence shape:
+When new material is appended to the canonical master, use a consistent evidence shape:
 
 | Field | What to record |
 | --- | --- |
@@ -133,37 +160,44 @@ When the canonical master is recovered, new entries should use a consistent evid
 
 Do not promote an inference into a sourced fact during consolidation.
 
-## Maintenance workflow
+## Canonicalization and maintenance workflow
 
-1. **Resolve the real master before editing.** Search durable sources for the canonical filename and same-content variants. Compare embedded lineage, section coverage, hashes and substantive content, not timestamp alone.
-2. **Preserve all prior passes.** New work extends the existing sections or adds a dated appendix. Older verified research remains historical evidence when superseded.
-3. **Revalidate only load-bearing claims.** Recheck primary sources when an old claim affects a current decision.
-4. **Keep source hierarchy explicit.** Prefer official repositories, releases, specs and maintainer sources for technical/current claims.
-5. **Promote only implementation-relevant findings downstream.** PRJ-020 stays the broad research map; downstream projects own runtime decisions.
-6. **Checkpoint the master, not another numbered fork.** Publish the same-name master, record its hash, and update Project Constellation after material additions.
+1. **Use the recovered consolidated master as the content authority candidate.** Do not restart source recovery from scratch unless stronger contradictory evidence appears.
+2. **Hash and promote the recovered master.** Copy the exact consolidated bytes into the approved project-owned durable location, record SHA-256/size, and preserve source provenance.
+3. **Preserve every same-name predecessor.** Compare embedded versions, section inventory, v10/v14/v9/v7 coverage and hashes; never replace by timestamp alone.
+4. **Revalidate only load-bearing claims.** Recheck primary sources when an old claim affects a current decision.
+5. **Keep source hierarchy explicit.** Prefer official repositories, releases, specs and maintainer sources for technical/current claims.
+6. **Promote only implementation-relevant findings downstream.** PRJ-020 stays the broad research map; downstream projects own runtime decisions.
+7. **Append rather than fork.** Current research deltas should extend the canonical master or be intentionally versioned snapshots with clear predecessor/successor links.
 
 ## Quality and anti-drift gates
 
 Before treating a research update as complete, verify that:
 
-- the update was applied to the recovered canonical master rather than a convenient duplicate;
-- prior v10/v14/v9/v7 material remains present unless a change is explicitly documented;
+- the update was applied to the recovered consolidated master rather than a convenient earlier duplicate;
+- the primary-base and merged-source provenance remains recorded;
+- embedded v10/v14 material and retained v9/v7 appendices remain present;
+- the KinitoPET addendum remains preserved;
 - new current claims have direct sources and checked dates;
 - historical links are labeled rather than silently presented as current;
 - source facts, user observations, inferences and proposals remain distinguishable;
 - downstream implementation pages are linked when a finding has implementation consequences;
 - no research-only item is described as shipping behavior without project-owned proof;
-- the final master is stored durably with hash or equivalent byte-verification evidence.
+- the final promoted master is stored durably with SHA-256/size or equivalent byte-verification evidence.
 
 ## Troubleshooting and recovery
 
 ### Multiple master files exist
 
-Do not select by modification time. Compare embedded versions, section inventory, v10/v14/v9/v7 coverage, unique research branches and hashes. Preserve unique material during reconciliation.
+Do not select by modification time. Prefer the recovered consolidated master because its own content records the latest base and all merged source passes. Still compare embedded versions, section inventory, v10/v14/v9/v7 coverage, unique research branches and hashes before deleting or superseding anything.
 
 ### A numbered v15/v16-style file appears
 
 Treat it as a candidate snapshot until its unique material is reconciled into the canonical master.
+
+### A same-name master lacks the source appendices
+
+Treat it as an earlier or incomplete candidate unless other evidence proves otherwise. The recovered consolidated authority explicitly preserves v9 and v7 appendices in addition to embedded v10/v14 material.
 
 ### An old source link is dead
 
@@ -179,4 +213,4 @@ The downstream project's actual runtime evidence wins. Keep the research item as
 
 ## Exact next action
 
-**Recover the exact `master desktop pet research.md` artifact, prove its lineage and hash, preserve the consolidated v10/v14/v9/v7 material, then append the NeurolingsCE Qt-to-Rust transition as a dated current architecture/parity case study. Run the differential mascot corpus before promoting any implementation idea into PRJ-005/006/007 or PCX-037/038/039/060/061.**
+**Promote the recovered consolidated `master desktop pet research.md` into the canonical project-owned durable location, record its exact SHA-256 and size, preserve all same-name predecessors, then append the already verified NeurolingsCE Qt-to-Rust transition as a dated current architecture/parity case study without dropping the embedded v10/v14 material, v9/v7 appendices, KinitoPET addendum or historical ecosystem evidence.**
