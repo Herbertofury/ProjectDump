@@ -58,7 +58,10 @@ jobs:
           fetch https://maven.minecraftforge.net/net/minecraftforge/srgutils/maven-metadata.xml srgutils-maven-metadata.xml
           fetch https://maven.neoforged.net/releases/net/neoforged/AutoRenamingTool/maven-metadata.xml auto-renaming-tool-maven-metadata.xml
           fetch https://repo.spongepowered.org/repository/maven-public/org/spongepowered/mixin/maven-metadata.xml mixin-maven-metadata.xml
-          fetch https://maven.llamalad7.net/com/llamalad7/mixinextras/mixinextras-common/maven-metadata.xml mixinextras-maven-metadata.xml
+          # MixinExtras is published on Maven Central. The legacy maintainer Maven host
+          # can be DNS-unavailable on hosted runners, so use the project's current
+          # documented distribution source rather than the obsolete host.
+          fetch https://repo.maven.apache.org/maven2/io/github/llamalad7/mixinextras-common/maven-metadata.xml mixinextras-maven-metadata.xml
           fetch https://maven.architectury.dev/dev/architectury/architectury-loom/maven-metadata.xml architectury-loom-maven-metadata.xml
 
           python3 - <<'PY'
