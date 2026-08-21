@@ -1,85 +1,465 @@
 # PCX-063 - Feature Foundry Aesthetic Vault
 
-## Status
+## Status and authority
 
-**Tracked project:** PCX-063
-**Current verified implementation name:** **Inspiration Vault**
-**Current implementation host:** `Herbertofury/GameSync-Next` on `main`
-**Primary source path:** `apps/feature-foundry/`
-**Bridge source:** `apps/extension-v2/src/entrypoints/feature-foundry-bridge/` plus `apps/extension-v2/src/background/bootstrap.ts`
-**Shared capture contract:** `packages/shared/src/featureFoundryCapture.ts`
+**Tracked project:** `PCX-063`  
+**Project goal:** operate a real searchable asset/aesthetic vault rather than an empty drawer, with persistent assets, source provenance, visual DNA, hot-drop/capture flows, and reversible organization.
 
-Project Constellation originally describes this track as an Aesthetic Vault that must become a real searchable asset/aesthetic operating surface rather than an empty drawer, with persistent assets, source provenance, visual direction, capture flows, and reversible organization. Current project-owned source shows that this goal now has an implemented browser-connected Feature Foundry workspace named **Inspiration Vault**.
+This project currently has **two verified implementation lanes** that solve different parts of that goal and must not be collapsed into one fictional system.
 
-The separate connected repository `Herbertofury/Feature-Foundry` currently has repository size `0`. It is not the strongest implementation source for this track. The current code described below lives in the GameSync Next monorepo.
+### Current production asset/runtime authority
+
+- **Repository:** `Herbertofury/Feature-Foundry`
+- **Branch:** `main`
+- **Verified head:** `e1ba080b5c7590f1c844a6ed13b3a471709920b9`
+- **Release/package version:** `24.0.0`
+- **Current product surface:** **Asset Vault**, including the floating Object Atlas/Scrapbook/Layers/History/Environment/Room Intelligence window
+- **Primary implementation:** `index.html`, `src/prototype-v24.ts`, `src/premium.ts`, `src/world/`, `src-tauri/`
+
+Feature Foundry v24 is now the real released production application and supersedes the older claim that the standalone `Feature-Foundry` repository was empty. Its Asset Vault is the current production surface for importing, searching, inspecting, placing, pinning, transforming, and operating assets inside living worlds and the professional UI.
+
+### Browser capture and provenance authority
+
+- **Repository:** `Herbertofury/GameSync-Next`
+- **Branch:** `main`
+- **Verified head:** `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`
+- **Implementation name:** **Inspiration Vault**
+- **Primary app path:** `apps/feature-foundry/`
+- **Bridge source:** `apps/extension-v2/src/entrypoints/feature-foundry-bridge/` and `apps/extension-v2/src/background/bootstrap.ts`
+- **Shared capture contract:** `packages/shared/src/featureFoundryCapture.ts`
+
+The GameSync Next implementation remains the strongest verified browser-to-vault capture/provenance workflow: it captures pages, images, links, and selections, preserves source/provider metadata, organizes references into boards, and includes a browser-local cleanup/export bench.
+
+### Important boundary
+
+Do **not** claim that Feature Foundry v24 and GameSync Next Inspiration Vault are already one unified persistence system. The production v24 Asset Vault does not currently consume the GameSync Next capture envelope, and GameSync Next's browser-local reference database is not the same storage layer as the v24 runtime's Asset Vault, scrapbook state, browser snapshot, Tauri snapshot, or SQLite database.
+
+The correct architectural direction is additive reconciliation: preserve both proven lanes, define a versioned bridge between them, then migrate data only after round-trip and restart tests prove no loss of source metadata, imported bytes, transforms, or board state.
+
+---
+
+## What Feature Foundry v24 Asset Vault provides
+
+The v24 application exposes **Asset Vault** as a first-class workspace beside Living Dashboard, Aesthetic Explorer, Room Studio, and Theme Lab.
+
+The current UI explicitly supports:
+
+- asset search across asset names and affordances;
+- import of images, Blender files, GLB/GLTF, OBJ, FBX, and audio;
+- a drag/drop import zone;
+- an Asset Intelligence inspector;
+- placement into the left or right living world;
+- placement as a whole-UI actor;
+- pinning as a scrapbook sticker to the exact UI surface under the pointer;
+- floating the Vault into its own movable/resizable window;
+- direct drag/drop from the floating Vault into worlds, cards, or scrapbook zones.
+
+The normal Asset Vault workspace exposes:
+
+```text
+Asset Vault
+- Search assets and affordances
+- Float Vault
+- Import asset
+- Drop image/model/audio
+- Asset grid
+- Asset Intelligence inspector
+- Add left
+- Add right
+- Place in UI
+- Pin sticker
+```
+
+The floating Vault adds these tabs:
+
+```text
+Object Atlas
+Mascots
+Scrapbook
+Layers
+History
+Environment
+Room Intelligence
+```
+
+This makes the production surface broader than a passive asset browser: it is also a live object-placement, transformation, scrapbook, history, environment, and room-intelligence tool.
+
+---
+
+## Feature Foundry v24 Asset Vault architecture
+
+```text
+Feature Foundry v24
+|
++-- Asset Vault workspace
+|   +-- searchable asset grid
+|   +-- Asset Intelligence inspector
+|   +-- file/drop import
+|   +-- left/right/UI/sticker placement
+|
++-- Floating Asset Vault
+|   +-- Object Atlas
+|   +-- Mascots
+|   +-- Scrapbook
+|   +-- Layers
+|   +-- History
+|   +-- Environment
+|   +-- Room Intelligence
+|
++-- objectState runtime
+|   +-- world objects
+|   +-- UI actors
+|   +-- pinned stickers
+|   +-- transform/physics state
+|
++-- browser persistence
+|   +-- ff-floating-vault
+|   +-- ff-scrapbook-layout
+|   +-- ff.browser-snapshot.v1
+|
++-- Tauri desktop persistence
+    +-- living-world-snapshot.json
+    +-- feature-foundry.sqlite3 for catalog/music/history systems
+```
+
+### Primary source ownership
+
+| Source | Responsibility |
+| --- | --- |
+| `index.html` | Asset Vault workspace, floating Vault markup, tabs, drop/import surfaces, and live controls. |
+| `src/prototype-v24.ts` | Asset catalog/runtime, file import, placement, drag/drop, sticker pinning, transforms, floating Vault state, scrapbook persistence, Room Intelligence extraction, self-tests. |
+| `src/premium.ts` | Production diagnostics, browser snapshot, native snapshot dispatch, typed premium runtime and Tauri integration. |
+| `src/world/ObjectEcologyLayer.ts` | Premium runtime object-ecology behavior separate from the V24 compatibility asset layer. |
+| `src-tauri/src/lib.rs` | Native world snapshot storage under the app-data directory and Tauri runtime commands. |
+| `tests/ui.test.ts` | Browser-level production verification for major Feature Foundry workspaces and runtime health. |
+
+---
+
+## Asset identity and runtime behavior
+
+The v24 compatibility runtime maintains an in-memory asset catalog and lookup map used by the Asset Vault and Object Atlas. Built-in assets carry project-owned metadata such as:
+
+- stable asset ID;
+- theme/world ownership;
+- display name;
+- rendered art;
+- semantic type;
+- physics description;
+- affordances;
+- mascot behavior hints;
+- optional media kind;
+- sticker capability;
+- breakability and other runtime flags.
+
+Selected assets are surfaced through Asset Intelligence rather than treated as opaque blobs. The inspector exposes at least type, physics, affordances, and mascot behavior.
+
+### Placement modes
+
+The floating Vault supports three materially different placement contracts.
+
+#### World restricted
+
+Assets stay within a living side world and use world-coordinate placement and world collision/physics rules.
+
+#### Whole UI
+
+Assets live in the global UI actor layer. They can remain positioned at rest or participate in UI-aware gravity/collision behavior.
+
+#### Scrapbook sticker
+
+Assets pin to the exact target panel/card/UI surface under the pointer. Pinned stickers store a target key plus normalized pin coordinates and intentionally ignore ordinary gravity until peeled or changed.
+
+The global drop handler preserves these distinctions instead of silently converting every import into one generic actor type.
+
+---
+
+## Scrapbook persistence
+
+Feature Foundry v24 persists non-world actor placement under:
+
+```text
+ff-scrapbook-layout
+```
+
+The saved record includes important runtime state such as:
+
+- `assetId`
+- `scope`
+- `gravity`
+- `gravityAfterPeel`
+- `x`, `y`
+- `rotation`
+- `scaleX`, `scaleY`
+- `opacity`
+- `blendMode`
+- `locked`
+- `zIndex`
+- `skewX`, `skewY`
+- `brightness`
+- `contrast`
+- `saturation`
+- `hue`
+- `blur`
+- visibility and anchor state
+- pinned-target identity and normalized pin coordinates
+
+`restoreScrapbookState()` recreates saved actors only when their `assetId` exists in the current runtime asset catalog.
+
+### Current imported-asset persistence gap
+
+This is an important production limitation and should remain explicit.
+
+Current `handleFile()` creates imported assets in memory with IDs such as:
+
+```text
+user-<timestamp>
+```
+
+Image imports are read as data URLs and inserted into the in-memory `assets`/`assetById` catalog. Non-image files are represented as an imported 3D/media placeholder with a semantic-rig-pending status.
+
+However, the current scrapbook persistence stores **only the imported asset ID**, not the imported asset definition or file bytes. On reload, `restoreScrapbookState()` skips records whose asset ID is absent from the rebuilt catalog.
+
+Therefore:
+
+- built-in asset placement persistence is source-backed;
+- imported asset bytes/catalog definitions are **not yet proven durable across a full reload/restart**;
+- a pinned or placed user import may have a scrapbook placement record but still fail to restore because the imported asset definition was memory-only.
+
+Do not call imported-asset persistence complete until the asset definition/blob itself is stored durably and a clean-restart test proves restoration.
+
+---
+
+## Floating Vault window persistence
+
+The floating Vault window persists its geometry and minimized state separately under:
+
+```text
+ff-floating-vault
+```
+
+Stored properties include position, dimensions, and minimized state. The window can be dragged, minimized, centered, resized, and restored on reload.
+
+This is UI-window persistence only. It must not be confused with persistence of user-imported asset bytes.
+
+---
+
+## Browser and native world snapshots
+
+Feature Foundry v24 adds another persistence lane through `src/premium.ts`.
+
+### Browser mode
+
+`Ctrl+S` stores the current textual production state under:
+
+```text
+ff.browser-snapshot.v1
+```
+
+The snapshot includes runtime diagnostics such as mode, view, theme, world state/layout, visual quality, current object snapshots, selected state, mascots, floating-Vault-open state, catalog diagnostics, Theme Director, Music Hub, media surface, and runtime metadata.
+
+### Tauri desktop mode
+
+The same save action invokes:
+
+```text
+save_world_snapshot
+```
+
+The native command validates that the submitted state is valid JSON and writes:
+
+```text
+living-world-snapshot.json
+```
+
+under the platform-specific Feature Foundry application-data directory.
+
+`load_world_snapshot` can read the file back.
+
+### Snapshot boundary
+
+The production snapshot serializes the **current runtime state**. It is not evidence that source files, browser-captured reference objects, imported binary asset bytes, or GameSync Inspiration Vault boards have been copied into the native database.
+
+A real Aesthetic Vault durability layer still needs explicit asset/blob identity and provenance storage rather than relying only on scene snapshots.
+
+---
+
+## Room Intelligence and Object Atlas handoff
+
+The floating Vault is integrated with Room Intelligence. Current source allows a detected room mesh to be inspected and then **added to the Object Atlas**. The produced asset is inserted into the runtime asset catalog with its source-room identity.
+
+The room workflow also supports:
+
+- selecting detected room meshes;
+- assigning semantic roles;
+- assigning physics behavior;
+- testing primary actions;
+- sending mascots to semantic anchors;
+- placing a selected Atlas asset onto a room surface;
+- showing/hiding and locking mesh mappings.
+
+This establishes a source-backed room-to-Atlas workflow, but the same persistence rule applies: a runtime-generated asset is not automatically a durable project asset merely because it appears in the in-memory Atlas.
+
+---
+
+## Import behavior in Feature Foundry v24
+
+### Accepted file classes
+
+The main Asset Vault currently advertises:
+
+```text
+image/*
+.blend
+.glb
+.gltf
+.obj
+.fbx
+audio/*
+```
+
+The wider floating/mascot import path also includes additional types such as JSON, ZIP, PNG, WebP, and audio.
+
+### Image import
+
+Image files are read with `FileReader` and represented as borderless image actors with a data-URL visual.
+
+Current source assigns semantic defaults equivalent to:
+
+- imported image actor;
+- 2.5D dynamic behavior;
+- place / throw / resize affordances;
+- mascot inspect/carry behavior.
+
+### 3D/media import
+
+Current generic non-image import creates an imported 3D/media runtime record whose semantic rig is still pending. That is a staging representation, not proof that arbitrary Blender/FBX/GLTF geometry is already fully parsed, rigged, persisted, and restored by the Asset Vault.
+
+Room Intelligence has a deeper Blender/3D semantic pipeline; do not transfer those claims automatically to every generic Asset Vault import path unless the same file is actually routed through and verified by that subsystem.
+
+---
+
+## Production verification in Feature Foundry v24
+
+The released package defines:
+
+```powershell
+npm install
+npm run dev
+npm run desktop:dev
+npm run test
+npm run typecheck
+npm run build
+npm run test:ui
+npm run verify
+npm run desktop:build
+npm run package
+```
+
+`npm run verify` currently chains:
+
+1. contract tests;
+2. authority tests;
+3. TypeScript checking;
+4. optimized Vite production build;
+5. `cargo check` for the Tauri application;
+6. Playwright browser UI verification.
+
+The current Playwright suite verifies major production health including the living-world layout, Frutiger and Frawgy runtime changes, Theme Atlas, Music Hub, media surface, runtime diagnostics, and zero page errors.
+
+The V24 compatibility runtime also contains a large internal self-test. Asset/Vault-related assertions include the existence and opening of the floating Vault, whole-UI actor creation, sticker pinning, transform tools, drag assets, Room Intelligence, Object Atlas extraction, and other studio behavior.
+
+### Missing dedicated imported-asset durability gate
+
+The current production verification does **not** establish a dedicated clean-restart test that imports a new local asset, places or pins it, fully reloads/restarts the application, and proves both asset bytes/definition and placement return unchanged.
+
+That should be treated as the most important current PCX-063 production gap.
+
+---
+
+# GameSync Next Inspiration Vault
+
+The GameSync Next implementation remains valuable because it solves the capture/provenance half of the PCX-063 goal more explicitly than Feature Foundry v24 currently does.
 
 ## What the Inspiration Vault does
 
-The Inspiration Vault is Feature Foundry's browser-connected reference capture and lightweight asset-preparation workspace. It is designed to move material from the web into structured creative boards, preserve where each reference came from, and prepare selected images for downstream theme/object/sticker/world work.
+The Inspiration Vault is a browser-connected reference capture and lightweight asset-preparation workspace. Verified capabilities include:
 
-The current Feature Foundry README describes the workspace as a capture studio for saving art references from the web, sorting them into boards, and running local cleanup/export passes for theme objects, sticker packs, mystery-game ideas, and broader mood worlds.
-
-Verified current capabilities include:
-
-- browser-extension capture of a **page**, **image**, **link**, or **selected text**;
-- a dedicated Feature Foundry bridge page that transfers capture payloads from the extension into the local Feature Foundry app;
+- browser-extension capture of a page, image, link, or selected text;
 - source-provider identity and provenance fields;
-- persistent local vault state;
+- a dedicated bridge page;
+- persistent local reference state;
 - board-based organization;
-- intent and status classification;
+- intent/status classification;
 - pinning and tagging;
-- drag/drop and manual asset use in the cleanup bench;
-- local image cleanup controls;
+- a browser-side cleanup bench;
 - palette extraction;
 - outline/shadow styling;
 - PNG export;
-- a built-in source atlas covering major visual-reference providers.
+- a built-in reference-provider atlas.
 
-## Architecture
+## Capture architecture
 
 ```text
 Browser page
  |
  | right-click "Save to Feature Foundry"
  v
-GameSync Extension V2 background service worker
+GameSync Extension V2 service worker
  |
  | create FeatureFoundryBridgeCapture
- | store temporary envelope in chrome.storage.local
+ | stage envelope in chrome.storage.local
  v
 feature-foundry-bridge extension page
  |
  | validate envelope
  | copy envelope into window.name
- | remove temporary chrome.storage.local record
+ | remove staged storage record
  v
-Feature Foundry app at http://127.0.0.1:5175/
+GameSync Next Feature Foundry app
  |
  | ?ff-workspace=inspiration-vault
  v
 InspirationVaultEditor
  |
- +--> persistent vault state in localStorage
- +--> boards / tags / intent / source provenance
- +--> local cleanup bench
- +--> PNG and palette output
+ +-- boards / tags / intent / provenance
+ +-- local cleanup bench
+ +-- palette + PNG output
 ```
 
-### Primary implementation files
+## Capture contract
 
-| File | Responsibility |
-| --- | --- |
-| `apps/feature-foundry/README.md` | Current Feature Foundry workspace overview and verified development/build commands. |
-| `apps/feature-foundry/ui/src/App.tsx` | Main Feature Foundry shell, workspace routing, and Inspiration Vault mounting. |
-| `apps/feature-foundry/src/ui/editors/InspirationVaultEditor.tsx` | Vault state model, source registry, boards, capture import, cleanup bench, palette extraction, and export UI. |
-| `packages/shared/src/featureFoundryCapture.ts` | Typed capture envelope, provider normalization, storage-key helpers, and workspace URL construction/parsing. |
-| `apps/extension-v2/src/background/bootstrap.ts` | Context-menu registration, capture creation, temporary staging, and bridge-tab launch. |
-| `apps/extension-v2/src/entrypoints/feature-foundry-bridge/main.ts` | Reads staged capture, validates it, forwards it to Feature Foundry, and cleans up temporary extension storage. |
-| `apps/extension-v2/wxt.config.ts` | Extension permissions and Manifest V3 build configuration. |
+The shared contract at `packages/shared/src/featureFoundryCapture.ts` defines:
 
-## Vault data model
+```text
+workspace: inspiration-vault
+query parameter: ff-workspace
+window envelope kind: gamesync:feature-foundry-capture:v1
+storage prefix: featureFoundryCaptureBridgeV1:
+default app URL: http://127.0.0.1:5175/
+```
 
-The current editor stores `InspirationVaultItem` records with these important fields:
+Supported capture kinds are:
+
+```text
+page
+image
+link
+selection
+```
+
+Every accepted capture requires:
+
+- capture ID;
+- title;
+- page URL;
+- source URL;
+- capture timestamp.
+
+Optional fields include image URL, link URL, selection text, note, and tags. Provider host and display label are also first-class fields.
+
+## Inspiration Vault data model
+
+The current `InspirationVaultItem` record includes:
 
 - `id`
 - `title`
@@ -99,32 +479,32 @@ The current editor stores `InspirationVaultItem` records with these important fi
 - `pinned`
 - `capturedAt`
 
-This is important because a vault item is not just an image blob. The source URL, page URL, capture kind, provider identity, notes, tags, time, classification, and board placement are first-class state.
+This is the strongest currently verified provenance model for PCX-063. A future v24 bridge should preserve this data rather than reducing a captured reference to an image file and title.
 
-### Persistent storage
+## Inspiration Vault persistence
 
-The current vault stores its state in browser local storage under:
+The GameSync Next vault persists its state under:
 
 ```text
 gamesync:feature-foundry:inspiration-vault:v1
 ```
 
-The editor validates the restored object and falls back to its seed state if the stored value is missing, malformed, or does not contain an item array.
+The editor validates restored data and falls back to seed state if the stored object is malformed.
 
-Current source proves persistence for the local Feature Foundry browser session. A separate durable database, multi-device sync service, or project-file storage layer is **not** established by the inspected implementation and should not be claimed.
+This proves browser-local reference persistence. It does not prove native SQLite, cloud, or project-file durability.
 
-## Boards
+## Boards and intent taxonomy
 
-Current source defines six boards:
+Current boards:
 
-1. **Inbox** - fresh browser-extension and manual captures.
-2. **Theme Objects** - props, interface ornaments, silhouettes, and world materials.
-3. **Sticker Tray** - icons, seals, charms, badges, and cutout-ready references.
-4. **Mystery Games** - unusual game references, mechanics, and unfinished-game concepts.
-5. **World Thesis** - atmosphere, palette anchors, moodboards, and world-direction material.
-6. **Collector Cabinet** - long-lived keeper references for later packs, apps, and extension surfaces.
+1. Inbox
+2. Theme Objects
+3. Sticker Tray
+4. Mystery Games
+5. World Thesis
+6. Collector Cabinet
 
-The current intent taxonomy is separate from board placement and includes:
+Current intent taxonomy:
 
 - theme object;
 - sticker;
@@ -135,90 +515,11 @@ The current intent taxonomy is separate from board placement and includes:
 - scene;
 - character.
 
-Items also carry a status of `inbox`, `processing`, `ready`, or `archive`.
-
-## Browser capture flow
-
-### Context menus
-
-GameSync Extension V2 registers a root context menu named:
-
-```text
-Save to Feature Foundry
-```
-
-It exposes four concrete capture actions:
-
-- Page into Inspiration Vault
-- Image into Inspiration Vault
-- Link into Inspiration Vault
-- Selection into Inspiration Vault
-
-The service worker converts the selected context into a typed `FeatureFoundryBridgeCapture` record.
-
-### Capture contract
-
-The shared contract supports four capture kinds:
-
-```text
-page
-image
-link
-selection
-```
-
-Every accepted capture must include a non-empty:
-
-- capture ID;
-- title;
-- page URL;
-- source URL;
-- capture timestamp.
-
-The capture envelope also carries provider host/label and may include image URL, link URL, selected text, note, and tags.
-
-The current envelope identifier is:
-
-```text
-gamesync:feature-foundry-capture:v1
-```
-
-The default Feature Foundry app URL is:
-
-```text
-http://127.0.0.1:5175/
-```
-
-and the workspace query parameter is:
-
-```text
-ff-workspace=inspiration-vault
-```
-
-### Temporary staging and handoff
-
-The extension temporarily stages the capture envelope in `chrome.storage.local` using a key prefixed with:
-
-```text
-featureFoundryCaptureBridgeV1:
-```
-
-It then opens `feature-foundry-bridge.html?captureId=...`.
-
-The bridge:
-
-1. validates that a capture ID exists;
-2. reads the staged envelope;
-3. validates the envelope with the shared parser;
-4. places the valid envelope in `window.name`;
-5. removes the temporary extension-storage entry;
-6. redirects to the Feature Foundry workspace URL.
-
-The Feature Foundry shell reads `ff-workspace` during initial routing, and the Inspiration Vault editor reads and validates the capture envelope from `window.name`. The editor prevents duplicate insertion when the incoming capture ID is already present.
+Statuses are `inbox`, `processing`, `ready`, or `archive`.
 
 ## Source atlas
 
-The current Inspiration Vault source registry contains built-in guidance for these providers:
+The Inspiration Vault includes built-in guidance for:
 
 - Pinterest
 - ArtStation
@@ -236,296 +537,332 @@ The current Inspiration Vault source registry contains built-in guidance for the
 - Flickr
 - Cosmos
 
-Each source entry records the host, category, specialties, expected capture flow, and a short use note. Categories currently include `popular`, `community`, and `gem`.
-
-Provider labels are normalized centrally by the shared capture contract. Current special-case labels include `X`, `CARI`, and `Aesthetics Wiki`.
+Provider records include host, category, specialties, expected capture flow, and operator notes.
 
 ## Cleanup bench
 
-The current editor includes a browser-side local cleanup bench rather than only a reference board.
-
 Verified controls include:
 
-- background mode:
- - none;
- - remove light;
- - remove dark;
- - remove green;
+- background mode: none / remove light / remove dark / remove green;
 - threshold;
 - brightness;
 - contrast;
 - saturation;
-- crop transparent pixels;
-- optional outline;
-- outline size;
-- outline color;
-- shadow strength.
+- transparent-pixel crop;
+- outline enable/size/color;
+- shadow strength;
+- palette extraction;
+- PNG export.
 
-The editor loads images through an `HTMLImageElement` with `crossOrigin = "anonymous"` and performs pixel processing in the browser. If the host blocks pixel access, the UI explicitly tells the user to download the image and drop the local file into the bench instead.
+Remote images are processed with browser canvas access when CORS allows it. The intended fallback for blocked pixel access is to download the image and use a local file/drop workflow.
 
-The processed result contains:
+---
 
-- a generated PNG data URL;
-- extracted palette values;
-- output width;
-- output height.
+## Running the two current implementation lanes
 
-The current export action downloads the processed result as a `.png` whose filename is derived from the source label. Palette text can also be copied when clipboard access is available.
+### Feature Foundry v24 production app
 
-### External-tool recommendations
+From `Herbertofury/Feature-Foundry`:
 
-The editor currently names these as optional external recipes rather than built-in runtime dependencies:
+```powershell
+npm install
+npm run dev
+```
 
-- BiRefNet
-- RMBG 2.0
-- Segment Anything 2
-- Real-ESRGAN
-- SUPIR
-- CLIP-style similarity
-- color clustering
+Native desktop development:
 
-Do not document these as bundled Feature Foundry services unless project source later adds actual integrations.
+```powershell
+npm run desktop:dev
+```
 
-## Running Feature Foundry
+Verification and packaging:
 
-The GameSync Next monorepo uses npm workspaces.
+```powershell
+npm run verify
+npm run desktop:build
+npm run package
+```
 
-From the repository root:
+### GameSync Next Inspiration Vault
+
+From `Herbertofury/GameSync-Next`:
 
 ```sh
 npm ci
 npm run dev:feature-foundry
 ```
 
-The root script builds `packages/shared` first and then starts Feature Foundry.
-
-The verified development URL is:
-
-```text
-http://127.0.0.1:5175/
-```
-
-You can also invoke the workspace directly after dependencies/shared build requirements are satisfied:
+Direct workspace development:
 
 ```sh
 npm --workspace apps/feature-foundry run dev
 ```
 
-### Build
-
-Preferred root command:
+Build:
 
 ```sh
 npm run build:feature-foundry
-```
-
-This builds the shared package and then the Feature Foundry app.
-
-Direct workspace build:
-
-```sh
-npm --workspace apps/feature-foundry run build
-```
-
-The app's build script runs TypeScript checking followed by the Vite build.
-
-### Preview
-
-The app exposes:
-
-```sh
-npm --workspace apps/feature-foundry run preview
-```
-
-with a strict preview port of `4175`.
-
-## Building the capture extension
-
-The web-capture bridge is part of GameSync Extension V2, not the standalone Feature Foundry Vite app.
-
-After root dependency installation, build Extension V2 with its workspace build command:
-
-```sh
 npm --workspace apps/extension-v2 run build
 ```
 
-The extension manifest requests `contextMenus`, `storage`, `tabs`, and broad host access needed by the current capture path. The capture system is implemented as an MV3 service-worker flow plus an extension page, so changes must be tested in a real built extension rather than only in the Feature Foundry dev server.
+The old GameSync Next Feature Foundry app still uses strict port `5175`; its preview uses `4175`.
 
-## How to use the current workflow
+---
 
-### Capture from the browser
+## Recommended operator workflow today
 
-1. Run Feature Foundry locally on port 5175.
-2. Load a current built GameSync Extension V2.
-3. On a reference page, image, link, or selected text, open the browser context menu.
-4. Choose **Save to Feature Foundry** and the appropriate capture subtype.
-5. The extension opens its bridge page and forwards the capture into the Inspiration Vault.
-6. Confirm the item appears once in the expected board and preserves source/provider fields.
+Until the two lanes are formally bridged, use them according to their verified strengths.
 
-### Organize a reference
+### For web research and source provenance
 
-Use board, intent, status, tags, notes, and pin state rather than encoding meaning into the title alone. Keep the original source URL and page URL intact so later work can trace the reference back to where it came from.
+Use GameSync Next Inspiration Vault:
 
-### Prepare an image
+1. run the GameSync Next Feature Foundry app;
+2. load a current Extension V2 build;
+3. use **Save to Feature Foundry** on a page/image/link/selection;
+4. verify the captured provider/source fields;
+5. organize into boards, intents, statuses, tags, and notes;
+6. use the cleanup bench when useful;
+7. export prepared PNGs when moving references toward production authoring.
 
-1. Load the item's image into the cleanup bench.
-2. Adjust background-removal mode and threshold.
-3. Tune brightness, contrast, saturation, outline, and shadow as needed.
-4. Review the extracted palette.
-5. Export the prepared PNG.
-6. Move the result into the appropriate downstream Feature Foundry authoring flow only after verifying the resulting asset is suitable for that project.
+### For current production world/object authoring
+
+Use Feature Foundry v24:
+
+1. open **Asset Vault**;
+2. search or select a built-in project asset;
+3. inspect its type, physics, affordances, and mascot behavior;
+4. choose world, whole-UI, or scrapbook placement;
+5. use the floating Vault for layers/history/environment/Room Intelligence;
+6. save browser/native snapshots when appropriate;
+7. treat newly imported user assets as session-scoped until imported-asset durability is fixed and restart-proven.
+
+---
+
+## Required bridge architecture
+
+The safest way to converge the two implementations is a versioned additive import contract, not a destructive rewrite.
+
+A future production bridge should preserve at least:
+
+```text
+capture identity
+source URL
+page URL
+provider host/label
+capture kind
+capture timestamp
+notes
+user tags
+board / intent / status
+pinned state
+original asset bytes or durable content address
+processed derivative bytes
+palette / visual DNA metadata
+Feature Foundry production asset ID
+lineage from source capture -> derivative -> production asset
+```
+
+Recommended high-level flow:
+
+```text
+GameSync capture envelope
+      |
+      v
+validated PCX-063 import envelope
+      |
+      +--> immutable source/provenance record
+      +--> durable binary/blob identity
+      +--> optional processed derivative
+      |
+      v
+Feature Foundry v24 Asset Vault / Object Atlas
+      |
+      +--> production asset identity
+      +--> placement/transforms
+      +--> room/world/sticker usage
+```
+
+Unknown fields should be preserved in a namespaced extension area rather than discarded during migration.
+
+---
 
 ## Modification guide
 
-### Add a board
+### Change Feature Foundry v24 Asset Vault UI
 
-Update the `VaultBoardId` union and `BOARD_META` in `InspirationVaultEditor.tsx`. Then verify:
+Start with:
 
-- existing stored records still load;
-- the board appears in the UI;
-- capture defaults remain sensible;
-- moving items between boards remains reversible;
-- no existing board ID is silently renamed without migration.
+- `index.html`
+- `src/prototype-v24.ts`
+- corresponding CSS under `src/styles/`
 
-### Add an intent
+Preserve the existing workspace routing, floating-window behavior, object placement modes, and V24 exact-source contract tests.
 
-Update the `VaultIntent` union and `INTENT_OPTIONS`. Preserve old intent values or provide a migration path before renaming them.
+### Change v24 asset import behavior
 
-### Add a provider
+The current import entry is `handleFile()` in `src/prototype-v24.ts`.
 
-Add a `SOURCE_REGISTRY` entry with:
+Any durability fix should separate:
 
-- stable ID;
-- display label;
-- host;
-- source category;
-- specialties;
-- expected capture flow;
-- operator note.
+1. immutable original file identity;
+2. decoded/display representation;
+3. derived/editable runtime asset metadata;
+4. project placement state.
 
-If provider-label normalization needs a special display form, update `normalizeFeatureFoundryProviderLabel()` in `packages/shared/src/featureFoundryCapture.ts` rather than duplicating host rules inside the editor.
+Do not solve restart persistence by embedding unbounded binary data into every scene snapshot or by silently discarding originals.
 
-### Change the capture schema
+### Change scrapbook persistence
 
-The capture envelope is explicitly versioned. Schema changes must be coordinated across:
+A breaking change to `ff-scrapbook-layout` requires migration. Preserve existing actor IDs when possible and do not clear a user's layout merely because a new field was added.
+
+### Change GameSync capture schema
+
+Coordinate changes across:
 
 1. `packages/shared/src/featureFoundryCapture.ts`;
-2. service-worker capture construction in `apps/extension-v2/src/background/bootstrap.ts`;
+2. Extension V2 service-worker capture construction;
 3. `feature-foundry-bridge/main.ts`;
 4. `InspirationVaultEditor.tsx`;
-5. any runtime test/fixture coverage added for the bridge.
+5. bridge/capture tests.
 
-Do not change the wire shape in only one host.
+The envelope is versioned. Do not modify only one producer or consumer.
 
-### Change the local-storage schema
+### Add an Inspiration Vault provider
 
-The vault key is versioned as `...:v1`. A breaking stored-state change should introduce a migration or a new storage version. Do not silently discard a user's existing boards, notes, tags, pins, or provenance.
+Update the source registry with stable identity, label, host, category, specialties, expected flow, and operator note. Keep provider-label normalization centralized in the shared capture package.
 
-## Verification checklist
+---
 
-A meaningful qualification pass for this project should cover all of the following:
+## Verification matrix
 
-### Feature Foundry app
+A release-worthy PCX-063 pass should eventually prove both lanes and the bridge between them.
 
-- `npm ci` completes from a clean checkout;
-- `npm run build:feature-foundry` succeeds;
-- the app opens at port 5175;
-- `?ff-workspace=inspiration-vault` lands directly in the Inspiration Vault;
-- all six boards render;
-- stored items survive reload;
-- board/intent/status/tag/pin changes survive reload;
-- malformed stored JSON does not crash the app.
+### Feature Foundry v24 production Asset Vault
 
-### Browser bridge
+- clean `npm install`;
+- `npm run verify` succeeds;
+- Asset Vault is directly reachable from rail/tab/dock;
+- search filters assets and affordances;
+- built-in assets can be added left/right/UI/sticker;
+- floating Vault can open, move, resize, minimize, center, and restore geometry;
+- object transforms and pinning survive reload for built-in assets;
+- Room Intelligence can extract a selected mesh into Object Atlas;
+- browser snapshot and native snapshot paths remain functional;
+- no console/page errors in the changed workflow.
 
-- Extension V2 builds successfully;
-- **Page**, **Image**, **Link**, and **Selection** captures each create the correct capture kind;
-- provider host and label are correct;
-- source/page/image/link/selection fields are preserved appropriately;
-- the staged extension-storage record is removed after a successful bridge handoff;
-- invalid or expired captures show truthful bridge errors;
-- duplicate capture IDs do not create duplicate vault items.
+### Imported-asset durability gate
 
-### Cleanup bench
+This is currently the highest-priority missing acceptance test:
 
-- local file processing works;
-- supported remote images process when CORS permits;
-- blocked remote pixel access produces the documented fallback message;
-- background modes materially alter pixels as intended;
-- crop/brightness/contrast/saturation/outline/shadow controls change the output;
-- palette extraction returns usable values;
-- PNG export produces a valid image with the intended dimensions;
-- repeated edits do not corrupt existing vault metadata.
+1. import one local image and one representative 3D/media file;
+2. place each in at least two scopes;
+3. modify transform/appearance metadata;
+4. pin at least one imported asset as a sticker;
+5. save state;
+6. fully reload/restart the application;
+7. prove the imported asset definitions and source bytes still resolve;
+8. prove placements/transforms/pins remain intact;
+9. prove no unknown asset IDs are silently skipped;
+10. prove deleting a derived placement does not delete the immutable source asset unless the user explicitly requests that deletion.
+
+### GameSync Inspiration Vault
+
+- clean monorepo install/build;
+- Feature Foundry app builds;
+- Extension V2 builds;
+- Page/Image/Link/Selection capture all work in a real Chromium/Opera extension runtime;
+- staged capture storage is removed after successful handoff;
+- provider/source fields survive;
+- duplicate capture IDs do not duplicate records;
+- multi-board state survives reload/restart;
+- cleanup-bench output passes deterministic image fixtures.
+
+### Cross-lane bridge
+
+- every provenance field round-trips;
+- original bytes retain content identity;
+- processed derivatives link to originals;
+- repeated import is idempotent;
+- duplicate source capture does not silently fork asset identity;
+- existing GameSync browser-local state is migrated without destructive overwrite;
+- existing v24 placements survive the bridge upgrade;
+- project export/import reproduces the same asset/provenance graph after restart.
+
+---
 
 ## Troubleshooting
 
-### Feature Foundry does not open
+### Feature Foundry v24 Asset Vault does not show
 
-Verify the local app is running on the configured default endpoint:
+Verify you are running the released `Herbertofury/Feature-Foundry` repository rather than the GameSync Next Feature Foundry sub-app. The production app has Asset Vault as a top-level rail/tab/dock workspace.
 
-```text
-http://127.0.0.1:5175/
-```
+### Imported image appears now but disappears after restart
 
-The current bridge contract assumes this default unless code explicitly supplies another app URL.
+This matches the current source-backed durability gap. The import created an in-memory `user-<timestamp>` asset, while the scrapbook record retained only its asset ID. Do not clear unrelated storage. Preserve the source file and treat the issue as missing imported-asset catalog/blob persistence.
 
-### The context menu is missing
+### Built-in sticker does not restore
 
-Confirm you are testing a current built GameSync Extension V2 with `contextMenus` permission and that the background service worker initialized its context menus. Inspect service-worker errors rather than assuming the Feature Foundry UI is at fault.
+Inspect `ff-scrapbook-layout`, its `assetId`, pin target key, and stored transform fields. Confirm the built-in asset still exists in the runtime catalog and the target UI surface still resolves.
 
-### The bridge says "Missing capture id"
+### Floating Vault geometry is wrong
 
-The extension page was opened without its required `captureId` query parameter. Re-run the capture through the registered context menu.
+Inspect `ff-floating-vault`. Geometry is clamped against the current viewport during restoration. A radically smaller viewport can legitimately move or shrink the window.
 
-### The bridge says "Capture expired"
+### Native snapshot fails
 
-The staged `chrome.storage.local` envelope is absent or failed schema validation. Verify the service worker wrote the expected `featureFoundryCaptureBridgeV1:<id>` record and that producer/consumer schema versions still match.
+Verify the Tauri app-data directory is writable and that the submitted snapshot is valid JSON. `save_world_snapshot` rejects malformed JSON before writing.
 
-### The vault opens but the capture is absent
+### Browser capture context menu is missing
 
-Inspect:
+This belongs to the GameSync Next bridge lane. Confirm a current Extension V2 build is loaded, `contextMenus` permission is present, and the MV3 service worker initialized successfully.
 
-- the `window.name` handoff;
-- envelope `kind` and `version`;
-- workspace ID;
-- duplicate capture ID handling;
-- browser console errors in Feature Foundry.
+### GameSync bridge reports an expired capture
 
-### Remote image cleanup fails
+Inspect the expected `featureFoundryCaptureBridgeV1:<id>` staging record and confirm producer/consumer envelope versions still match.
 
-Some hosts block browser pixel access even when the image visibly loads. The current intended fallback is to download the file and use a local file/drop workflow in the cleanup bench.
+### Cleanup bench cannot read remote pixels
 
-### State disappears after changing storage code
+Use the documented local-file fallback. A visible remote image is not automatically canvas-readable because CORS rules still apply.
 
-Check the exact `gamesync:feature-foundry:inspiration-vault:v1` key and any migration logic. Do not solve schema issues by blindly clearing the user's vault.
+---
 
-## Current verification boundaries
+## Current verified boundaries
 
-The inspected source verifies that the Inspiration Vault, typed capture contract, context-menu producer, bridge page, local persistence, boards, provider atlas, and cleanup/export code all exist in the current GameSync Next repository.
+Verified now:
 
-This documentation pass does **not** claim that every context-menu capture path was freshly exercised in Opera/Chromium, that the cleanup bench was freshly pixel-compared against golden fixtures, or that vault state has a durable database/cloud/project-file backend. The Feature Foundry workspace package currently defines `lint` as a TODO echo rather than a real lint gate, and no dedicated Inspiration Vault automated test command was identified in the inspected package scripts.
+- Feature Foundry v24 is a real released production repository at version `24.0.0`.
+- v24 contains a first-class Asset Vault and floating Object Atlas/Scrapbook/Layers/History/Environment/Room Intelligence surface.
+- built-in assets have rich runtime metadata and multiple placement modes.
+- built-in non-world placement/transform/pin state has a browser-local persistence path.
+- the floating Vault window has its own persisted geometry state.
+- browser and Tauri world snapshots exist.
+- GameSync Next still contains the typed browser-capture/provenance Inspiration Vault path at current main.
 
-Those gaps should remain explicit until runtime evidence exists.
+Not yet claimed:
 
-## Highest-value next verification work
+- durable restart-safe storage of arbitrary user-imported asset definitions/bytes in Feature Foundry v24;
+- automatic migration of GameSync Inspiration Vault records into Feature Foundry v24;
+- a unified native database for browser-captured reference provenance and production Asset Vault bytes;
+- cloud/multi-device synchronization;
+- complete arbitrary Blender/FBX/GLTF semantic ingestion through the generic Asset Vault import button;
+- complete current-run cross-browser qualification of all GameSync capture kinds.
 
-1. Run a clean `build:feature-foundry` and Extension V2 build from the same checkout.
-2. Exercise all four browser capture kinds in a real Chromium/Opera runtime.
-3. Verify bridge cleanup and duplicate suppression.
-4. Test persistence across reload/restart with a populated multi-board vault.
-5. Add automated contract tests for capture envelope parsing and bridge staging/cleanup.
-6. Add focused tests for local-storage migration and duplicate IDs.
-7. Add deterministic cleanup-bench image fixtures for background removal, crop, palette, outline, shadow, and export.
-8. Decide whether long-term vault storage remains browser-local or moves to a project-owned durable asset database while preserving existing v1 state.
+These are real acceptance gaps, not reasons to discard the working systems that already exist.
 
-## Relationship to nearby Project Constellation tracks
+---
 
-- **PRJ-002 Feature Foundry** is the umbrella authoring application.
-- **PCX-043 Feature Foundry Production App** covers the full production application surface.
-- **PCX-045 Feature Foundry Object Intelligence** consumes or enriches object-oriented material after capture.
-- **PCX-046 Feature Foundry Source Hubs** covers provider/source-adapter strategy more broadly.
-- **PCX-047 Favorite Artist Worlds Database** is a structured research/database track rather than the general live capture vault.
-- **PCX-059 Feature Foundry Project Brain Bridge** covers continuity/project-brain interchange, not visual-reference capture.
-- **PCX-063 Feature Foundry Aesthetic Vault** is the persistent browser-connected inspiration/reference and lightweight asset-preparation workspace documented here.
+## Highest-value next work
 
-Keep these ownership boundaries explicit so the Inspiration Vault does not become a duplicate of the whole Feature Foundry platform or an unstructured dumping ground.
+1. Add content-addressed durable storage for Feature Foundry v24 imported asset originals and metadata.
+2. Migrate `ff-scrapbook-layout` from asset-ID-only references to durable asset identities without losing existing built-in placements.
+3. Add a clean-restart imported-asset durability test to the v24 release gate.
+4. Define a versioned PCX-063 bridge envelope that can ingest the existing GameSync `FeatureFoundryCaptureEnvelope` without losing provenance.
+5. Preserve browser-captured source records as immutable lineage while allowing derived production assets and edits.
+6. Add idempotent capture-to-production import with duplicate/source collision handling.
+7. Add deterministic project export/import that includes asset graph, hashes, provenance, derivatives, placements, and visual-DNA metadata.
+8. Only after those gates pass, consider retiring or merging the older GameSync Next Feature Foundry sub-app; do not remove it merely because v24 now owns the production authoring surface.
+
+## Wiki maintenance
+
+Update this page when Feature Foundry production Asset Vault behavior, import persistence, Object Atlas/Room Intelligence ownership, GameSync capture schema, browser bridge behavior, storage keys, native snapshot/database behavior, project export/import, build commands, or verified acceptance evidence changes. Prefer current project-owned source/runtime evidence over Project Constellation's older generic continuity summary, and preserve historical implementation lanes when they still contain capabilities not yet migrated into the current production application.
