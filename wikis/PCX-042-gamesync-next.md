@@ -22,7 +22,7 @@ The current head materially supersedes the prior documentation baseline `9e337c7
 
 The standalone shipping baseline is `Herbertofury/Gamesync` at `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928` in the current durable lead-gate evidence. Do not run a parity audit against an arbitrary older GameSync checkout and treat the result as current.
 
-Open proposal branches and pull requests are **not current product source** until merged and reverified. Current connected PR evidence now includes separate draft lanes for package-build performance, Vite, Petz persistence, the test toolchain, the React/Three UI runtime, TypeScript 7, the PlayCanvas/Tauri desktop runtime, and the broken Opera compatibility entrypoint. These are documented later as proposals and repairs, not as current-main behavior.
+Open proposal branches and pull requests are **not current product source** until merged and reverified. Current connected PR evidence now spans independent draft lanes for shared-package performance, Vite, Petz persistence, Playwright/Oxlint/ws, React/Three/Pixi/Babylon UI runtime, TypeScript 7, PlayCanvas/Tauri desktop runtime, the broken Opera compatibility entrypoint, Asset Orchestrator dependencies, Extension V2 storage/document runtime libraries, Node 26 server tooling, Rapier 0.20, node-pkware 5.9.2, MCP TypeScript SDK v2, and native Zod 4 JSON Schema generation. These are documented later as branch-only proposals and repairs, not as current-main behavior.
 
 ## Repository layout
 
@@ -760,20 +760,27 @@ The Extension V2 workspace itself remains on WXT `0.21.4` and version `0.8.0`. I
 
 ## Current open proposal matrix, not current main
 
-The connected repository currently has multiple independent draft proposals. They are intentionally isolated so version migrations, performance work, correctness repairs, and runtime changes can be tested and rolled back independently. All remain unmerged as of the current documentation pass.
+The connected repository currently has multiple independent draft proposals. They are intentionally isolated so version migrations, performance work, correctness repairs, and runtime changes can be tested and rolled back independently. All remain unmerged as of the current documentation pass. The matrix below records the current connected PR heads observed on 2026-08-21; re-read GitHub before using a head as an execution target because these branches are actively maintained.
 
-| PR | Current head | Scope | Current proposed versions / behavior | Publication status |
+| PR | Current head | Scope | Current proposed versions / behavior | Status / boundary |
 | --- | --- | --- | --- | --- |
-| [#7](https://github.com/Herbertofury/GameSync-Next/pull/7) | `0fdb0dbec3729d0d96c18395cf25b469b1d09a36` | shared-package build performance | package-local TypeScript incremental state for six shared packages; historical same-workload warm median improvement about 39.65% with output-equivalence and invalidation checks | draft / unmerged / exact-current-head severe proof still blocked |
-| [#8](https://github.com/Herbertofury/GameSync-Next/pull/8) | `485c84fda1821aebd1cb4246d5d68987d9f5ac2f` | Vite stack | Vite `8.2.1`, `@vitejs/plugin-react` `6.0.5`, WXT retained at `0.21.4` | draft / unmerged / authoritative lock and severe proof pending |
-| [#10](https://github.com/Herbertofury/GameSync-Next/pull/10) | `1b8ad1abb3c01065e03a6780d67db9e74ef11e71` | Petz persistence correctness | stable host-owned persistence identity, additive one-pet restore, legacy-save compatibility, corrupt-save fallback, awaited async teardown persistence | draft / unmerged / full exact-head Petz, host, restart, Ferrum, Opera, parity and security proof pending |
-| [#11](https://github.com/Herbertofury/GameSync-Next/pull/11) | `249b03ac043970a4132dcad2d81f38ff0671d4fa` | test toolchain | Playwright family `1.63.0-alpha-2026-08-19`, Oxlint `1.79.0`, direct `ws` `8.21.3` | draft / unmerged / authoritative lock regeneration and severe proof pending |
-| [#12](https://github.com/Herbertofury/GameSync-Next/pull/12) | `52afab343550c6c56a41b893ee327b42ea1514d7` | UI runtime | React / React DOM `19.2.8`, Three `0.185.1`, React Three Fiber `9.7.0`, Drei `10.7.8` | draft / unmerged / authoritative UI graph and complete host proof pending |
-| [#13](https://github.com/Herbertofury/GameSync-Next/pull/13) | `b8b22d33614cc29e64b115ddd487dafc05b1341c` | TypeScript compiler | TypeScript `7.0.2` native compiler; removes the Extension V2 TypeScript 6 deprecation-suppression escape hatch | draft / unmerged / native TypeScript 7 lock graph and severe proof pending |
-| [#14](https://github.com/Herbertofury/GameSync-Next/pull/14) | `088666e2d40a3bc747c8b1fd4e11e5627734fd46` | desktop runtime | PlayCanvas `2.21.4`, `@tauri-apps/cli` `2.11.4` | draft / unmerged / native Linux and Windows build/package/runtime plus Ferrum proof pending |
-| [#15](https://github.com/Herbertofury/GameSync-Next/pull/15) | `3046883c2575be72c320ff25364a71a46f328629` | broken root Opera compatibility command | restores `opera-extension/app/tests/e2e.opera-gx.test.js` as a compatibility delegate to `npm run verify:extension-v2:opera` plus a focused regression | draft / unmerged / current main remains broken at `test:e2e-opera` |
+| [#7](https://github.com/Herbertofury/GameSync-Next/pull/7) | `b2920094ad32951d861802d039aca6100989c1ab` | shared-package build performance | package-local TypeScript incremental state for six shared packages; preserves output-equivalence/invalidation checks and adds scoped Opera verifier install on the healthy artifact-reuse path | draft / unmerged / fresh exact-head benchmark, runtime, Opera, Ferrum and Secret Scan proof still required |
+| [#8](https://github.com/Herbertofury/GameSync-Next/pull/8) | `89adc7390c5ab53daa60d8be86e81c1f5eb3be33` | Vite stack | Vite `8.2.2`, `@vitejs/plugin-react` `6.1.0`, WXT retained at `0.21.4` | draft / unmerged / authoritative combined lock regeneration and severe proof pending |
+| [#10](https://github.com/Herbertofury/GameSync-Next/pull/10) | `2612396804b44399b7b23b4f32f21217325da79c` | Petz persistence correctness | stable host-owned persistence identity, additive one-pet restore, legacy-save compatibility, corrupt-save fallback, awaited async teardown persistence | draft / unmerged / full exact-head Petz, host, restart, Ferrum, Opera, parity and security proof pending |
+| [#11](https://github.com/Herbertofury/GameSync-Next/pull/11) | `5eeed65742412c57d052d1e836d5cba56fe80363` | test toolchain | Playwright family `1.63.0-alpha-2026-08-21`, Oxlint `1.79.0`, direct `ws` `8.21.3` | draft / unmerged / authoritative lock regeneration, exact-build Ferrum, Opera and Secret Scan proof pending |
+| [#12](https://github.com/Herbertofury/GameSync-Next/pull/12) | `c05e0039d3b6cf690c99a8425198a48f69c6b576` | UI/rendering runtime | React / React DOM `19.2.8`, Three `0.185.1`, R3F `9.7.0`, Drei `10.7.8`, PixiJS `8.20.0`, BabylonJS `9.22.1`, plus current support-stack updates | draft / unmerged / authoritative graph, all affected builds, Ferrum/Opera and security proof pending |
+| [#13](https://github.com/Herbertofury/GameSync-Next/pull/13) | `8580a0d31263fa8275c5888f185ea3faa9daad83` | TypeScript compiler | TypeScript `7.0.2` native compiler | draft / unmerged / native TypeScript 7 lock graph plus full severe runtime matrix pending |
+| [#14](https://github.com/Herbertofury/GameSync-Next/pull/14) | `94a9ac91fcffef7e9278aa2a61ca99b4a1196339` | desktop runtime | PlayCanvas `2.21.4`, `@tauri-apps/cli` `2.11.4` | draft / unmerged / Linux + Windows Tauri packaging/executable launch and Ferrum desktop proof pending |
+| [#15](https://github.com/Herbertofury/GameSync-Next/pull/15) | `3046883c2575be72c320ff25364a71a46f328629` | broken root Opera compatibility command | restores `opera-extension/app/tests/e2e.opera-gx.test.js` as a compatibility delegate to `npm run verify:extension-v2:opera` plus a focused regression | draft / unmerged / current `main` remains broken at `test:e2e-opera` until a verified repair merges |
+| [#16](https://github.com/Herbertofury/GameSync-Next/pull/16) | `c63d27e0b26b61dec8aa042e399d67617f9ee5be` | Asset Orchestrator runtime stack | coordinated Hono `4.13.3`, node-server `2.1.1`, better-sqlite3 `13.0.3`, archiver `8.0.0`, chalk `6.0.0`, commander `15.0.0`, ora `9.4.1`, p-limit `7.3.1`, puppeteer-core `25.8.0`, tsx `4.23.12`, Node types `26.2.0`, lucide-react `1.33.0` | draft / unmerged / real lock regeneration, CLI/server/SQLite smoke and security proof pending |
+| [#17](https://github.com/Herbertofury/GameSync-Next/pull/17) | `e81bdbd110307640f35168f33ca0f28efec08716` | Extension V2 storage/document runtime libraries | Dexie `4.4.5`, DOMPurify `3.4.14`, Linkedom `0.18.13`, Mammoth `1.12.1` | draft / unmerged / production extension graph, exact-build Ferrum, Opera fresh/restart and security proof pending |
+| [#18](https://github.com/Herbertofury/GameSync-Next/pull/18) | `8c7c7e6563802720dcb96a5c4645ccab6ac8556d` | server Node 26 tooling | `@types/node 26.2.0`, `tsx 4.23.12`, real built-server WebSocket success/failure smoke | draft / unmerged / authoritative lock and real server runtime proof pending |
+| [#19](https://github.com/Herbertofury/GameSync-Next/pull/19) | `11a21ffa4edcf4098f4c4b38777b5eee9208ed39` | physics tooling | `@dimforge/rapier2d-compat 0.20.0` plus real WASM physics smoke | draft / unmerged / authoritative lock, affected builds and runtime proof pending |
+| [#20](https://github.com/Herbertofury/GameSync-Next/pull/20) | `e6a27bf8263d3c56a1a6fb199fa63dd23913c5aa` | compression/tooling | `node-pkware 5.9.2` with byte-exact implode/explode and malformed-input smoke | draft / unmerged / authoritative lock, binary round-trip/failure proof and broad build checks pending |
+| [#21](https://github.com/Herbertofury/GameSync-Next/pull/21) | `bbd6a258d721c75afe0404b93b60969f290226c4` | local MCP runtime | migrates `packages/mcp-local` from legacy `@modelcontextprotocol/sdk` to split `@modelcontextprotocol/client` + `server` `2.0.0`; real v2 stdio tools/list, echo, time, unknown-tool and shutdown smoke | draft / unmerged / authoritative lock and exact v2 runtime proof pending |
+| [#22](https://github.com/Herbertofury/GameSync-Next/pull/22) | `b37e3e6b150791e178a4d48f636bc3a5c95d6140` | schema tooling | keep Zod `4.3.6`, remove deprecated `zod-to-json-schema`, generate through first-party Zod 4 `toJSONSchema()` while preserving the legacy named draft-07 envelope and closed-object semantics | draft / unmerged / authoritative lock and generated-contract regression proof pending |
 
-Do not infer a combined future stack from these proposal branches. Each branch has its own lockfile, build, platform, browser, restart, parity, security, and stale-main acceptance requirements. When more than one proposal is eventually eligible, rebase or recreate it from then-current `main` and rerun the combined affected matrix rather than assuming individually safe branches compose automatically.
+These proposal rows are **execution metadata, not product truth**. Do not infer a combined future stack from them, do not change current-main installation commands to proposal versions, and do not claim a proposal is ready merely because it is mergeable. Each branch has its own lockfile, build, platform, browser, restart, parity, security, and stale-main acceptance requirements. When more than one proposal is eventually eligible, rebase/recreate against then-current `main` and rerun the combined affected matrix rather than assuming individually safe branches compose automatically.
 
 ### Pending package-build optimization evidence
 
@@ -802,16 +809,17 @@ The repair is not current until merged. On `main`, use `npm run verify:extension
 
 ## Current infrastructure blocker affecting proposals
 
-Current connected PR evidence and durable lead-gate evidence agree on the following boundary:
+Current connected PR evidence now narrows the proposal acceptance blocker more precisely:
 
-- the private GameSync repositories' exact-head GitHub Actions jobs are still failing before project workflow steps execute on affected proposal heads;
-- proposal records report no executable workflow-step payload for those failed private runs, so they are not product/test failures;
-- public runner/npm execution has been demonstrated elsewhere, but cross-repository recovery cannot read the private GameSync repositories without an authorized read token such as the repository-specific recovery secret described in the proposal evidence;
-- authoritative lockfile regeneration remains required for the stack migrations and must not be replaced with synthetic lock metadata;
-- no equivalent full-fidelity connected path currently proves exact private proposal build + Ferrum + Windows Opera acceptance;
-- therefore branch-only or historical evidence must not be promoted into exact-current-head merge proof.
+- current `main` remains `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`; proposal branches are not substitutes for it;
+- private GameSync exact-head Actions checks on affected proposal heads continue to fail or stop before executable product-verification steps, so those results are infrastructure non-execution evidence rather than product failures/passes;
+- current public Ferrum evidence shows the public runner pool, npm registry freshness, browser setup, lock-integrity tooling and full Ferrum CI are healthy on the synchronized run-66 line;
+- public cross-repository recovery lanes receive real runners but stop at an explicit **private GameSync read-token preflight** before checkout when no authorized sibling-repository token is available;
+- authoritative lockfile regeneration is still mandatory for dependency proposals and must not be replaced with synthetic SRI, guessed tarballs, hand-edited lock entries, or stale historical dependency graphs;
+- proposal-specific exact-build Ferrum and real Windows Opera GX fresh/restart remain mandatory where the Extension V2 production graph is affected;
+- therefore a mergeable draft PR, source review, or historical same-implementation benchmark is insufficient merge/current-main proof.
 
-This is an infrastructure blocker for affected proposal acceptance, not evidence that current `main` is broken. The `cd906ff` tracker/Bounty/Animation recovery has explicit project-owned isolated Opera evidence and remains the current-main behavior baseline.
+This is an acceptance-infrastructure/authorization blocker for the draft proposals, not evidence that current `main` is broken. The `cd906ff` tracker/Bounty/Animation recovery has explicit project-owned isolated Opera evidence and remains the current-main behavior baseline.
 
 ## Testing discipline
 
@@ -890,6 +898,10 @@ Treat the host adapter/configuration as a first suspect while preserving the sha
 
 Confirm the PR number, exact head SHA, base SHA, draft/merge state, authoritative lockfile state, and required severe gates. A proposal version is not a current product dependency until the proposal is merged and the resulting mainline product passes the required build/runtime verification.
 
+### A proposal table head is stale
+
+The proposal matrix is intentionally a connected-evidence snapshot. Re-read the pull request before executing from its SHA. If the PR head changed, update execution plans and evidence against the new exact head rather than treating this wiki snapshot as a branch pin.
+
 ## Security and repository hygiene
 
 The repository README explicitly keeps these out of Git:
@@ -933,10 +945,11 @@ For stack proposals, keep one concern per branch where practical, regenerate the
 3. Expand paired provider/runtime evidence where GameSync Next's Bounty slice is narrower than shipping GameSync's provider set.
 4. Keep Universal Game Tracker import/export fixtures lossless across large DOCX/Google Docs/XLSX inputs, custom schema, relationships, assets, archive/restore, and all declared export formats.
 5. Keep the broken root `test:e2e-opera` command documented as a current-main defect until PR #15 or a verified successor is merged and proves the compatibility route end-to-end.
-6. Track PRs #7, #8, and #10 through #15 as proposal-only state. Update their exact heads rather than freezing stale branch SHAs in operational instructions.
-7. For PRs #11 through #14, require authoritative lock regeneration plus the full affected build/runtime matrix before any dependency version becomes a current-main wiki fact.
-8. Continue verifying extension state across popup, panel, full page, content script, service worker, offscreen runtime, restart, and supported provider/site paths.
-9. Re-run combined acceptance if multiple proposal lanes are eventually merged or rebased together; independently successful branches do not prove the composed stack.
+6. Treat PRs #7, #8, and #10 through #22 as proposal-only state. Re-read each PR for its exact current head before execution instead of freezing this documentation snapshot as a branch pin.
+7. For dependency/toolchain proposals, require authoritative package-manager lock regeneration and exact installed identities before any proposed version becomes a current-main wiki fact.
+8. Keep proposal-specific runtime proof scoped to the actual affected surface: real WebSocket server smoke for server tooling, real v2 stdio for MCP, generated-contract regression for native Zod, real WASM physics for Rapier, binary round-trip/failure behavior for node-pkware, Asset Orchestrator CLI/server/SQLite smoke, and exact-build Extension V2 Ferrum/Opera coverage for production extension graph changes.
+9. Continue verifying extension state across popup, panel, full page, content script, service worker, offscreen runtime, restart, and supported provider/site paths.
+10. Re-run combined acceptance if multiple proposal lanes are eventually merged or rebased together; independently successful branches do not prove the composed stack.
 
 ## Wiki maintenance
 
