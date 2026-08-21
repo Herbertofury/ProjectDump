@@ -1,0 +1,71 @@
+# Temporary public-runner seed workflow. Never merge this branch.
+name: MMV v0.9.0 toolchain seed pack
+
+on:
+  push:
+    branches:
+      - tmp-mmv-v090-sqlite-vendor
+    paths:
+      - .github/workflows/tmp-mmv-v090-toolchain-seeds-push.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  seeds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch and verify official Maven metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          ROOT="$RUNNER_TEMP/mmv-toolchain-seeds"
+          rm -rf "$ROOT"
+          mkdir -p "$ROOT"
+          cd "$ROOT"
+          fetch() {
+            curl --fail --location --retry 5 --retry-all-errors \
+              -H 'User-Agent: MinecraftModVault/0.9.0 toolchain-seed-builder' \
+              "$1" --output "$2"
+            test -s "$2"
+          }
+          fetch https://maven.fabricmc.net/net/fabricmc/yarn/maven-metadata.xml yarn-maven-metadata.xml
+          fetch https://maven.fabricmc.net/net/fabricmc/intermediary/maven-metadata.xml intermediary-maven-metadata.xml
+          fetch https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml fabric-api-maven-metadata.xml
+          fetch https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-mappings/maven-metadata.xml quilt-mappings-maven-metadata.xml
+          fetch https://maven.minecraftforge.net/de/oceanlabs/mcp/mcp_config/maven-metadata.xml mcpconfig-maven-metadata.xml
+          fetch https://maven.minecraftforge.net/net/minecraftforge/srgutils/maven-metadata.xml srgutils-maven-metadata.xml
+          fetch https://maven.minecraftforge.net/net/minecraftforge/AutoRenamingTool/maven-metadata.xml auto-renaming-tool-maven-metadata.xml
+          fetch https://repo.spongepowered.org/repository/maven-public/org/spongepowered/mixin/maven-metadata.xml mixin-maven-metadata.xml
+          fetch https://maven.llamalad7.net/com/llamalad7/mixinextras/mixinextras-common/maven-metadata.xml mixinextras-maven-metadata.xml
+          fetch https://maven.architectury.dev/dev/architectury/architectury-loom/maven-metadata.xml architectury-loom-maven-metadata.xml
+          python3 - <<'PY'
+          import json, pathlib, xml.etree.ElementTree as ET
+          root=pathlib.Path('.')
+          summary={'schemaVersion':1,'generatedAt':'2026-08-20T00:00:00Z','sources':{}}
+          for path in sorted(root.glob('*.xml')):
+              tree=ET.parse(path)
+              versions=[(node.text or '').strip() for node in tree.findall('.//version') if (node.text or '').strip()]
+              if not versions:
+                  raise RuntimeError(f'{path.name} has no versions')
+              summary['sources'][path.name]={'records':len(versions),'latest':versions[-1],'bytes':path.stat().st_size}
+          with open('TOOLCHAIN-SEED-SUMMARY.json','w',encoding='utf-8',newline='\n') as out:
+              json.dump(summary,out,indent=2,sort_keys=True); out.write('\n')
+          PY
+          sha256sum *.xml TOOLCHAIN-SEED-SUMMARY.json > SHA256SUMS.txt
+          cat TOOLCHAIN-SEED-SUMMARY.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mmv-v090-toolchain-seeds
+          path: |
+            ${{ runner.temp }}/mmv-toolchain-seeds/*.xml
+            ${{ runner.temp }}/mmv-toolchain-seeds/TOOLCHAIN-SEED-SUMMARY.json
+            ${{ runner.temp }}/mmv-toolchain-seeds/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
