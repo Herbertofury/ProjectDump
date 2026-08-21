@@ -1,4 +1,5 @@
 # Temporary source-seed workflow for Minecraft Mod Vault v0.9.0.
+# Recovery retry after moving MixinExtras metadata to its current Maven Central distribution.
 # Artifacts are independently verified before use and this branch is never merged.
 name: MMV v0.9.0 official loader, mapping, API, and build-tool seeds
 
