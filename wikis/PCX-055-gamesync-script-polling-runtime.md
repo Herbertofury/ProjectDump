@@ -98,6 +98,57 @@ The narrow repair should preserve one of these invariants:
 
 Whichever repair is chosen should have a focused regression test that drives the real `SCRIPT_STOP_SCHEDULER -> SCRIPT_SCHEDULE_POLLS -> alarm fire` sequence and proves `runScheduledPolls()` is invoked without requiring a service-worker restart.
 
+### Manifest V3 alarm and service-worker contract
+
+Current Chrome extension-platform guidance materially tightens the scheduler acceptance contract beyond the source-level re-arm defect.
+
+The current `chrome.alarms` documentation states that:
+
+- alarms can be delayed beyond their requested time for performance reasons;
+- an alarm does not wake a sleeping device;
+- when a device wakes, missed alarms fire, but a repeating alarm fires at most once and is then rescheduled from the wake time rather than replaying every missed interval;
+- normal packaged extensions cannot rely on periods below **30 seconds / 0.5 minutes**;
+- Chrome limits an extension to 500 active alarms, while Script Tracker currently uses only one;
+- Chrome 150 adds `persistAcrossSessions`, but the same documentation says that property is unsupported in other browsers and earlier Chrome versions, and recommends checking that important alarms exist whenever the service worker starts.
+
+Chrome's Manifest V3 service-worker guidance also requires extension API event listeners to be registered synchronously at global script evaluation so an event can wake the worker and immediately find its handler. GameSync currently imports the singleton from the background service-worker graph, so the constructor's initial `setupAlarms()` call is synchronous during module evaluation. However, later removing that listener as part of an ordinary user-visible **Stop scheduler** operation breaks the intended long-lived event-listener model.
+
+For GameSync's Opera GX target, do **not** make `persistAcrossSessions` a correctness dependency until exact target-browser support is proven. Treat it as an optional platform optimization when supported, not as a substitute for durable scheduler intent plus startup reconciliation.
+
+### Recommended durable scheduler state machine
+
+The current handler does not persist scheduler-enabled state or the currently requested scheduler interval. `SCRIPT_SCHEDULE_POLLS` passes `intervalMinutes` directly to `schedulePolls()`, and `SCRIPT_STOP_SCHEDULER` clears the alarm; the existing Script Tracker preference keys cover source/user preferences but not an explicit scheduler-enabled intent record.
+
+A robust repair should separate **user intent** from the browser's transient alarm object:
+
+```text
+Persisted scheduler intent
+  enabled: boolean
+  intervalMinutes: number
+        |
+        v
+service-worker startup reconciliation
+        |
+        +--> listener registered synchronously
+        +--> read durable intent
+        +--> chrome.alarms.get('script-tracker-poll')
+        +--> recreate missing alarm only when enabled
+        +--> run one due-source catch-up pass when appropriate
+```
+
+Recommended lifecycle invariants:
+
+1. Register the `chrome.alarms.onAlarm` listener once for each service-worker instance and keep it installed for that worker's lifetime.
+2. `SCRIPT_SCHEDULE_POLLS` validates the requested interval, persists `enabled: true` and the interval, creates/replaces the named alarm, then verifies the alarm exists.
+3. `SCRIPT_STOP_SCHEDULER` persists `enabled: false`, clears the named alarm, and **does not** remove the long-lived event listener.
+4. Service-worker startup reads scheduler intent and reconciles the actual alarm with that intent. If polling is enabled but the alarm is missing, recreate it.
+5. If polling is disabled but an orphan alarm exists, clear it.
+6. Alarm delivery rechecks the alarm name and durable enabled state before running due-source work.
+7. Startup/wake catch-up uses persisted per-source `lastPollAt` timestamps; it should not attempt to replay every missed wall-clock interval.
+8. If a target browser supports `persistAcrossSessions`, use it only as an explicitly feature-qualified enhancement. Startup reconciliation remains the source of truth.
+
+This design also gives `SCRIPT_GET_SCHEDULER_STATUS` enough durable information to report **intended state**, **actual alarm state**, and **active poll state** separately instead of conflating them.
+
 ### Preventing overlapping poll loops
 
 The runtime has a single-process overlap guard:
@@ -400,6 +451,8 @@ GameSync's manifest is Manifest V3 and declares both `alarms` and `storage`, whi
 
 Update `parseInterval()` in `ScriptPollScheduler.js` and ensure every UI or source-configuration surface accepts the same value. Preserve the special meaning of `manual` unless a deliberate migration is implemented.
 
+For any future direct minute-based scheduler control, validate against the target browser's alarm floor rather than blindly accepting sub-minute values. Current Chrome documentation enforces a normal packaged-extension floor of 0.5 minutes; the existing hourly/daily/weekly source intervals are safely above it.
+
 ### Change status precedence
 
 Change status aggregation only with explicit regression coverage. The current order is safety-oriented: `broken` outranks `working`. Changing this can hide a bad advisory when another source reports a healthier state.
@@ -429,12 +482,16 @@ A meaningful runtime qualification should exercise all of the following:
 10. Exercise hourly, daily, weekly, and manual source intervals.
 11. Verify a deliberately overdue source is polled when the due-source loop next runs.
 12. Exercise `SCRIPT_STOP_SCHEDULER`, then `SCRIPT_SCHEDULE_POLLS` in the same live service-worker instance, fire the named alarm, and prove the listener was re-armed and `runScheduledPolls()` executes.
-13. Restart the browser/service worker after missing at least one expected polling window and prove the intended startup catch-up behavior.
-14. Import CSV and JSON catalogs, including quoted CSV fields and duplicate rows.
-15. Export Script Tracker data and import it into a clean test profile.
-16. Verify mod-status precedence using conflicting multi-source evidence.
-17. Verify source enable/disable and removal cascades.
-18. Inspect extension/service-worker console errors after each failure case.
+13. Persist scheduler-enabled intent, force the alarm object to disappear, restart/reconstruct the service worker, and prove startup reconciliation recreates the alarm only when polling is enabled.
+14. Restart the browser/service worker after missing at least one expected polling window and prove one startup/wake catch-up pass polls every source that is due from persisted `lastPollAt` without replaying duplicate missed intervals.
+15. Prove the alarm listener is installed synchronously when the service-worker module graph loads and that repeated worker reconstruction does not accumulate duplicate listeners in one worker instance.
+16. On Opera GX, verify the actual target browser's alarm persistence behavior; do not count Chrome 150 `persistAcrossSessions` semantics as proven unless that target exposes and honors them.
+17. Verify custom scheduler intervals below the target browser's supported floor are rejected or normalized truthfully rather than accepted and silently delayed.
+18. Import CSV and JSON catalogs, including quoted CSV fields and duplicate rows.
+19. Export Script Tracker data and import it into a clean test profile.
+20. Verify mod-status precedence using conflicting multi-source evidence.
+21. Verify source enable/disable and removal cascades.
+22. Inspect extension/service-worker console errors after each failure case.
 
 ## Troubleshooting
 
@@ -448,6 +505,16 @@ At the current verified source head, inspect the listener lifecycle first. `SCRI
 
 Do not work around this by forcing a browser restart as the normal start path. Repair the listener lifecycle and add a stop/start regression test.
 
+### The scheduler was enabled, but its alarm disappeared after a browser/service-worker restart
+
+Treat scheduler intent and alarm existence as two different facts. Current GameSync source does not persist an explicit scheduler-enabled/interval record and does not reconcile the named alarm on worker startup. Platform guidance recommends checking that important alarms exist whenever the service worker starts, especially across browsers and versions where alarm persistence is not guaranteed.
+
+A correct repair should read durable scheduler intent, call `chrome.alarms.get('script-tracker-poll')`, recreate the alarm only when enabled, and then verify actual alarm state. Do not infer that an absent alarm means the user disabled polling.
+
+### An alarm fired later than its nominal schedule
+
+Late delivery is permitted by the browser platform and can also follow device sleep. Do not calculate catch-up by assuming one callback per missed interval. Use persisted `lastPollAt` and the due-source loop to determine what work is actually overdue. A repeating alarm that was missed during sleep may fire once after wake and then continue from the wake-time schedule.
+
 ### A source never polls automatically
 
 Check:
@@ -455,12 +522,13 @@ Check:
 1. the source status is `active`;
 2. the source's `pollInterval` is not `manual`;
 3. `lastPollAt` is not newer than expected;
-4. the recurring scheduler was actually started;
-5. the scheduler's alarm listener is currently installed, especially after a prior stop/start cycle;
-6. the configured adapter exists;
-7. the adapter is configured and its connection test succeeds;
-8. the service-worker console for scheduler or adapter errors;
-9. `scriptPollLog` for durable failure history.
+4. durable scheduler intent says recurring polling is enabled after the lifecycle repair;
+5. the recurring scheduler alarm actually exists;
+6. the scheduler's alarm listener is currently installed, especially after a prior stop/start cycle;
+7. the configured adapter exists;
+8. the adapter is configured and its connection test succeeds;
+9. the service-worker console for scheduler or adapter errors;
+10. `scriptPollLog` for durable failure history.
 
 ### A scheduled pass says a poll is already in progress
 
@@ -482,11 +550,26 @@ Inspect every `scriptModSources` row for that mod and recompute the precedence m
 
 This documentation pass inspected the current canonical GameSync source at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`. It verifies that the scheduler, IndexedDB layer, adapter registry, Scarlet's Realm adapter, Custom List adapter, message API, manifest permissions, and build scripts exist in current source.
 
-It also verifies a source-level lifecycle defect in the current scheduler: `stopScheduledPolls()` removes the alarm listener, while `schedulePolls()` recreates the alarm without reinstalling that listener. This documentation pass did not execute a live Opera stop/start reproduction, so the defect is recorded as source-proven and still requires an exact runtime regression test after repair.
+It also verifies two related source-level lifecycle gaps in the current scheduler:
 
-Project Constellation specifically requires reliable startup catch-up. Current source proves an important part of that behavior: every due-source pass uses persisted `lastPollAt` timestamps, so an overdue source can be recognized and polled the next time `runScheduledPolls()` executes. Within `ScriptPollScheduler.js` itself, the singleton constructor installs the alarm listener but does not invoke `runScheduledPolls()` as an explicit startup catch-up step. This pass did not establish a separate background startup caller that guarantees due-source catch-up after a browser restart or missed alarm window.
+1. `stopScheduledPolls()` removes the alarm listener, while `schedulePolls()` recreates the alarm without reinstalling that listener.
+2. Scheduler-enabled state and the requested global alarm interval are not durably persisted by `SCRIPT_SCHEDULE_POLLS` / `SCRIPT_STOP_SCHEDULER`, and current scheduler startup does not reconcile persisted user intent against actual alarm existence.
 
-The next project-specific checkpoint should therefore first repair and prove the same-worker stop/start listener re-arm path, then prove restart/missed-window catch-up in the real built extension. Only after both paths pass should the recurring polling lifecycle be described as fully qualified.
+The first defect is directly visible in `ScriptPollScheduler.js`. The second gap is confirmed by both `ScriptPollScheduler.js` and `script-tracker-handler.js`: the scheduler messages call the methods directly, while the existing preference API does not establish a dedicated scheduler-enabled/interval contract.
+
+This documentation pass did not execute a live Opera stop/start/restart reproduction, so these are source-proven architecture findings and still require exact runtime regression tests after repair.
+
+Project Constellation specifically requires reliable startup catch-up. Current source proves an important part of that behavior: every due-source pass uses persisted `lastPollAt` timestamps, so an overdue source can be recognized and polled the next time `runScheduledPolls()` executes. Current browser-platform behavior strengthens the reason to keep that timestamp-driven design: delayed or sleep-missed repeating alarms do not guarantee one callback for every missed interval.
+
+The next project-specific checkpoint should therefore repair and prove the complete state machine: same-worker stop/start listener continuity, durable scheduler intent, startup alarm reconciliation, delayed/sleep catch-up, and exact target-browser behavior. Only after those paths pass in the real built Opera GX extension should the recurring polling lifecycle be described as fully qualified.
+
+## External platform references
+
+These references are implementation constraints, not substitutes for GameSync runtime evidence:
+
+- [Chrome for Developers: `chrome.alarms`](https://developer.chrome.com/docs/extensions/reference/api/alarms) - alarm delay, sleep/wake behavior, minimum period, persistence semantics, and startup-reconciliation guidance. Page last updated July 24, 2026.
+- [Chrome for Developers: Events in extension service workers](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/events) - global synchronous event-listener registration requirement.
+- [Chrome for Developers: Extension service worker lifecycle](https://developer.chrome.com/docs/extensions/develop/concepts/service-workers/lifecycle) - worker termination/restart behavior and durable-state guidance.
 
 ## Maintenance triggers
 
@@ -495,6 +578,9 @@ Update this wiki when any of the following materially changes:
 - Script Tracker adapter registry;
 - scheduling API or alarm name;
 - supported poll intervals;
+- alarm persistence / target-browser compatibility behavior;
+- durable scheduler-intent storage;
+- startup alarm reconciliation;
 - overlap/cancellation behavior;
 - stop/start listener lifecycle;
 - startup catch-up semantics;
