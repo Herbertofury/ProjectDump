@@ -1,6 +1,6 @@
 # Temporary source-seed workflow for Minecraft Mod Vault v0.9.0.
 # Artifacts are independently verified before use and this branch is never merged.
-name: MMV v0.9.0 official loader and build-tool seeds
+name: MMV v0.9.0 official loader, mapping, API, and build-tool seeds
 
 on:
   pull_request:
@@ -16,7 +16,7 @@ permissions:
 jobs:
   seeds:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -50,6 +50,16 @@ jobs:
           fetch https://maven.minecraftforge.net/net/minecraftforge/gradle/ForgeGradle/maven-metadata.xml forgegradle-maven-metadata.xml
           fetch https://maven.neoforged.net/releases/net/neoforged/gradle/userdev/maven-metadata.xml neogradle-userdev-maven-metadata.xml
           fetch https://maven.neoforged.net/releases/net/neoforged/moddev/net.neoforged.moddev.gradle.plugin/maven-metadata.xml moddevgradle-plugin-maven-metadata.xml
+          fetch https://maven.fabricmc.net/net/fabricmc/yarn/maven-metadata.xml yarn-maven-metadata.xml
+          fetch https://maven.fabricmc.net/net/fabricmc/intermediary/maven-metadata.xml intermediary-maven-metadata.xml
+          fetch https://maven.fabricmc.net/net/fabricmc/fabric-api/fabric-api/maven-metadata.xml fabric-api-maven-metadata.xml
+          fetch https://maven.quiltmc.org/repository/release/org/quiltmc/quilt-mappings/maven-metadata.xml quilt-mappings-maven-metadata.xml
+          fetch https://maven.minecraftforge.net/de/oceanlabs/mcp/mcp_config/maven-metadata.xml mcpconfig-maven-metadata.xml
+          fetch https://maven.minecraftforge.net/net/minecraftforge/srgutils/maven-metadata.xml srgutils-maven-metadata.xml
+          fetch https://maven.minecraftforge.net/net/minecraftforge/AutoRenamingTool/maven-metadata.xml auto-renaming-tool-maven-metadata.xml
+          fetch https://repo.spongepowered.org/repository/maven-public/org/spongepowered/mixin/maven-metadata.xml mixin-maven-metadata.xml
+          fetch https://maven.llamalad7.net/com/llamalad7/mixinextras/mixinextras-common/maven-metadata.xml mixinextras-maven-metadata.xml
+          fetch https://maven.architectury.dev/dev/architectury/architectury-loom/maven-metadata.xml architectury-loom-maven-metadata.xml
 
           python3 - <<'PY'
           import json
@@ -66,7 +76,7 @@ jobs:
               'modrinth-game-versions.json': ('array', 300),
               'modrinth-loaders.json': ('array', 10),
           }
-          summary = {'schemaVersion': 1, 'generatedAt': '2026-08-20T00:00:00Z', 'sources': {}}
+          summary = {'schemaVersion': 2, 'generatedAt': '2026-08-20T00:00:00Z', 'sources': {}}
           for name, (kind, minimum) in json_expectations.items():
               payload = json.loads((root / name).read_text(encoding='utf-8'))
               if kind == 'object':
@@ -79,7 +89,7 @@ jobs:
                   count = len(payload)
               summary['sources'][name] = {'records': count, 'bytes': (root / name).stat().st_size}
 
-          for name in [
+          xml_names = [
               'forge-maven-metadata.xml',
               'neoforge-maven-metadata.xml',
               'neoform-maven-metadata.xml',
@@ -87,7 +97,18 @@ jobs:
               'forgegradle-maven-metadata.xml',
               'neogradle-userdev-maven-metadata.xml',
               'moddevgradle-plugin-maven-metadata.xml',
-          ]:
+              'yarn-maven-metadata.xml',
+              'intermediary-maven-metadata.xml',
+              'fabric-api-maven-metadata.xml',
+              'quilt-mappings-maven-metadata.xml',
+              'mcpconfig-maven-metadata.xml',
+              'srgutils-maven-metadata.xml',
+              'auto-renaming-tool-maven-metadata.xml',
+              'mixin-maven-metadata.xml',
+              'mixinextras-maven-metadata.xml',
+              'architectury-loom-maven-metadata.xml',
+          ]
+          for name in xml_names:
               tree = ET.parse(root / name)
               versions = tree.findall('.//version')
               if not versions:
