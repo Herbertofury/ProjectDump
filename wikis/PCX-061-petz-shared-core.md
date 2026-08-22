@@ -7,8 +7,8 @@
 **Current strongest shared-core source:** `Herbertofury/GameSync-Next`, with dedicated typed `packages/petz-engine`, `packages/petz-compat`, `packages/petz-formats`, and `packages/petz-bridge` workspaces.
 **Current GameSync Next main observed:** `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`.
 **Current shipping parity baseline:** `Herbertofury/Gamesync` GameSync `0.6.3`, `main` observed at commit `a8e37976eb0b3ee3c4ec5e802b02d3bfa1f41928`.
-**Active persistence repair:** draft [GameSync Next PR #10](https://github.com/Herbertofury/GameSync-Next/pull/10), current head `72669096280904eb0f210d49d3a3e3163f42b106`, based on current `main`, remains unmerged and staging-only.
-**Current implementation boundary:** current `main` still has the source-proven persistence defect tracked by [issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9). PR #10 implements a preservation-first repair in source, but exact-head package/regression/Extension V2/parity/Ferrum/security execution is still blocked before workflow steps by the private hosted-runner allocation condition. Complete original PF Magic behavioral parity, merged and runtime-proven cross-restart persistence, complete use of every inventoried Petz resource, and end-to-end parity across shipping GameSync, Extension V2, and desktop are not yet proven.
+**Active persistence repair:** draft [GameSync Next PR #10](https://github.com/Herbertofury/GameSync-Next/pull/10), current head `2612396804b44399b7b23b4f32f21217325da79c`, based on current `main`, remains unmerged and staging-only.
+**Current implementation boundary:** current `main` still has the source-proven persistence defect tracked by [issue #9](https://github.com/Herbertofury/GameSync-Next/issues/9). PR #10 implements a preservation-first repair in source at exact head `2612396804b44399b7b23b4f32f21217325da79c`, but its fresh Petz verify run `32459020450` and Secret Scan run `32459020441` both failed before GitHub exposed executable job steps. Public Ferrum recovery infrastructure is healthy but currently stops at the explicit private GameSync read-token preflight, so the proposal remains unmerged and staging-only. Complete original PF Magic behavioral parity, merged and runtime-proven cross-restart persistence, complete use of every inventoried Petz resource, and end-to-end parity across shipping GameSync, Extension V2, and desktop are not yet proven.
 
 ## 1. Purpose and scope
 
@@ -248,7 +248,7 @@ That means the current-main bridge has persistence plumbing but does not provide
 
 ### Draft PR #10 persistence repair
 
-Draft [PR #10, Fix Petz bridge persistence identity and restore path](https://github.com/Herbertofury/GameSync-Next/pull/10), currently at head `72669096280904eb0f210d49d3a3e3163f42b106` on top of current `main`, contains a source-level preservation-first repair. It remains unmerged and is not current product behavior.
+Draft [PR #10, Fix Petz bridge persistence identity and restore path](https://github.com/Herbertofury/GameSync-Next/pull/10), currently at head `2612396804b44399b7b23b4f32f21217325da79c` on top of current `main`, contains a source-level preservation-first repair. It remains unmerged and is not current product behavior.
 
 The staged repair changes the shared core in several important ways:
 
@@ -281,7 +281,9 @@ PR #10 adds `scripts/petz/persistence-regression.mjs` plus `.github/workflows/pe
 - exact-build Ferrum extension-host health, restart, identity, and diagnostics;
 - Secret scan.
 
-The latest issue/PR evidence records that exact-head workflow attempts still fail before GitHub supplies executable steps under the known private hosted-runner allocation/payment-spending-limit blocker. This is an **execution blocker**, not evidence that the Petz repair failed or passed. Keep the repair staging-only until the exact current head actually executes and satisfies every gate.
+The exact current PR head is `2612396804b44399b7b23b4f32f21217325da79c`. Fresh private-repository checks on that head are **not product test results**: Petz persistence verify run `32459020450` / job `96701992871` and Secret Scan run `32459020441` / job `96701992684` both completed `failure` with `steps: null`, before any executable product-verification step ran.
+
+A public recovery lane exists in Ferrum PR #62 at head `3e9e5371c03f4aac5be27c5e128a0cd60e1fa037`. Its runner-pool probe `32460964252`, registry freshness `32460964357`, Stack Playwright lock integrity `32460964247`, and Ferrum CI `32460964290` succeeded, proving the public runner path is healthy. The cross-repository Petz recovery matrix still stops at the explicit private GameSync read-token preflight before checkout, Node setup, lock regeneration, or candidate tests. This narrows the remaining acceptance blocker to private GameSync execution/read authorization; it does **not** convert source review or public infrastructure health into Petz acceptance. Keep PR #10 draft and unmerged until the exact current head actually executes and satisfies every gate.
 
 ### Current bridge environment boundary
 
@@ -671,7 +673,7 @@ Current-main `destroy()` fires asynchronous saves without awaiting durable compl
 
 ### Staged PR #10 looks correct but CI is red
 
-Inspect workflow job steps before inferring a product failure. The latest Petz verification and Secret Scan attempts are documented as failing before executable steps were allocated under the known private hosted-runner account blocker. A zero-step runner failure proves neither pass nor fail for the Petz implementation.
+Inspect workflow job steps before inferring a product failure. On exact head `2612396804b44399b7b23b4f32f21217325da79c`, Petz verify run `32459020450` / job `96701992871` and Secret Scan run `32459020441` / job `96701992684` failed with `steps: null`, so no Petz build, regression, browser, restart, integrity, or security command actually executed. Public Ferrum recovery jobs are healthy, but the cross-repository lane currently stops at the private GameSync read-token preflight. Treat both conditions as infrastructure/authorization evidence, not product pass/fail evidence.
 
 ### Cursor or toy-aware behavior never triggers through the typed bridge
 
