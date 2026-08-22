@@ -26,6 +26,79 @@ This means the connected repository is presently a **project identity/publicatio
 
 Do not invent Gradle, Maven, Cargo, launcher, or RuneLite installation commands from this placeholder. Recover the project-owned implementation first.
 
+## Current RuneLite compatibility and safety baseline - 2026-08-22
+
+The missing PRJ-010 source does not prevent us from recording the **external compatibility contract** that any recovered candidate must satisfy before it can be promoted.
+
+### Current Plugin Hub baseline
+
+The current official RuneLite Plugin Hub source at commit `94b2b0d54b2f537a415731e6f85b216b0d9c457e` declares:
+
+```text
+runelite.version = 1.12.36
+```
+
+That makes **RuneLite 1.12.36** the current Plugin Hub compatibility baseline for this recovery pass. The preserved No-Hitch reference embeds RuneLite `1.12.29.1`, so it must now be treated as a historical latest-known-good runtime that needs a deliberate compatibility audit against 1.12.36 rather than assumed current compatibility.
+
+Do not rewrite or discard the known-good `1.12.29.1` artifact. Keep it as the regression reference while qualifying a recovered source candidate against the newer host baseline.
+
+### Current official external-plugin template
+
+The official `runelite/example-plugin` reference is currently inspected at commit `5370caa0f5f6a5bba4fbb42931722ca535ad3fd5`.
+
+Its build contract currently establishes the following useful compatibility checks for a recovered RuneLite plugin source:
+
+- Java source target: **Java 11**;
+- Gradle wrapper: **Gradle 8.10**;
+- RuneLite dependency: `latest.release` through RuneLite's repository;
+- development runner: `ExternalPluginManager.loadBuiltin(...)` followed by RuneLite in developer mode;
+- no `META-INF/services/net.runelite.client.plugins.Plugin` service file;
+- no committed build artifacts;
+- config-key/group renames require migration rather than silently resetting users.
+
+These are **current external compatibility reference points**, not permission to scaffold a replacement project while the original PRJ-010 implementation is missing.
+
+### Threading, performance, and I/O constraints
+
+Any recovered FlipForge or Farm Material Ranker candidate should be audited against the current official plugin-development rules before build instructions are promoted into this wiki:
+
+- do not block the RuneLite client thread with network or disk I/O;
+- use RuneLite's injected OkHttp client for HTTP work and return client-facing work through `clientThread.invoke()` when necessary;
+- do not run full-scene scans every tick/frame when spawn/despawn/event tracking can maintain the needed state;
+- keep overlay per-frame work minimal;
+- explicitly cancel scheduled tasks during shutdown;
+- store plugin-owned files only below RuneLite's `.runelite` directory unless the user explicitly chooses a path;
+- use `LinkBrowser` for URLs rather than generic desktop launching;
+- prefer RuneLite `gameval` constants over hard-coded IDs where current APIs provide them.
+
+These constraints matter directly to PRJ-010 because pricing, item/monster metadata, route calculations, overlays, 117HD integration, and the Rust bridge can otherwise introduce client-thread stalls or lifecycle leaks that the old reference artifact does not prove safe on the current host.
+
+### Plugin Hub safety boundary
+
+Current official RuneLite plugin guidance forbids or restricts several implementation techniques that must be checked if recovered PRJ-010 components are intended for Plugin Hub-compatible distribution, including:
+
+- reflection;
+- JNI/JNA or direct native-memory access from a Hub plugin;
+- external process execution;
+- dynamic code download/loading or runtime code generation;
+- injected mouse/keyboard input;
+- automation-oriented combat helpers and other disallowed client behavior.
+
+This is especially important for the **No-Hitch launcher** and **Rust dashboard/bridge** portions of PRJ-010. Those components may legitimately live outside a Plugin Hub plugin architecture, but the separation must be explicit. Do not hide native/external-process behavior inside a Hub plugin or claim Hub compatibility without matching the current restrictions.
+
+### In-game verification rule
+
+Automated RuneScape gameplay/input is **not** an acceptable verification method. Current RuneLite guidance explicitly treats injected or automated game input as prohibited.
+
+The safe qualification split is:
+
+1. automated/static checks may verify source identity, compilation, unit tests, plugin loading in a development client, configuration migration, file/network behavior, packaging, and non-game UI/runtime logs;
+2. final game-interaction confirmation must be **user-driven** in the actual supported RuneLite/Jagex login path;
+3. the user should exercise the specific golden path and edge cases while the maintainer records the exact artifact/client identities and any observed errors;
+4. a clean JVM startup alone is not a passing gameplay qualification.
+
+This rule supersedes any older plan that implied an agent should drive the live game client to prove the plugin.
+
 ## Durable recovered project lineage
 
 Project Constellation preserves the following components for this family:
@@ -83,7 +156,7 @@ Project Constellation preserves an exact known-good reference identity:
 | Embedded RuneLite | `1.12.29.1` |
 | Recorded source commit | `68ff80e` |
 
-This identity is valuable as a **latest-known-good reference artifact**, not proof that the current connected FlipForge repository can rebuild it.
+This identity is valuable as a **latest-known-good reference artifact**, not proof that the current connected FlipForge repository can rebuild it or that it is compatible with the current 1.12.36 Plugin Hub baseline.
 
 ### Preservation rule
 
@@ -94,7 +167,8 @@ Do not replace or relabel a newly found launcher/JAR as the known-good reference
 3. main class and launcher behavior;
 4. source commit/lineage when available;
 5. external-plugin loading behavior;
-6. restart persistence in the real target client.
+6. restart persistence in the real target client;
+7. compatibility against the current RuneLite/Plugin Hub baseline.
 
 ## 117HD / RLHD relationship
 
@@ -146,7 +220,8 @@ Record:
 - file size;
 - embedded RuneLite version where applicable;
 - plugin versions;
-- Rust bridge/dashboard version where applicable.
+- Rust bridge/dashboard version where applicable;
+- current RuneLite/Plugin Hub compatibility baseline used for qualification.
 
 ### 2. Clean build
 
@@ -158,7 +233,9 @@ Required evidence should include:
 - compilation;
 - unit/integration tests supplied by the project;
 - generated plugin descriptors/resources;
-- packaged JAR/ZIP integrity.
+- packaged JAR/ZIP integrity;
+- Java target and Gradle/RuneLite dependency compatibility;
+- explicit separation of any native/external launcher or Rust-bridge process from Hub-plugin code.
 
 ### 3. Developer/runtime smoke test
 
@@ -170,28 +247,29 @@ Use this as an intermediate diagnostic only:
 - obvious startup exceptions are absent;
 - Farm Material Ranker can render its sidebar/data surfaces;
 - FlipForge can expose its actual user workflow;
-- 117HD/RLHD integration does not break startup.
+- 117HD/RLHD integration does not break startup;
+- no client-thread blocking or shutdown lifecycle leak is observed in the changed path.
 
 Passing this stage does **not** clear the release blocker.
 
 ### 4. Jagex-launched client proof
 
-This is the project family's hard release gate.
+This is the project family's hard release gate and must remain **user-driven** for actual game interaction.
 
 For every external plugin being shipped:
 
 - launch RuneLite through the real Jagex-supported path used by the user;
 - verify the plugin appears in the client;
 - enable it;
-- exercise its primary workflow rather than only observing the settings entry;
+- have the user exercise its primary workflow rather than only observing the settings entry;
 - verify required data/network/UI behavior;
 - close the client cleanly;
 - relaunch through the same Jagex path;
 - verify the plugin is still present;
 - verify enabled/settings state persists;
-- re-run a representative workflow after restart.
+- have the user re-run a representative workflow after restart.
 
-The durable Project Constellation record explicitly states that **JAR inspection, compilation, or developer-mode loading alone is insufficient**.
+The durable Project Constellation record explicitly states that **JAR inspection, compilation, or developer-mode loading alone is insufficient**, and current RuneLite guidance means automated gameplay/input must not be substituted for user confirmation.
 
 ## Farm Material Ranker qualification
 
@@ -242,6 +320,8 @@ Before adding build instructions, recover and inspect:
 
 Document the actual protocol rather than guessing whether it is HTTP, WebSocket, native IPC, files, or another mechanism.
 
+If this bridge is a separate native/process component, keep that separation explicit so a RuneLite Plugin Hub-compatible plugin does not violate the current ban on external process execution from Hub plugin code.
+
 ## Installation
 
 ### Current truthful state
@@ -257,6 +337,7 @@ Do not:
 - initialize a replacement RuneLite plugin project inside the placeholder repository;
 - overwrite the known-good JAR identity with an unverified newer file;
 - claim Plugin Hub/Jagex-client compatibility from developer-mode success;
+- automate RuneScape gameplay or inject input to manufacture a runtime pass;
 - assume Farm Material Ranker v1.1.0 build commands without its manifest;
 - assume 117HD dependency or configuration versions;
 - invent Rust bridge ports or commands.
@@ -270,6 +351,8 @@ This is the current verified condition. Search project-owned Drive artifacts, pr
 ### Plugin works in developer mode but not the normal client
 
 The release blocker remains open. Reproduce using the exact Jagex-launched flow, record the loaded client/runtime identity, inspect external-plugin discovery, and verify that the plugin artifact is installed where that runtime actually discovers it.
+
+Also compare the recovered source/artifact against the current Plugin Hub 1.12.36 baseline rather than assuming the old 1.12.29.1 reference remains compatible.
 
 ### Plugin disappears after restart
 
@@ -290,6 +373,10 @@ Do not change providers based on assumptions. First recover the exact v1.1.0 sou
 
 Keep renderer/plugin changes isolated from FlipForge/Farm Material Ranker qualification. Prove the base external-plugin path first, then add the rendering integration and compare startup, frame behavior, UI, and restart persistence.
 
+### Recovered plugin blocks or hitches the client
+
+Audit network/file operations for client-thread execution, repeated scene scans, overlay per-frame work, uncancelled scheduled tasks, and shutdown blocking before attempting broader optimization. These are current RuneLite lifecycle rules and common failure points for plugins that worked against an older host.
+
 ## Contribution and modification workflow
 
 Until source recovery is complete, contribution work is primarily **continuity recovery and verification**, not implementation.
@@ -301,8 +388,9 @@ For each recovered candidate:
 3. inspect embedded version/manifest metadata;
 4. identify repository/worktree lineage when possible;
 5. compare against the known-good hitchless JAR and Farm Material Ranker v1.1.0 record;
-6. classify it as historical, candidate, latest-known-good, or superseding verified state;
-7. only then publish source or documentation updates.
+6. compare the candidate against the current Plugin Hub `1.12.36` and example-plugin compatibility rules;
+7. classify it as historical, candidate, latest-known-good, or superseding verified state;
+8. only then publish source or documentation updates.
 
 Once implementation source is restored to the canonical repository, expand this wiki with:
 
@@ -324,7 +412,8 @@ Once implementation source is restored to the canonical repository, expand this 
 4. The Rust dashboard/bridge implementation is not present in the connected repository.
 5. 117HD/RLHD wiring is not present in the connected repository.
 6. The real Jagex-launched external-plugin and restart-persistence release gate remains unresolved in the durable project record.
+7. The historical No-Hitch reference embeds RuneLite `1.12.29.1`, while the current Plugin Hub baseline is `1.12.36`; compatibility has not yet been proven.
 
 ## Exact next documentation checkpoint
 
-Recover the latest PRJ-010 implementation/release artifacts, starting with FlipForge source, `farm-material-ranker.zip`, and the source matching No-Hitch commit `68ff80e`. Reconcile hashes and manifests without overwriting the known-good reference, restore the canonical source repository, then replace the recovery-only sections of this wiki with exact build/install/configuration/API/module documentation backed by that source.
+Recover the latest PRJ-010 implementation/release artifacts, starting with FlipForge source, `farm-material-ranker.zip`, and the source matching No-Hitch commit `68ff80e`. Reconcile hashes and manifests without overwriting the known-good reference, restore the canonical source repository, then qualify the recovered plugin source against the current Plugin Hub `1.12.36` / Java 11 baseline and the user-driven real-client restart workflow before replacing the recovery-only sections of this wiki with exact build/install/configuration/API/module documentation backed by that source.
