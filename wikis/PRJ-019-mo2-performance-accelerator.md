@@ -43,9 +43,11 @@ Version **4.0.1** corrected that failure by:
 
 The recovered synthetic benchmark showed roughly an 8.3-8.6x improvement for the targeted proxy-recomputation pattern. That is evidence for one measured pattern, not a promise that the whole MO2 application becomes 8x faster.
 
-## Current MO2 host baseline, checked 2026-08-17
+## Current MO2 host baseline, revalidated 2026-08-22
 
-The official [Mod Organizer 2 v2.5.2 release](https://github.com/ModOrganizer2/modorganizer/releases/tag/v2.5.2) remains the primary stable host gate. Current [MO2 master](https://github.com/ModOrganizer2/modorganizer) is active beyond that release and was observed at `efe2a02d5dc641946baaa8db1440800f38d07837` for this pass.
+The official [Mod Organizer 2 v2.5.2 release](https://github.com/ModOrganizer2/modorganizer/releases/tag/v2.5.2) remains the primary stable host gate. Current [MO2 master](https://github.com/ModOrganizer2/modorganizer) remains at `efe2a02d5dc641946baaa8db1440800f38d07837` in the connected source check, so the upstream implementation watermark has not moved since the previous pass.
+
+MO2 v2.5.2 ships Qt/PyQt 6.7.1 and Python 3.12.3. Those versions remain the compatibility floor for the primary production qualification lane.
 
 Current upstream source matters directly to this project:
 
@@ -55,6 +57,40 @@ Current upstream source matters directly to this project:
 - `ModListView` already uses a small 50 ms single-shot timer to coalesce bursts of marker/plugin refresh work caused by repeated expand/collapse signals.
 
 These are concrete host hot paths to instrument. They are stronger targets than generic widget discovery.
+
+## Current host regression to protect: separator state across F5 refresh
+
+A currently open upstream MO2 v2.5.2 issue, [#2420 - Top separators lose anchor and collapsible state after F5 refresh](https://github.com/ModOrganizer2/modorganizer/issues/2420), is directly relevant to this accelerator because it exercises the same mod-list refresh, separator, filter/model and state-restoration surfaces the plugin must preserve.
+
+The reported reproduction is specific and useful:
+
+1. use Skyrim SE/AE with Creation Club mods;
+2. place a separator at the top of the mod list above the Creation Club entries;
+3. collapse or otherwise establish separator state;
+4. press **F5** to refresh;
+5. observe whether the separator remains anchored, collapsible and in the same position.
+
+The issue reports that MO2 2.5.2 can lose the top separator's anchor/collapsed state or move it during refresh, while the reporter describes the older 2.4.4 behavior as stable.
+
+### Why this matters to PRJ-019
+
+This is an upstream host defect report, **not evidence that MO2 Performance Accelerator caused the bug**. It is still a high-value qualification fixture because an accelerator that changes invalidation timing, batches model refreshes or snapshots/restores list state could easily:
+
+- make the upstream defect more frequent;
+- hide the defect temporarily while corrupting another state path;
+- restore the wrong separator position from stale state;
+- create a false benchmark win by skipping the refresh work that exposes the problem.
+
+### Required differential lane
+
+When the 4.0.1 source/artifact is recovered, include this exact scenario in the real-host matrix:
+
+- **native MO2 / accelerator off:** capture the current 2.5.2 behavior and record whether issue #2420 reproduces;
+- **accelerator on:** run the same profile, same Creation Club entries, same top separator and same refresh sequence;
+- **comparison:** the accelerator must never produce a worse result than native MO2 and must not claim to have fixed the host bug unless the resulting separator identity, position, collapsed state, row mapping and restart state are all proven stable;
+- **future-host lane:** rerun the fixture after any upstream MO2 fix so the accelerator is proven not to reintroduce the resolved defect.
+
+Record stable separator IDs/labels and neighboring mod identities rather than relying only on row numbers, because a model refresh can legitimately change transient indexes while stable logical identity should remain recoverable.
 
 ## Current Qt evolution: proposal versus host reality
 
@@ -87,6 +123,7 @@ Record at minimum:
 - expanded/collapsed separator state;
 - resulting visible/hidden row set;
 - resulting mod priority/order;
+- stable identities of separators and neighboring mods across refresh;
 - task-related warnings/exceptions.
 
 After acceleration, the semantic result must match exactly while the measured work/time improves.
@@ -141,7 +178,8 @@ When the canonical 4.0.1 source is recovered, add a lightweight development-only
 - relevant model reset/layout/data-change signals;
 - drag start/end windows;
 - marker/plugin refresh bursts;
-- final proxy row mapping and stable mod identities.
+- F5 refresh start/end and model-reset sequences;
+- final proxy row mapping and stable mod/separator identities.
 
 Use the probes to compare **accelerator off** versus **accelerator on** on the same deterministic fixture. The test should fail if work decreases but the final row mapping/state differs.
 
@@ -160,6 +198,7 @@ Use a real Windows MO2 v2.5.2 process and a complete representative mod list. Do
 | Criteria filters | Category/content/update filters remain lossless and correct. |
 | Sorting | Sort order and stable mod identity are unchanged. |
 | Grouping/separators | Grouping, expanded/collapsed state, and separator placement are preserved. |
+| F5 / Creation Club separator regression | Reproduce upstream issue #2420 accelerator-off and accelerator-on; accelerator must not worsen, hide through stale state, or reintroduce the defect after an upstream fix. |
 | Drag reorder | Native insertion target/final order remain exact; UI stays responsive. |
 | Selection/scroll | Current row, selection and scroll survive accelerated refresh paths. |
 | Profile switch | Old-model work cannot write into the new profile/model state. |
@@ -199,8 +238,8 @@ The connected project evidence does not yet expose the complete canonical 4.0.1 
 
 ## Exact next action
 
-**Recover the exact MO2 Performance Accelerator 4.0.1 source/artifact bytes, instrument the current MO2 `ModListSortProxy`/`ModListView` invalidation paths as host-contract probes, then run accelerator-off versus accelerator-on comparisons in real MO2 v2.5.2 for startup, rapid filtering, sorting/grouping, drag reorder, profile switch, failure/circuit-breaker behavior, selection/scroll/separators, restart, logs, and full-list timing. Keep Qt 6.9/6.10 filter-change APIs proposal-only until the actual MO2 host ships them.**
+**Recover the exact MO2 Performance Accelerator 4.0.1 source/artifact bytes, instrument the current MO2 `ModListSortProxy`/`ModListView` invalidation paths as host-contract probes, and run accelerator-off versus accelerator-on comparisons in real MO2 v2.5.2 for startup, rapid filtering, sorting/grouping, the exact Creation Club/top-separator F5 regression from upstream issue #2420, drag reorder, profile switch, failure/circuit-breaker behavior, selection/scroll/separators, restart, logs and full-list timing. Keep Qt 6.9/6.10 filter-change APIs proposal-only until the actual MO2 host ships them.**
 
 ## Evidence boundary
 
-The 4.0.1 crash fix and targeted synthetic benchmark are preserved evidence. This page does not claim fresh real Windows MO2 v2.5.2 whole-workflow qualification or a newly recovered canonical source tree.
+The 4.0.1 crash fix and targeted synthetic benchmark are preserved evidence. MO2 v2.5.2 is still the current stable host and upstream issue #2420 is a current host regression fixture, not a defect attributed to this plugin. This page does not claim fresh real Windows MO2 v2.5.2 whole-workflow qualification or a newly recovered canonical source tree.
