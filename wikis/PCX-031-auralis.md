@@ -2,7 +2,7 @@
 
 **Project Constellation ID:** `PCX-031`
 **Status:** ACTIVE / TRACKED
-**Current source boundary:** production build artifacts and implementation directives are recovered in the durable File Library; a canonical GitHub application repository has not yet been resolved.
+**Current source boundary:** production build artifacts and implementation directives are recovered in durable project evidence; a canonical GitHub application repository has not yet been resolved.
 
 ## Purpose
 
@@ -12,7 +12,7 @@ The recovered master build directive requires the application to preserve the su
 
 ## Current authoritative implementation contract
 
-The newest directly recovered Auralis build directive specifies this core stack:
+The newest directly recovered Auralis build directive specifies this recovery baseline:
 
 - stable Rust **1.97.1**, edition 2024;
 - Slint **1.17.0**;
@@ -32,18 +32,31 @@ Recovered authoritative artifacts include:
 
 The preview is a visual/interaction reference. Its simulated process list, meters, CPU, and latency values are not runtime evidence.
 
-## Current stack freshness, checked 2026-08-20
+## Current stack freshness, checked 2026-08-22
 
-The recovered Auralis stack is unusually current and should **not** be churned merely to look newer:
+The recovered Auralis stack is already close to current and should **not** be churned merely to look newer. Qualification must preserve a known-good recovery baseline and change one toolchain axis at a time.
 
-- [Rust 1.97.1](https://blog.rust-lang.org/releases/latest/) remains the current stable Rust point release as of this review. The master directive is already on the current stable compiler line.
-- The recovered directive pins **Slint 1.17.0**, but the current stable patch release is [Slint 1.17.1](https://github.com/slint-ui/slint/releases/tag/v1.17.1), released July 7, 2026. It fixes several startup/runtime crashes and UI correctness issues, including `TextEdit` cursor scrolling, conditional `Timer.restart()` panic, struct-field two-way binding crashes, and other rendering/windowing defects. Treat 1.17.1 as a **patch-level qualification candidate** once the canonical Auralis source is recovered. Do not rewrite the recovered 1.17.0 lockfile baseline before first proving the existing build.
+- The recovered directive pins **Rust 1.97.1**, but the current stable compiler is [Rust 1.98.0](https://blog.rust-lang.org/2026/08/20/Rust-1.98.0/), released August 20, 2026. Treat 1.97.1 as the recovery/compiler baseline and 1.98.0 as a separate compiler-qualification candidate after the source is recovered and the baseline build passes.
+- Rust 1.98.0 adds explicit algebraic floating-point methods such as `algebraic_add` and `algebraic_mul`. The Rust release notes state that these operations may be reordered and are non-deterministic. **Do not adopt them in Auralis DSP merely because the compiler exposes them.** Real-time audio code needs a deliberate numerical-quality experiment proving bounded gain, finite output, phase behavior, loudness/true-peak behavior, repeatability expectations, and measured CPU benefit before any algebraic/fast-math-style transformation is accepted.
+- The recovered directive pins **Slint 1.17.0**, while the current stable patch release remains [Slint 1.17.1](https://github.com/slint-ui/slint/releases/tag/v1.17.1), released July 7, 2026. It fixes several startup/runtime crashes and UI correctness issues, including `TextEdit` cursor scrolling, conditional `Timer.restart()` panic, struct-field two-way binding crashes, and other rendering/windowing defects. Treat 1.17.1 as a patch-level qualification candidate after the baseline build is proven.
 - [`windows` 0.62.2](https://docs.rs/crate/windows/latest) remains the current documented Rust-for-Windows crate line used by the recovered directive.
 - [Rubato 4.0.0](https://github.com/HEnquist/rubato) remains the current major release and explicitly documents real-time-safe processing without allocations during processing.
 
+### Qualification order
+
+Do not combine compiler and UI-runtime upgrades into one unexplained rebuild. Use this sequence:
+
+1. recover and build the exact Rust 1.97.1 + Slint 1.17.0 baseline;
+2. hold Rust at 1.97.1 and qualify Slint 1.17.1;
+3. return Slint to the chosen accepted state and qualify Rust 1.98.0 separately;
+4. only then test a combined accepted toolchain;
+5. record exact `rustc -Vv`, Cargo lockfile hash, Slint version, generated artifact hash, and runtime acceptance evidence for every lane.
+
+This keeps a compiler regression distinguishable from a UI-runtime regression and prevents a fresh toolchain from silently becoming the recovery authority.
+
 ### Decision
 
-Preserve the recovered Rust 1.97.1 / Slint 1.17.0 / windows-rs 0.62.2 / Rubato 4.0 pins as the **recovery baseline** until the canonical source is found and built. After that baseline succeeds, qualify Slint 1.17.1 as the first low-risk patch candidate because it fixes concrete runtime/UI defects without changing the intended Slint major/minor architecture.
+Preserve Rust 1.97.1 / Slint 1.17.0 / windows-rs 0.62.2 / Rubato 4.0 as the **recovery baseline** until canonical source is found and built. Then qualify Slint 1.17.1 and Rust 1.98.0 as independent low-risk toolchain lanes. A successful newer build does not erase the recovered baseline.
 
 Slint 1.17's MCP accessibility/input/screenshot capability remains a useful **test/debug adapter candidate**, not part of the audio signal path. If adopted, isolate it to development/verification surfaces and never require it for real-time audio operation.
 
@@ -103,6 +116,21 @@ The recovered production checklist requires replacement of starter/demo DSP with
 - loudness-matched A/B.
 
 Every DSP block needs bounded-gain and finite-output tests. Subjective enhancement must not be confused with numerical correctness.
+
+### Compiler-sensitive DSP gate
+
+Any compiler upgrade, target-feature change, LTO change, SIMD rewrite, or use of algebraic floating-point operations must rerun the deterministic DSP fixture set. At minimum record:
+
+- impulse response and channel-matrix outputs;
+- silence/denormal behavior;
+- finite-output and bounded-gain properties;
+- true-peak and loudness deltas;
+- phase/correlation metrics;
+- resampler drift behavior;
+- callback CPU distribution and underrun count;
+- exact compiler and build flags.
+
+Performance wins are accepted only if the audio-quality and recovery gates stay within defined tolerances. Do not trade determinism or numerical safety for an unmeasured compiler optimization.
 
 ## Microsoft Spatial Sound
 
@@ -171,33 +199,35 @@ Required proof includes:
 9. representative game behavior;
 10. protected-media failure behavior where capture is restricted;
 11. clean rollback/uninstall proof;
-12. no duplicated audio, persistent glitches, or meaningful idle CPU use introduced by the engine.
+12. no duplicated audio, persistent glitches, or meaningful idle CPU use introduced by the engine;
+13. compiler/toolchain qualification evidence when moving away from the recovered Rust 1.97.1 baseline.
 
 ## Smallest useful current experiment
 
 Once the canonical source repository/worktree is resolved:
 
 1. verify Rust/Slint/windows-rs/Rubato lockfile identity against this recovered directive;
-2. build the recovered 1.17.0 Slint baseline without changing dependencies;
+2. build the recovered Rust 1.97.1 + Slint 1.17.0 baseline without changing dependencies;
 3. enumerate active Core Audio sessions;
 4. implement or verify one process-tree loopback capture path;
 5. exercise default-device switching and process relaunch;
-6. record latency, underruns, recovery time, and exact build hash;
-7. qualify Slint 1.17.1 as a separate patch-only build and rerun the same UI/runtime checks;
-8. only then evaluate the virtual-endpoint routing layer.
+6. record latency, underruns, recovery time, exact build hash, and DSP fixture results;
+7. hold Rust at 1.97.1 and qualify Slint 1.17.1;
+8. qualify Rust 1.98.0 separately with the accepted Slint state and rerun compiler-sensitive DSP fixtures;
+9. only then evaluate the virtual-endpoint routing layer.
 
-This isolates the riskiest Windows audio fundamentals and keeps the Slint patch decision evidence-based before DSP or broader UI expansion.
+This isolates the riskiest Windows audio fundamentals and prevents compiler/UI changes from being conflated before DSP or broader UI expansion.
 
 ## Current blocker
 
-The production repository/worktree containing the executable Rust implementation has not yet been resolved from the connected GitHub surface. Direct File Library artifacts prove the implementation contract but are not enough to claim a runnable build exists.
+The production repository/worktree containing the executable Rust implementation has not yet been resolved from the connected GitHub surface. Durable project artifacts prove the implementation contract but are not enough to claim a runnable build exists.
 
 Do not initialize a replacement Auralis repository merely because the connected source path is unresolved. Search and reconcile the project-owned source first.
 
 ## Exact next action
 
-Resolve the canonical Auralis source repository/worktree and reconcile it against `MASTER_BUILD_PROMPT.md`, `IMPLEMENTATION.md`, and the interactive preview. Preserve the recovered stack pins as the first baseline, then qualify the Slint 1.17.1 patch separately before considering any larger dependency or architecture migration.
+Resolve the canonical Auralis source repository/worktree and reconcile it against `MASTER_BUILD_PROMPT.md`, `IMPLEMENTATION.md`, and the interactive preview. Preserve Rust 1.97.1 + Slint 1.17.0 as the first build baseline. Then qualify Slint 1.17.1 and Rust 1.98.0 in separate lanes before considering any larger dependency, DSP, or architecture migration.
 
 ## Wiki maintenance
 
-Update this page when the canonical source repository is located, stack versions change, the virtual endpoint/WDK architecture is selected, real application routing becomes verified, DSP stages become measured, installer/signing behavior becomes proven, or a new latest-good runtime build is established.
+Update this page when the canonical source repository is located, the stable Rust/Slint/windows-rs/Rubato versions change, the virtual endpoint/WDK architecture is selected, real application routing becomes verified, DSP stages become measured, installer/signing behavior becomes proven, or a new latest-good runtime build is established. Recheck compiler-sensitive DSP qualification whenever the Rust toolchain changes.
