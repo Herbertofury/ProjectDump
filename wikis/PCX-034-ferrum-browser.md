@@ -4,17 +4,17 @@
 **Canonical repository:** [Herbertofury/Ferrum-Browser](https://github.com/Herbertofury/Ferrum-Browser)
 **Canonical branch:** `main`
 **Verified project version:** `0.2.0`
-**Latest verified merged product commit:** `56879a6410f41b3142ad97f21d4ffefb9ca1b5d3`
-**Latest verified full Ferrum CI:** `32369906986`
+**Latest verified merged product commit:** `7cbf7f5d972f5e27a58ced7b0f32d9d816ef54f1`
+**Latest verified full Ferrum CI:** `32462095769`
 **Latest verified evidence-history benchmark:** `32369906922`
-**Latest verified toolchain:** Playwright `1.63.0-alpha-2026-08-20`, Electron `43.4.0`, `@electron/packager` `20.3.0`
+**Latest verified toolchain:** Playwright `1.63.0-alpha-2026-08-21`, Electron `43.4.0`, `@electron/packager` `20.3.0`
 **Native Windows qualification commit:** `eb88b2149cf695edde2591e8e16d13bb43a90c8e`
 **Native Windows workflows:** Ferrum CI `32199800957`, Native Windows `32199800977`
 **Tauri v2 qualification commit:** `cf79303b8788d58fe274d7ce3e4a9b87d889c310`
 **Tauri qualification workflow:** `32194473469`
-**Latest observed main commit:** `13c5deffe4e7901fcfd4e26206ff8156d0525226` (verified STATUS synchronization after run 65 recovery validation)
-**Earlier important verified product commits:** CI critical path `8ff1d85d26500f415c01b7de1753608c4d689f80`; Playwright Aug-20 qualification `4068747e8c3fce19155cfe1087aa7cd534bba910`; Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`; service parity `09c8334ef5b744afd8ca94732cd9c458744058fb`
-**Project state:** verified complete product checkpoint on main with collision-safe evidence-history caching, current Playwright Aug-20 qualification, real Tauri v2 and native Windows coverage, and preserved broad CI/runtime fidelity
+**Latest observed main commit:** `fc2a8c13fbf2e6694dd5bbc9d9ce9e54095dfab9` (verified STATUS synchronization after run 66)
+**Earlier important verified product commits:** evidence-cache repair `56879a6410f41b3142ad97f21d4ffefb9ca1b5d3`; CI critical path `8ff1d85d26500f415c01b7de1753608c4d689f80`; Playwright Aug-20 qualification `4068747e8c3fce19155cfe1087aa7cd534bba910`; Playwright-stack `1217144c626fade0a52596e16d78f995f827652b`; MV3 recovery `7360184f154f9182f9d754126a0348d2b10b1738`; service parity `09c8334ef5b744afd8ca94732cd9c458744058fb`
+**Project state:** verified complete product checkpoint on main with collision-safe evidence-history caching, current Playwright Aug-21 qualification, real Tauri v2 and native Windows coverage, and preserved broad CI/runtime fidelity
 
 ## Purpose
 
@@ -35,20 +35,22 @@ Ferrum is broader than a browser wrapper. The same deterministic test/evidence m
 
 Ferrum orchestrates real runtimes. A successful tool handshake, mock, rendered dashboard, or compilation is not a substitute for exercising the target application.
 
-## Current verified status, refreshed 2026-08-20
+## Current verified status, refreshed 2026-08-21
 
-The current `.agents-memory/STATUS.json` is synchronized through verified evolution run 65. The latest verified code commit is `56879a6410f41b3142ad97f21d4ffefb9ca1b5d3`, verified by Ferrum CI run `32369906986`. Later `main` commits through `13c5deffe4e7901fcfd4e26206ff8156d0525226` synchronize durable status and exact-head recovery validation; they do not supersede the run-65 product tree with a different implementation.
+The current `.agents-memory/STATUS.json` is synchronized through verified evolution run 66. The latest verified code commit is `7cbf7f5d972f5e27a58ced7b0f32d9d816ef54f1`, verified by Ferrum CI run `32462095769`. Later `main` commits through `fc2a8c13fbf2e6694dd5bbc9d9ce9e54095dfab9` record the verified Aug-21 product and synchronize durable status; they do not supersede the run-66 product tree with a different implementation.
 
 The currently verified baseline toolchain is:
 
-- Playwright **1.63.0-alpha-2026-08-20**;
+- Playwright **1.63.0-alpha-2026-08-21**;
 - Electron **43.4.0**;
 - `@electron/packager` **20.3.0**;
 - Node.js **24+**.
 
-The Playwright alpha is verified project state, not an unqualified freshness experiment. Evolution run 64 advanced the exact npm lock from the Aug-17 alpha to `1.63.0-alpha-2026-08-20`, retained Electron/packager versions, and added an Opera GX-specific `PLAYWRIGHT_LEGACY_SCREENSHOT=1` compatibility path only when the caller has not explicitly configured it. The exact proposal tree passed Ferrum CI, lock-integrity, Native Windows, Tauri WebDriver, service-fixture, stateful-API, and service-network-fault workflows before promotion.
+The Playwright alpha is verified project state, not an unqualified freshness experiment. Evolution run 66 advanced the exact npm lock from the already-qualified Aug-20 alpha to `1.63.0-alpha-2026-08-21`, retained Electron/packager versions, and promoted only after the exact proposal head `15a011a89f52c7bcd6c2ed297aec28c5eadb0e16` produced verified tree `ccbe12002d2161c43c06ecc8f9288b9ecebee98c` and passed the complete affected Ferrum matrix. The merged product tree is recorded as an exact match to that verified proposal tree.
 
-Evolution run 65 then fixed a correctness defect in the otherwise fast uncapped evidence-history cache. A same-size `agent-summary.json` rewrite could preserve the same observable filesystem stat tuple long enough for a stat-only cache to return stale parsed state. The merged repair keeps bounded 32-worker scans and cached parsing while making cache reuse collision-safe through platform-specific watchers, mutation epochs/rescans, and exact-byte fallback.
+Run-66 proof includes broad Ferrum CI `32462095769`, Native Windows `32462095737`, Tauri WebDriver `32462095757`, service fixture `32462095734`, service network-fault `32462095748`, stateful API `32462095761`, and the dedicated Playwright lock qualification run `32462095749`. The verified build/evidence artifacts are content-addressed in project status, including Linux desktop artifact `9439344866` (145,033,779 bytes), Windows desktop artifact `9439616970` (166,284,798 bytes), Linux evidence artifact `9439343482`, Windows evidence artifact `9439385176`, and retained Brave/Opera GX evidence. This makes the Aug-21 dependency promotion a complete product qualification rather than a package-version-only update.
+
+Evolution run 65 previously fixed a correctness defect in the otherwise fast uncapped evidence-history cache. A same-size `agent-summary.json` rewrite could preserve the same observable filesystem stat tuple long enough for a stat-only cache to return stale parsed state. The merged repair keeps bounded 32-worker scans and cached parsing while making cache reuse collision-safe through platform-specific watchers, mutation epochs/rescans, and exact-byte fallback.
 
 The forced-collision acceptance intentionally reproduced the old defect: the legacy stat-only cache returned stale `passed` state, while the repaired cache returned the current `failed` bytes on both Linux and Windows. The 2,000-run evidence-history benchmark retained large performance gains versus direct reads:
 
@@ -67,7 +69,7 @@ Ferrum subsequently added and verified:
 
 - bounded-parallel evidence-history scans with no result cap;
 - collision-safe evidence-history cache invalidation across same-stat rewrites;
-- current Playwright `1.63.0-alpha-2026-08-20` qualification with Opera GX-specific screenshot compatibility;
+- current Playwright `1.63.0-alpha-2026-08-21` qualification with the previously proven Opera GX-specific screenshot compatibility retained;
 - monotonic run-relative evidence timing and direct compact-result duration;
 - no implicit 400-element snapshot ceiling;
 - stable agent snapshot refs across DOM mutation and replacement;
@@ -277,12 +279,12 @@ Current `package.json` pins:
 
 ```text
 Node >= 24.0.0
-playwright 1.63.0-alpha-2026-08-20
+playwright 1.63.0-alpha-2026-08-21
 electron 43.4.0
 @electron/packager 20.3.0
 ```
 
-Electron 43.4.0 and Playwright `1.63.0-alpha-2026-08-20` have passed the required severe matrix on the exact promoted product tree. The Opera GX legacy-screenshot compatibility environment remains browser-specific and must not be broadened to other browsers without new evidence.
+Electron 43.4.0 and Playwright `1.63.0-alpha-2026-08-21` have passed the required severe matrix on the exact promoted product tree. The Opera GX legacy-screenshot compatibility environment remains browser-specific and must not be broadened to other browsers without new evidence.
 
 Tauri and native Windows provider dependencies are CI/fixture qualifications rather than blanket Ferrum core dependencies. Keep them isolated to the relevant target workflow unless a measured requirement justifies promotion into the default installation.
 
@@ -823,7 +825,7 @@ Current project-owned direction includes:
 - keep forced MV3 worker termination/recovery in the extension regression surface;
 - keep complete uncapped snapshots and page-session ref identity as agent-facing correctness guarantees;
 - preserve exact-head severe CI promotion discipline for future stack changes;
-- preserve Playwright `1.63.0-alpha-2026-08-20` until a newer candidate passes the same exact affected matrix;
+- preserve Playwright `1.63.0-alpha-2026-08-21` until a newer candidate passes the same exact affected matrix;
 - preserve collision-safe evidence-history caching, platform-appropriate watcher strategy, mutation-epoch rescans, and exact-byte fallback;
 - never restore stat-only evidence-summary reuse without defeating the deterministic collision regression;
 - keep Tauri v2 embedded WebDriver qualification on both Linux and Windows;
