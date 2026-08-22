@@ -4,7 +4,7 @@
 **Status:** ACTIVE umbrella
 **Verified shipping browser host:** [`Herbertofury/Gamesync`](https://github.com/Herbertofury/Gamesync) `0.6.3`
 **Verified next-generation browser host:** [`Herbertofury/GameSync-Next`](https://github.com/Herbertofury/GameSync-Next) Extension V2 `0.8.0`
-**GameSync Next current head observed:** `9e337c720f0180cffa577f140b181c699f0a1650`
+**GameSync Next current head observed:** `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`
 **Universal mascot parity implementation commit:** `60940e8479af518f3373a79efa091902f4843842`
 **Standalone desktop-core ownership:** unresolved in connected user-owned GitHub
 **Historical Project Constellation next action:** resolve which repository owns the shared mascot core.
@@ -47,7 +47,9 @@ The umbrella should not be reduced to one repository simply because one host cur
 
 ### Next-generation browser authority
 
-[`Herbertofury/GameSync-Next`](https://github.com/Herbertofury/GameSync-Next) Extension V2 `0.8.0` is the strongest verified typed next-generation browser implementation. Its universal mascot parity work was introduced in commit `60940e8479af518f3373a79efa091902f4843842`, while the repository head inspected for this pass is `9e337c720f0180cffa577f140b181c699f0a1650`.
+[`Herbertofury/GameSync-Next`](https://github.com/Herbertofury/GameSync-Next) Extension V2 `0.8.0` is the strongest verified typed next-generation browser implementation. Its universal mascot parity work was introduced in commit `60940e8479af518f3373a79efa091902f4843842`, while the current repository head inspected for this pass is `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`.
+
+The later `cd906...` head merged the verified Universal Game Tracker, Bounty, and Animation Tracker recovery into `main`; it did not replace the mascot implementation origin. Direct inspection at `cd906...` still shows the all-site `page-mascot.content.ts` entrypoint matching `*://*/*`, the shared settings/site-policy flow, SPA route resynchronization, and lightweight/full-runtime ownership handoff introduced by the mascot parity work. Treat `cd906...` as the current repository authority and `60940e...` as the source lineage for the universal mascot implementation.
 
 The current parity implementation is source-backed by:
 
