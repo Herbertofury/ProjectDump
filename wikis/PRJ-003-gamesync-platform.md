@@ -244,6 +244,20 @@ Mascot, ACS, Shimeji, and PF Magic Petz work intersects GameSync. Preserve engin
 
 The shipping repository contains a performance audit that identifies concrete hot paths in the extension, including message-router dispatch, storage migration, content injection, mascot state reads, and settings/broadcast paths. Treat it as optimization evidence and a backlog, not proof that every suggested optimization has already been implemented.
 
+### Current branch-only GameSync Next performance proposal
+
+As of **2026-08-23**, [GameSync Next PR #7](https://github.com/Herbertofury/GameSync-Next/pull/7) is an **open draft** on `automation/perf-package-build-dag`, with exact proposal head `964e947fc92cf9175112d436d2d7ddb74677159a` against unchanged `main` `cd906ff0831bf7fc33b41fea31b6f0c004cc1562`. GitHub reports the proposal as **125 commits ahead / 0 behind**, 22 changed files, and still unmerged. It is therefore durable branch evidence, **not** current product authority and not a shipping performance claim.
+
+The proposal preserves the six-package build order (`schema -> shared -> engine -> core -> pixi-game -> ui`) while enabling package-local `dist/.tsbuildinfo` for those shared packages. The maintained acceptance contract requires emitted-output identity, build-info completeness, missing-output recovery, semantic source invalidation, clean-build equivalence, parity checks, real browser/runtime evidence, and Windows Opera GX coverage rather than accepting compiler-cache speed alone.
+
+The last successful same-workload benchmark for the unchanged six-package implementation is historical evidence: warm median `11,170.298 ms -> 6,740.991 ms` (**39.65% faster**), warm p95 `11,262.302 ms -> 6,798.499 ms` (**39.63% faster**), and cold build **1.71% faster**. These numbers do **not** qualify the current exact head because both the proposal and benchmark methodology have advanced since that run.
+
+The newest exact-head change removes repeated Git subprocess work from `scripts/perf/resolve-latest-ferrum.mjs` by indexing reachable commit/tree/parent history once and answering ancestry/tree questions in memory. Same-host synthetic helper measurements recorded for that change showed a median `198.124 ms -> 3.793 ms` and p95 `249.494 ms -> 4.205 ms`; those are **resolver-helper measurements only**, not end-to-end GameSync performance results.
+
+Current acceptance remains blocked. Exact-head Secret Scan run `32632851894` failed before any Gitleaks workflow step executed, and the cross-repository recovery path currently stops at the private GameSync read-token preflight. Treat this as infrastructure failure evidence, not a failed product/security scan and not permission to weaken the gate. Before this branch can be described as `READY ON BRANCH/PR`, the exact head still needs its current-main benchmark, correctness/recovery gates, affected builds and regressions, parity checks, Ferrum provenance/runtime evidence, Windows Opera GX fresh/restart evidence, exact-head secret scan, and final stale-main verification.
+
+Durable branch continuity is mirrored in the connected Drive document **GameSync Performance Pass - Latest** (`1ihaBjEQJ5h-AIe9RcUWkD08RPaOkhC_tyWxGVSDaobs`). If PR #7 changes, re-resolve its exact head and execution state instead of treating the values above as permanent authority.
+
 When modifying hot paths:
 
 1. Reproduce current behavior first.
@@ -339,8 +353,8 @@ Use the checklist as implementation history. Re-verify the current source and re
 
 ## Exact current next action
 
-Maintain the repository-owned parity matrix as the extension-level source of truth for shipping-to-Next migration, then continue pairing every `implemented-unverified` and `gap` capability with exact runtime evidence. Keep desktop/server and Feature Foundry ownership in the broader host ledger. Do not retire shipping GameSync until `parityComplete` is actually true and the relevant real-host migration/restart workflows pass.
+Maintain the repository-owned parity matrix as the extension-level source of truth for shipping-to-Next migration, then continue pairing every `implemented-unverified` and `gap` capability with exact runtime evidence. Keep desktop/server and Feature Foundry ownership in the broader host ledger. Keep PR #7 branch-only until its exact-head acceptance surface passes; if it merges, re-baseline both current-source identity and performance evidence instead of carrying draft metrics forward. Do not retire shipping GameSync until `parityComplete` is actually true and the relevant real-host migration/restart workflows pass.
 
 ## Wiki maintenance
 
-Update this page when either repository head materially changes platform ownership, the shipping or Next extension version changes, the parity matrix changes capability status, the executable parity-audit contract changes, a major feature slice moves onto current Next main, the real Opera verification path changes, or the platform's exact next action changes. Preserve validated shipping behavior and version lineage rather than rewriting the platform around whichever repository changed most recently.
+Update this page when either repository head materially changes platform ownership, the shipping or Next extension version changes, the parity matrix changes capability status, the executable parity-audit contract changes, a major feature slice moves onto current Next main, the real Opera verification path changes, an active branch-only platform proposal materially changes acceptance state, or the platform's exact next action changes. Preserve validated shipping behavior and version lineage rather than rewriting the platform around whichever repository changed most recently.
