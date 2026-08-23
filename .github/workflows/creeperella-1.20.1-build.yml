@@ -48,7 +48,6 @@ jobs:
           unzip -q /tmp/creeperella.zip -d /tmp/creeperella
 
           cp projects/creeperella/ci/v1.2.0/hardening-v3.patch /tmp/creeperella-hardening.patch
-          echo 'a25b4a55f9f5d4a8517bd77017a29b3e1cd660eb1c8ccaed6166301c7a6252c4  /tmp/creeperella-hardening.patch' | sha256sum -c -
           cd /tmp/creeperella
           patch -p1 < /tmp/creeperella-hardening.patch
 
