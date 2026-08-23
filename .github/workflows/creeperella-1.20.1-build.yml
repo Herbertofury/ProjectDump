@@ -47,14 +47,15 @@ jobs:
           unzip -t /tmp/creeperella.zip
           unzip -q /tmp/creeperella.zip -d /tmp/creeperella
 
-          cp projects/creeperella/ci/v1.2.0/hardening-v2.patch /tmp/creeperella-hardening.patch
-          echo '5346fa5886e574060991b0502cd3f43e9feba1a1c84973d9c3d9b24a2bcf6d54  /tmp/creeperella-hardening.patch' | sha256sum -c -
+          cp projects/creeperella/ci/v1.2.0/hardening-v3.patch /tmp/creeperella-hardening.patch
+          echo 'a25b4a55f9f5d4a8517bd77017a29b3e1cd660eb1c8ccaed6166301c7a6252c4  /tmp/creeperella-hardening.patch' | sha256sum -c -
           cd /tmp/creeperella
           patch -p1 < /tmp/creeperella-hardening.patch
 
           echo '8d7abf0b325882cb9c5f48a06c84d4db1f9314843d6759c4f9c81e0aade08ad2  src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java' | sha256sum -c -
           echo 'c53bcbeadb69474b5f14ff3416665b81e4fe0a2c9fb1d9ba2c0d8899f8f88618  src/main/java/dev/herbertofury/creeperella/registry/ModItems.java' | sha256sum -c -
           echo '45ca025deed19367a239d4e65ed739b23433e7fbf462d50bbabbce634d8d51a3  src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java' | sha256sum -c -
+          echo '733df8b7276b8ef05edadd02323fba570d7e6062a6bf98484d4a30fea009960e  src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java' | sha256sum -c -
 
           test -f build.gradle
           test -f src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
@@ -70,6 +71,8 @@ jobs:
           grep -q 'FoodProperties' src/main/java/dev/herbertofury/creeperella/registry/ModItems.java
           grep -q 'onExplosionDetonate' src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java
           grep -q 'getAffectedEntities().removeIf' src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java
+          grep -q 'findLongRangeTarget' src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java
+          grep -q 'ProjectileUtil.getEntityHitResult' src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java
           grep -q 'FUSE_WHISTLE' src/main/java/dev/herbertofury/creeperella/registry/ModItems.java
           test "$(find src/main/java -name '*.java' | wc -l)" -ge 14
           grep -q "net.minecraftforge.renamer.*1.1.2" build.gradle
