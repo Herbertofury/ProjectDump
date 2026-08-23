@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - build/creeperella-1.20.1
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/creeperella-1.20.1-build.yml'
+      - 'projects/creeperella/ci/v1.1.0/**'
   workflow_dispatch:
 
 jobs:
