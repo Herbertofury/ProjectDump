@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -56,35 +56,106 @@ jobs:
           test "$(find /tmp/creeperella/src/main/java -name '*.java' | wc -l)" -ge 10
           test "$(find /tmp/creeperella/src/main/resources -name '*.json' | wc -l)" -ge 20
 
-      - name: Compile and build
-        working-directory: /tmp/creeperella
-        run: gradle build --no-daemon --stacktrace
+      - name: Apply ForgeGradle 7 production remapping
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('/tmp/creeperella/build.gradle')
+          s = p.read_text()
+          forge_line = "    id 'net.minecraftforge.gradle' version '[7.0.29,8.0)'\n"
+          renamer_line = "    id 'net.minecraftforge.renamer' version '1.1.2'\n"
+          if renamer_line not in s:
+              if forge_line not in s:
+                  raise SystemExit('ForgeGradle plugin line not found')
+              s = s.replace(forge_line, forge_line + renamer_line, 1)
+          dep_block = '''dependencies {
+              implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
+          }
+          '''
+          production = '''dependencies {
+              implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
+          }
 
-      - name: Dedicated server smoke test
+          renamer.mappings.from minecraft.dependency.toSrgFile
+          renamer.classes(tasks.named('jar', Jar)) {
+              archiveClassifier = 'srg'
+          }
+
+          tasks.named('build') {
+              dependsOn tasks.named('renameJar')
+          }
+          '''
+          if 'renamer.mappings.from minecraft.dependency.toSrgFile' not in s:
+              if dep_block not in s:
+                  raise SystemExit('Forge dependency block not found')
+              s = s.replace(dep_block, production, 1)
+          p.write_text(s)
+          PY
+          grep -q "net.minecraftforge.renamer.*1.1.2" /tmp/creeperella/build.gradle
+          grep -q 'renamer.mappings.from minecraft.dependency.toSrgFile' /tmp/creeperella/build.gradle
+          grep -q "archiveClassifier = 'srg'" /tmp/creeperella/build.gradle
+
+      - name: Compile, remap and build production JAR
         working-directory: /tmp/creeperella
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p run
-          echo 'eula=true' > run/eula.txt
-          set +e
-          timeout 120s gradle runServer --no-daemon --stacktrace > server.log 2>&1
-          code=$?
-          set -e
+          gradle build --no-daemon --stacktrace
+          prod_jar="$(find build/libs -maxdepth 1 -type f -name '*-srg.jar' -print -quit)"
+          test -n "$prod_jar"
+          unzip -t "$prod_jar"
+          echo "Production JAR: $prod_jar"
+          sha256sum "$prod_jar" | tee build/libs/PRODUCTION-SHA256.txt
+
+      - name: Real Forge dedicated-server smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/creeperella-server
+          mkdir -p /tmp/creeperella-server/mods
+          cd /tmp/creeperella-server
+          curl -fL --retry 4 --retry-delay 2 \
+            -o forge-installer.jar \
+            'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar'
+          echo 'ed31ce02ac69176f34353235cb2508d5a0f1e088  forge-installer.jar' | sha1sum -c -
+          java -jar forge-installer.jar --installServer
+          prod_jar="$(find /tmp/creeperella/build/libs -maxdepth 1 -type f -name '*-srg.jar' -print -quit)"
+          cp "$prod_jar" mods/creeperella-1.1.0.jar
+          echo 'eula=true' > eula.txt
+          : > server.log
+          setsid ./run.sh nogui > server.log 2>&1 &
+          pid=$!
+          ready=0
+          for i in $(seq 1 150); do
+            if grep -Eq 'Done \([0-9.]+s\)! For help, type "help"' server.log; then
+              ready=1
+              break
+            fi
+            if ! kill -0 "$pid" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
           cat server.log
-          if grep -Eq 'Done \([0-9.]+s\)! For help, type "help"' server.log; then
-            echo 'Dedicated server reached ready state.'
-          else
-            echo "Dedicated server did not reach ready state (exit ${code})." >&2
+          if [ "$ready" -ne 1 ]; then
+            echo 'Production Forge server did not reach ready state.' >&2
             exit 1
           fi
+          grep -Eiq 'creeperella|Bloom & Boom' server.log
+          echo 'Production-remapped Creeperella loaded and Forge server reached ready state.'
+          kill -TERM -- "-$pid" 2>/dev/null || true
+          sleep 2
+          kill -KILL -- "-$pid" 2>/dev/null || true
 
       - name: Upload verification artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: creeperella-1.1.0-ci
+          name: creeperella-1.1.0-production-ci
           if-no-files-found: warn
           path: |
-            /tmp/creeperella/build/libs/*.jar
-            /tmp/creeperella/server.log
+            /tmp/creeperella/build/libs/*-srg.jar
+            /tmp/creeperella/build/libs/PRODUCTION-SHA256.txt
+            /tmp/creeperella-server/server.log
