@@ -39,11 +39,13 @@ jobs:
           mkdir -p /tmp/creeperella
           test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part00)" -eq 15000
           test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part01)" -eq 15000
-          test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part02)" -eq 15000
+          test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part02)" -eq 13944
+          test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part02b)" -eq 1056
           test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part03)" -eq 2248
           cat projects/creeperella/ci/v1.3.0/source.b64.part00 \
               projects/creeperella/ci/v1.3.0/source.b64.part01 \
               projects/creeperella/ci/v1.3.0/source.b64.part02 \
+              projects/creeperella/ci/v1.3.0/source.b64.part02b \
               projects/creeperella/ci/v1.3.0/source.b64.part03 > /tmp/creeperella.b64
           test "$(wc -c < /tmp/creeperella.b64)" -eq 47248
           base64 -d /tmp/creeperella.b64 > /tmp/creeperella.zip
