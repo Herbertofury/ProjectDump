@@ -1,0 +1,31 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="MIT for original code; bundled assets per ASSET_LICENSES.md"
+
+[[mods]]
+modId="creeperella"
+version="${file.jarVersion}"
+displayName="Creeperella: Bloom & Boom"
+logoFile="creeperella.png"
+authors="Herbertofury; original resource-pack artists credited in ASSET_LICENSES.md"
+displayURL="https://github.com/Herbertofury/Minecraft-Mod-Vault"
+displayTest="MATCH_VERSION"
+description='''
+Creeperella: Bloom & Boom turns Pie's Female Creeper and Cherry Creeper designs into a polished standalone mob family.
+Female, Bunny, Bee, Cherry, and Blossom Creepers are real independent mobs with natural spawning, charged forms,
+transformations, progression, and compatibility hooks while vanilla minecraft:creeper remains completely untouched.
+'''
+
+[[dependencies.creeperella]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.creeperella]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
