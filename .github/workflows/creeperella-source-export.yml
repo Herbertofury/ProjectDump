@@ -5,15 +5,21 @@ on:
     branches:
       - export/creeperella-1.2.0-source
 
+permissions:
+  contents: write
+
 jobs:
   export:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: export/creeperella-1.2.0-source
       - name: Reconstruct canonical 1.2.0 source
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf /tmp/creeperella /tmp/source.zip /tmp/source.b64
           mkdir -p /tmp/creeperella
           head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/source.b64
           head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/source.b64
@@ -27,6 +33,30 @@ jobs:
           echo 'c53bcbeadb69474b5f14ff3416665b81e4fe0a2c9fb1d9ba2c0d8899f8f88618  src/main/java/dev/herbertofury/creeperella/registry/ModItems.java' | sha256sum -c -
           echo '45ca025deed19367a239d4e65ed739b23433e7fbf462d50bbabbce634d8d51a3  src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java' | sha256sum -c -
           echo '733df8b7276b8ef05edadd02323fba570d7e6062a6bf98484d4a30fea009960e  src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java' | sha256sum -c -
+
+      - name: Persist readable canonical source on GitHub
+        shell: bash
+        run: |
+          set -euo pipefail
+          dest="$GITHUB_WORKSPACE/projects/creeperella/source/1.2.0"
+          rm -rf "$dest"
+          mkdir -p "$dest"
+          cp -a /tmp/creeperella/. "$dest/"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add projects/creeperella/source/1.2.0
+          if git diff --cached --quiet; then
+            echo 'Readable source already current.'
+          else
+            git commit -m 'chore(creeperella): persist readable 1.2.0 canonical source'
+            git push origin HEAD:export/creeperella-1.2.0-source
+          fi
+
+      - name: Package canonical source artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd /tmp/creeperella
           zip -qr /tmp/Creeperella-1.2.0-canonical-source.zip .
           sha256sum /tmp/Creeperella-1.2.0-canonical-source.zip > /tmp/Creeperella-1.2.0-canonical-source.sha256
       - uses: actions/upload-artifact@v4
