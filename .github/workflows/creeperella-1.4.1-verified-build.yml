@@ -1,0 +1,152 @@
+name: Creeperella 1.4.1 Verified Build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/creeperella-1.4.1-verified-build.yml'
+      - 'projects/creeperella/ci/v1.4.1/**'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.0'
+
+      - name: Reconstruct verified 1.3.1 lineage and apply direct 1.4.1 delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/v3.patch /tmp/v4.patch /tmp/v5.patch /tmp/v6.patch /tmp/v10.patch
+          mkdir -p /tmp/creeperella
+          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
+          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
+          head -c 3608 projects/creeperella/ci/v1.2.0/source.b64.part02 >> /tmp/creeperella.b64
+          tr -d '\r\n' < /tmp/creeperella.b64 | base64 -d > /tmp/creeperella.zip
+          echo '773bd723beacbdc6da3547442445a7c64765e0efa3a206aa620d484deec54fdc  /tmp/creeperella.zip' | sha256sum -c -
+          unzip -t /tmp/creeperella.zip
+          unzip -q /tmp/creeperella.zip -d /tmp/creeperella
+
+          cp projects/creeperella/ci/v1.2.0/hardening-v3.patch /tmp/v3.patch
+          cd /tmp/creeperella
+          patch -p1 < /tmp/v3.patch
+
+          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.2.2/hardening-v4.patch.gz.b64" | base64 -d | gzip -d > /tmp/v4.patch
+          echo 'd1a72d7b00d82eeaa643e2d2a89ccfe5ae92c7772ad4221c05d39a2032f531a6  /tmp/v4.patch' | sha256sum -c -
+          patch -p1 < /tmp/v4.patch
+
+          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.3.0/hardening-v5.patch.gz.b64" | base64 -d | gzip -d > /tmp/v5.patch
+          echo '28912c269009425411aab93ea88fa519982ce6d3c310d6e2e8375c7c90091511  /tmp/v5.patch' | sha256sum -c -
+          patch -p1 < /tmp/v5.patch
+
+          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.3.1/hardening-v6.patch.gz.b64" | base64 -d | gzip -d > /tmp/v6.patch
+          echo '74bafddb09e0099f0577ee47fbdba9ed76093f0340a13a884a559c0e63f22cb3  /tmp/v6.patch' | sha256sum -c -
+          patch -p1 < /tmp/v6.patch
+
+          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.1/hardening-v10-from-1.3.1.patch.gz.b64" | base64 -d | gzip -d > /tmp/v10.patch
+          echo '2de17809a1b675aec51fa3ca7ff3d08e37507603162f663c895d2e774cfb35b9  /tmp/v10.patch' | sha256sum -c -
+          git apply --check /tmp/v10.patch
+          git apply /tmp/v10.patch
+
+          grep -q '^minecraft_version=1.20.1$' gradle.properties
+          grep -q '^forge_version=47.4.23$' gradle.properties
+          grep -q '^mod_version=1.4.1$' gradle.properties
+          test -f src/main/java/dev/herbertofury/creeperella/client/CatCreeperSourceAnimation.java
+          test -f tools/audit_cat_bedrock_port.py
+          test -f reference-assets/cat/creeper_charged.geo.json
+          test -f reference-assets/cat/creeper.entity.json
+          grep -q 'setCatLegX(child(waist, "leftLeg"), sourceLeg)' src/main/java/dev/herbertofury/creeperella/client/CreeperellaModel.java
+          grep -q 'tail.xRot += CatCreeperSourceAnimation.tailXRot' src/main/java/dev/herbertofury/creeperella/client/CreeperellaModel.java
+          test "$(find src/main/java -name '*.java' | wc -l)" -eq 19
+          test "$(find src/main/resources -name '*.json' | wc -l)" -eq 68
+          python3 tools/audit_cat_bedrock_port.py
+          python3 tools/audit_3d_spawn_eggs.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          files = list(Path('src/main/resources').rglob('*.json'))
+          for p in files:
+              json.loads(p.read_text())
+          print(f'PASS: parsed {len(files)} JSON resources')
+          PY
+
+      - name: Compile, remap and build production JAR
+        working-directory: /tmp/creeperella
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle build --no-daemon --stacktrace
+          prod_jar="$(find build/libs -maxdepth 1 -type f -name '*-srg.jar' -print -quit)"
+          test -n "$prod_jar"
+          unzip -t "$prod_jar"
+          sha256sum "$prod_jar" | tee build/libs/PRODUCTION-SHA256.txt
+
+      - name: Real Forge dedicated-server smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/creeperella-server
+          mkdir -p /tmp/creeperella-server/mods
+          cd /tmp/creeperella-server
+          curl -fL --retry 4 --retry-delay 2 -o forge-installer.jar 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar'
+          echo 'ed31ce02ac69176f34353235cb2508d5a0f1e088  forge-installer.jar' | sha1sum -c -
+          java -jar forge-installer.jar --installServer
+          prod_jar="$(find /tmp/creeperella/build/libs -maxdepth 1 -type f -name '*-srg.jar' -print -quit)"
+          cp "$prod_jar" mods/creeperella-1.4.1.jar
+          echo 'eula=true' > eula.txt
+          : > server.log
+          setsid ./run.sh nogui > server.log 2>&1 &
+          pid=$!
+          ready=0
+          for i in $(seq 1 150); do
+            if grep -Eq 'Done \([0-9.]+s\)! For help, type "help"' server.log; then ready=1; break; fi
+            if ! kill -0 "$pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          cat server.log
+          test "$ready" -eq 1
+          grep -Eiq 'creeperella|Bloom & Boom' server.log
+          if grep -Eiq 'mod loading error|failed to load|exception caught during firing event|fatal' server.log; then exit 1; fi
+          kill -TERM -- "-$pid" 2>/dev/null || true
+          sleep 2
+          kill -KILL -- "-$pid" 2>/dev/null || true
+
+      - name: Package verified source
+        working-directory: /tmp/creeperella
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/creeperella-source-stage /tmp/Creeperella-Bloom-and-Boom-1.4.1-Forge-1.20.1-source.zip
+          mkdir -p /tmp/creeperella-source-stage
+          rsync -a --exclude '.gradle' --exclude 'build' --exclude 'run' ./ /tmp/creeperella-source-stage/
+          cd /tmp/creeperella-source-stage
+          zip -qr /tmp/Creeperella-Bloom-and-Boom-1.4.1-Forge-1.20.1-source.zip .
+          unzip -t /tmp/Creeperella-Bloom-and-Boom-1.4.1-Forge-1.20.1-source.zip
+          sha256sum /tmp/Creeperella-Bloom-and-Boom-1.4.1-Forge-1.20.1-source.zip | tee /tmp/SOURCE-SHA256.txt
+
+      - name: Upload verification artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: creeperella-1.4.1-production-ci
+          if-no-files-found: warn
+          path: |
+            /tmp/creeperella/build/libs/*-srg.jar
+            /tmp/creeperella/build/libs/PRODUCTION-SHA256.txt
+            /tmp/Creeperella-Bloom-and-Boom-1.4.1-Forge-1.20.1-source.zip
+            /tmp/SOURCE-SHA256.txt
+            /tmp/creeperella-server/server.log
