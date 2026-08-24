@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/v3.patch /tmp/v4.patch /tmp/v5.patch /tmp/v6.patch /tmp/v7.patch /tmp/v8.patch
+          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/v3.patch /tmp/v4.patch /tmp/v5.patch /tmp/v6.patch /tmp/v7.patch /tmp/v7.b64 /tmp/v8.patch
           mkdir -p /tmp/creeperella
           head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
           head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
@@ -58,7 +58,16 @@ jobs:
           echo '74bafddb09e0099f0577ee47fbdba9ed76093f0340a13a884a559c0e63f22cb3  /tmp/v6.patch' | sha256sum -c -
           patch -p1 < /tmp/v6.patch
 
-          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/hardening-v7.patch.gz.b64" | base64 -d | gzip -d > /tmp/v7.patch
+          cat \
+            "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part00" \
+            "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part01" \
+            "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part02" \
+            "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part03" \
+            "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part04" \
+            "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part05" \
+            "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part06" > /tmp/v7.b64
+          echo 'ec547fc11acfb65dbdcfe4e4add47dc7532c6183ced46014036229c141029f43  /tmp/v7.b64' | sha256sum -c -
+          tr -d '\r\n' < /tmp/v7.b64 | base64 -d | gzip -d > /tmp/v7.patch
           echo '602421ac8126dae768e974aaf18fb9d2229ec9b9b333ce404679b00123eedafd  /tmp/v7.patch' | sha256sum -c -
           git apply /tmp/v7.patch
 
