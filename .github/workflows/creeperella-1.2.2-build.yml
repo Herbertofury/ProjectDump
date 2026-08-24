@@ -1,0 +1,117 @@
+name: Creeperella 1.2.2 Verify
+
+on:
+  push:
+    branches:
+      - build/creeperella-1.2.2
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.0'
+
+      - name: Reconstruct exact Creeperella 1.2.2 compile source
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/v3.patch /tmp/v4.patch
+          mkdir -p /tmp/creeperella
+          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
+          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
+          head -c 3608 projects/creeperella/ci/v1.2.0/source.b64.part02 >> /tmp/creeperella.b64
+          tr -d '\r\n' < /tmp/creeperella.b64 | base64 -d > /tmp/creeperella.zip
+          echo '773bd723beacbdc6da3547442445a7c64765e0efa3a206aa620d484deec54fdc  /tmp/creeperella.zip' | sha256sum -c -
+          unzip -t /tmp/creeperella.zip
+          unzip -q /tmp/creeperella.zip -d /tmp/creeperella
+
+          cp projects/creeperella/ci/v1.2.0/hardening-v3.patch /tmp/v3.patch
+          cd /tmp/creeperella
+          patch -p1 < /tmp/v3.patch
+
+          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.2.2/hardening-v4.patch.gz.b64" | base64 -d | gzip -d > /tmp/v4.patch
+          echo 'd1a72d7b00d82eeaa643e2d2a89ccfe5ae92c7772ad4221c05d39a2032f531a6  /tmp/v4.patch' | sha256sum -c -
+          patch -p1 < /tmp/v4.patch
+
+          grep -q '^minecraft_version=1.20.1$' gradle.properties
+          grep -q '^forge_version=47.4.23$' gradle.properties
+          grep -q '^mod_version=1.2.2$' gradle.properties
+          test -f src/main/java/dev/herbertofury/creeperella/client/CherryRemakeModelLayers.java
+          test -f src/main/java/dev/herbertofury/creeperella/client/CreeperellaGlowLayer.java
+          grep -q 'CherryRemakeModelLayers::createCherryLayer' src/main/java/dev/herbertofury/creeperella/client/ClientEvents.java
+          grep -q 'CherryRemakeModelLayers::createCherryChargeLayer' src/main/java/dev/herbertofury/creeperella/client/ClientEvents.java
+          grep -q 'RenderType.eyes' src/main/java/dev/herbertofury/creeperella/client/CreeperellaGlowLayer.java
+          ! grep -q 'createCherryLayer' src/main/java/dev/herbertofury/creeperella/client/CreeperellaModelLayers.java
+          test "$(find src/main/java -name '*.java' | wc -l)" -ge 16
+          echo '959e948d29664fdabf6b13573baccab0d444f09edb99afdf0c97c1ae229c8060  gradle.properties' | sha256sum -c -
+          echo 'e07f6ad7ebb9a0d9c954588927e9202eb7795aa285da6d527cc5a043f61120e5  src/main/java/dev/herbertofury/creeperella/client/CreeperellaModelLayers.java' | sha256sum -c -
+          echo '7091ba89d206f04b816bb8432bdbed858300d287ceb0b0a75bccc34a6176c9bc  src/main/java/dev/herbertofury/creeperella/client/CherryRemakeModelLayers.java' | sha256sum -c -
+          echo '63e3c98489cc38a52430a4e959f6679edd21587f982188b46a2ba9297f12f88f  src/main/java/dev/herbertofury/creeperella/client/CreeperellaModel.java' | sha256sum -c -
+          echo '8245bbb3caf0abdf3431f00165e9de833013e0879c90a241d31537fd1fa3a4f7  src/main/java/dev/herbertofury/creeperella/client/ClientEvents.java' | sha256sum -c -
+          echo '3f0d8f3016ebc4d775f7dc4b3e29c88e6f8429426bc31e68d5540c72a162806a  src/main/java/dev/herbertofury/creeperella/client/CreeperellaRenderer.java' | sha256sum -c -
+          echo 'a10cbb2c784cb906ab0d31dd7fd96e21405303a9efcdeb87b6fd2bc13d0e6d3c  src/main/java/dev/herbertofury/creeperella/client/CreeperellaGlowLayer.java' | sha256sum -c -
+
+      - name: Compile, remap and build production JAR
+        working-directory: /tmp/creeperella
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle build --no-daemon --stacktrace
+          prod_jar="$(find build/libs -maxdepth 1 -type f -name '*-srg.jar' -print -quit)"
+          test -n "$prod_jar"
+          unzip -t "$prod_jar"
+          sha256sum "$prod_jar" | tee build/libs/PRODUCTION-SHA256.txt
+
+      - name: Real Forge dedicated-server smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/creeperella-server
+          mkdir -p /tmp/creeperella-server/mods
+          cd /tmp/creeperella-server
+          curl -fL --retry 4 --retry-delay 2 -o forge-installer.jar 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar'
+          echo 'ed31ce02ac69176f34353235cb2508d5a0f1e088  forge-installer.jar' | sha1sum -c -
+          java -jar forge-installer.jar --installServer
+          prod_jar="$(find /tmp/creeperella/build/libs -maxdepth 1 -type f -name '*-srg.jar' -print -quit)"
+          cp "$prod_jar" mods/creeperella-1.2.2.jar
+          echo 'eula=true' > eula.txt
+          : > server.log
+          setsid ./run.sh nogui > server.log 2>&1 &
+          pid=$!
+          ready=0
+          for i in $(seq 1 150); do
+            if grep -Eq 'Done \([0-9.]+s\)! For help, type "help"' server.log; then ready=1; break; fi
+            if ! kill -0 "$pid" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          cat server.log
+          test "$ready" -eq 1
+          grep -Eiq 'creeperella|Bloom & Boom' server.log
+          kill -TERM -- "-$pid" 2>/dev/null || true
+          sleep 2
+          kill -KILL -- "-$pid" 2>/dev/null || true
+
+      - name: Upload verification artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: creeperella-1.2.2-production-ci
+          if-no-files-found: warn
+          path: |
+            /tmp/creeperella/build/libs/*-srg.jar
+            /tmp/creeperella/build/libs/PRODUCTION-SHA256.txt
+            /tmp/creeperella-server/server.log
