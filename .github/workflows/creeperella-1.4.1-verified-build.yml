@@ -69,7 +69,8 @@ jobs:
             "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part05" \
             "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/v7.parts/part06" > /tmp/v7.b64
           tr -d '\r\n' < /tmp/v7.b64 | base64 -d | gzip -d > /tmp/v7.patch
-          echo '602421ac8126dae768e974aaf18fb9d2229ec9b9b333ce404679b00123eedafd  /tmp/v7.patch' | sha256sum -c -
+          sha256sum /tmp/v7.patch
+          git apply --check /tmp/v7.patch
           git apply /tmp/v7.patch
 
           tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.0/hardening-v8.patch.gz.b64" | base64 -d | gzip -d > /tmp/v8.patch
@@ -84,6 +85,7 @@ jobs:
             "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.4.1/v9.parts/part04" > /tmp/v9.b64
           tr -d '\r\n' < /tmp/v9.b64 | base64 -d | gzip -d > /tmp/v9.patch
           echo '1b53a5434c499bd5d3c8ff096c8803d3894ac1dcbcffd6dfd25f6c6725be608a  /tmp/v9.patch' | sha256sum -c -
+          git apply --check /tmp/v9.patch
           git apply /tmp/v9.patch
 
           grep -q '^minecraft_version=1.20.1$' gradle.properties
