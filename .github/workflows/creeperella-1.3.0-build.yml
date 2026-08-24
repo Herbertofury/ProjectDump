@@ -35,27 +35,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/v3.patch /tmp/v4.patch /tmp/v5.patch
+          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64
           mkdir -p /tmp/creeperella
-          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
-          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
-          head -c 3608 projects/creeperella/ci/v1.2.0/source.b64.part02 >> /tmp/creeperella.b64
-          tr -d '\r\n' < /tmp/creeperella.b64 | base64 -d > /tmp/creeperella.zip
-          echo '773bd723beacbdc6da3547442445a7c64765e0efa3a206aa620d484deec54fdc  /tmp/creeperella.zip' | sha256sum -c -
+          test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part00)" -eq 15000
+          test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part01)" -eq 15000
+          test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part02)" -eq 15000
+          test "$(wc -c < projects/creeperella/ci/v1.3.0/source.b64.part03)" -eq 2248
+          cat projects/creeperella/ci/v1.3.0/source.b64.part00 \
+              projects/creeperella/ci/v1.3.0/source.b64.part01 \
+              projects/creeperella/ci/v1.3.0/source.b64.part02 \
+              projects/creeperella/ci/v1.3.0/source.b64.part03 > /tmp/creeperella.b64
+          test "$(wc -c < /tmp/creeperella.b64)" -eq 47248
+          base64 -d /tmp/creeperella.b64 > /tmp/creeperella.zip
+          echo 'bee3de0b0abf0a5b1f04cb9886bf5467f2ccc47cee7af3a51721044a2144d516  /tmp/creeperella.zip' | sha256sum -c -
           unzip -t /tmp/creeperella.zip
           unzip -q /tmp/creeperella.zip -d /tmp/creeperella
-
-          cp projects/creeperella/ci/v1.2.0/hardening-v3.patch /tmp/v3.patch
           cd /tmp/creeperella
-          patch -p1 < /tmp/v3.patch
-
-          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.2.2/hardening-v4.patch.gz.b64" | base64 -d | gzip -d > /tmp/v4.patch
-          echo 'd1a72d7b00d82eeaa643e2d2a89ccfe5ae92c7772ad4221c05d39a2032f531a6  /tmp/v4.patch' | sha256sum -c -
-          patch -p1 < /tmp/v4.patch
-
-          tr -d '\r\n' < "$GITHUB_WORKSPACE/projects/creeperella/ci/v1.3.0/hardening-v5.patch.gz.b64" | base64 -d | gzip -d > /tmp/v5.patch
-          echo '28912c269009425411aab93ea88fa519982ce6d3c310d6e2e8375c7c90091511  /tmp/v5.patch' | sha256sum -c -
-          patch -p1 < /tmp/v5.patch
 
           grep -q '^minecraft_version=1.20.1$' gradle.properties
           grep -q '^forge_version=47.4.23$' gradle.properties
@@ -67,7 +62,7 @@ jobs:
           grep -q 'spawn_egg_anim' src/main/java/dev/herbertofury/creeperella/client/ClientEvents.java
           grep -q 'use3DSpawnEggs' src/main/java/dev/herbertofury/creeperella/config/CreeperellaClientConfig.java
           grep -q 'animate3DSpawnEggs' src/main/java/dev/herbertofury/creeperella/config/CreeperellaClientConfig.java
-          test "$(find src/main/java -name '*.java' | wc -l)" -ge 17
+          test "$(find src/main/java -name '*.java' | wc -l)" -eq 17
 
       - name: Compile, remap and build production JAR
         working-directory: /tmp/creeperella
