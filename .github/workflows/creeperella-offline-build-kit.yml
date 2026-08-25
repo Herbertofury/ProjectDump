@@ -16,10 +16,6 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Fetch known-good Creeperella CI source transport
-        shell: bash
-        run: git fetch origin build/creeperella-1.4.5-ci --depth=1
-
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
@@ -37,10 +33,9 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/creeperella-build-kit
           mkdir -p /tmp/creeperella /tmp/creeperella-build-kit
-          REF=origin/build/creeperella-1.4.5-ci
-          git show "$REF":projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
-          git show "$REF":projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
-          git show "$REF":projects/creeperella/ci/v1.2.0/source.b64.part02 >> /tmp/creeperella.b64
+          cat projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
+          cat projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
+          cat projects/creeperella/ci/v1.2.0/source.b64.part02 >> /tmp/creeperella.b64
           tr -d '\r\n' < /tmp/creeperella.b64 | base64 -d > /tmp/creeperella.zip
           unzip -t /tmp/creeperella.zip
           unzip -q /tmp/creeperella.zip -d /tmp/creeperella
