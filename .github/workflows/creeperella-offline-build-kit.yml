@@ -1,0 +1,69 @@
+name: Creeperella Offline Build Kit
+
+on:
+  push:
+    branches:
+      - ci/creeperella-offline-build-kit
+  workflow_dispatch:
+
+jobs:
+  kit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.3.0'
+
+      - name: Reconstruct known-good Creeperella source and warm dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/creeperella-build-kit
+          mkdir -p /tmp/creeperella /tmp/creeperella-build-kit
+          head -c 15000 projects/creeperella/ci/v1.1.0/source.b64.part00 > /tmp/creeperella.b64
+          head -c 15000 projects/creeperella/ci/v1.1.0/source.b64.part01 >> /tmp/creeperella.b64
+          head -c 15000 projects/creeperella/ci/v1.1.0/source.b64.part02 >> /tmp/creeperella.b64
+          cat projects/creeperella/ci/v1.1.0/source.b64.part03 >> /tmp/creeperella.b64
+          tr -d '\r\n' < /tmp/creeperella.b64 | base64 -d > /tmp/creeperella.zip
+          echo '519e8a082aa0c4f043636248cd5f609ca49b51a9142b0e704af46c4c91cbccb7  /tmp/creeperella.zip' | sha256sum -c -
+          unzip -q /tmp/creeperella.zip -d /tmp/creeperella
+          cd /tmp/creeperella
+          gradle compileJava --no-daemon --stacktrace
+          gradle dependencies --configuration compileClasspath --no-daemon > /tmp/compile-classpath.txt
+          gradle dependencies --configuration runtimeClasspath --no-daemon > /tmp/runtime-classpath.txt
+
+      - name: Package portable Gradle/JDK/dependency kit
+        shell: bash
+        run: |
+          set -euo pipefail
+          KIT=/tmp/creeperella-build-kit
+          mkdir -p "$KIT"
+          GRADLE_BIN="$(readlink -f "$(command -v gradle)")"
+          GRADLE_HOME="$(cd "$(dirname "$GRADLE_BIN")/.." && pwd)"
+          echo "$GRADLE_HOME" > "$KIT/GRADLE_HOME.txt"
+          echo "$JAVA_HOME" > "$KIT/JAVA_HOME.txt"
+          cp /tmp/compile-classpath.txt /tmp/runtime-classpath.txt "$KIT/"
+          tar -C "$GRADLE_HOME" -czf "$KIT/gradle-home.tar.gz" .
+          tar -C "$JAVA_HOME" -czf "$KIT/jdk17-home.tar.gz" .
+          tar -C "$HOME" -czf "$KIT/gradle-user-home.tar.gz" .gradle
+          sha256sum "$KIT"/* > "$KIT/SHA256SUMS.txt"
+          du -h "$KIT"/*
+
+      - name: Upload offline build kit
+        uses: actions/upload-artifact@v4
+        with:
+          name: creeperella-offline-build-kit
+          path: /tmp/creeperella-build-kit/*
+          compression-level: 0
+          retention-days: 1
