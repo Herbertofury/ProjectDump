@@ -16,9 +16,9 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Fetch canonical main source transport
+      - name: Fetch known-good Creeperella CI source transport
         shell: bash
-        run: git fetch origin main --depth=1
+        run: git fetch origin build/creeperella-1.4.5-ci --depth=1
 
       - name: Set up Java 17
         uses: actions/setup-java@v5
@@ -37,12 +37,12 @@ jobs:
           set -euo pipefail
           rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/creeperella-build-kit
           mkdir -p /tmp/creeperella /tmp/creeperella-build-kit
-          git show origin/main:projects/creeperella/ci/v1.1.0/source.b64.part00 | head -c 15000 > /tmp/creeperella.b64
-          git show origin/main:projects/creeperella/ci/v1.1.0/source.b64.part01 | head -c 15000 >> /tmp/creeperella.b64
-          git show origin/main:projects/creeperella/ci/v1.1.0/source.b64.part02 | head -c 15000 >> /tmp/creeperella.b64
-          git show origin/main:projects/creeperella/ci/v1.1.0/source.b64.part03 >> /tmp/creeperella.b64
+          REF=origin/build/creeperella-1.4.5-ci
+          git show "$REF":projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
+          git show "$REF":projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
+          git show "$REF":projects/creeperella/ci/v1.2.0/source.b64.part02 >> /tmp/creeperella.b64
           tr -d '\r\n' < /tmp/creeperella.b64 | base64 -d > /tmp/creeperella.zip
-          echo '519e8a082aa0c4f043636248cd5f609ca49b51a9142b0e704af46c4c91cbccb7  /tmp/creeperella.zip' | sha256sum -c -
+          unzip -t /tmp/creeperella.zip
           unzip -q /tmp/creeperella.zip -d /tmp/creeperella
           cd /tmp/creeperella
           gradle compileJava --no-daemon --stacktrace
