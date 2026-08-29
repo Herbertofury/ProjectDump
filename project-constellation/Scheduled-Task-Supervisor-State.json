@@ -1,6 +1,6 @@
 {
-  "schema": "scheduled-task-supervisor.state/15",
-  "updatedAt": "2026-08-29T22:16:23Z",
+  "schema": "scheduled-task-supervisor.state/16",
+  "updatedAt": "2026-08-29T22:17:07Z",
   "currentTaskCount": 4,
   "enabledCurrentTaskCount": 4,
   "pausedIncompleteCurrentTaskCount": 0,
@@ -9,14 +9,14 @@
     "Track New Minecraft Mods",
     "Minecraft Vault HTML Sync",
     "Scheduled Task + GitHub Publish Supervisor",
-    "Redundant Supervisor"
+    "Redundant Schedule Supervisor"
   ],
   "scopePolicy": "Only the current active automation inventory is authoritative. Disabled historical entries are treated as deleted/out of scope and are not recreated or carried as obligations.",
   "materialChangesThisRun": [
     {
       "area": "Live task inventory",
       "result": "RECONCILED_TO_FOUR_CURRENT_ENABLED_TASKS",
-      "detail": "The current live automation inventory contains exactly four active tasks and all four are enabled. The prior durable supervisor checkpoint incorrectly carried historical deleted task obligations and stale publication/escalation state; those records have been removed from current scope."
+      "detail": "The final live automation inventory contains exactly four active tasks and all four are enabled. The prior durable supervisor checkpoint incorrectly carried historical deleted task obligations and stale publication/escalation state; those records have been removed from current scope."
     },
     {
       "area": "Minecraft publication ledger",
@@ -25,8 +25,13 @@
     },
     {
       "area": "Minecraft Vault HTML Sync",
-      "result": "NEW_CURRENT_TASK_REGISTERED_PENDING_FIRST_WATCH_PASS",
-      "detail": "The new HTML sync task is enabled and has not yet run. Its authoritative source is Google Sheet Minecraft Recommendations Vault (Drive ID 1lReleqgCnDXvdseHqVdU9qzTVHP5MuXMpUzJqxeCr_s). Its required publication targets are the Minecraft vault Drive project area and the Herbertofury/Minecraft-Mod-Vault source tree. A recursive current GitHub tree inspection did not find the exact Explorer filename, but because this task was just created and has not yet had its first watch pass this is pending initial synchronization, not a failed publication claim."
+      "result": "NEW_CURRENT_TASK_REGISTERED_PENDING_FIRST_SYNC_PASS",
+      "detail": "The HTML sync task is enabled and has not yet run. Its authoritative source is Google Sheet Minecraft Recommendations Vault (Drive ID 1lReleqgCnDXvdseHqVdU9qzTVHP5MuXMpUzJqxeCr_s). Its required publication targets are the Minecraft vault Drive project area and the Herbertofury/Minecraft-Mod-Vault source tree. A recursive current GitHub tree inspection did not find the exact Explorer filename, but because this task is newly created and still awaiting its first run this is pending initial synchronization, not a failed publication claim."
+    },
+    {
+      "area": "Redundant supervisor",
+      "result": "FIRST_WATCH_PASS_OBSERVED_HEALTHY",
+      "detail": "Redundant Schedule Supervisor completed its first observed watch pass at 2026-08-29T22:16:44Z and remained enabled. The final task scan still shows all four current tasks enabled."
     }
   ],
   "health": {
@@ -44,8 +49,8 @@
       "canonicalRepository": "Herbertofury/Minecraft-Mod-Vault",
       "currentRepositoryHead": "ecc46fe42c83bfcbcda7aeddd87ce5b286d2db4c",
       "currentCanonicalLine": "v0.15.0 triage",
-      "lastRun": "2026-08-26T17:29:01Z",
-      "lastTaskDefinitionUpdate": "2026-08-29T22:14:49Z",
+      "lastRun": "2026-08-26T06:33:32Z",
+      "lastTaskDefinitionUpdate": "2026-08-29T22:14:08Z",
       "materialScoutPublicationClaimedThisRun": false,
       "status": "ENABLED; HEALTHY_NO_OP_ALLOWED; NEXT_MATERIAL_REPORT_MUST_DUAL_PUBLISH_AND_REMOTE_VERIFY"
     },
@@ -60,17 +65,17 @@
       "githubDestination": "Herbertofury/Minecraft-Mod-Vault source tree",
       "driveDestination": "canonical Minecraft vault project area",
       "githubExactFilenameObservedAtAudit": false,
-      "status": "INITIAL_SYNC_PENDING_FIRST_WATCH_RUN; NOT YET A FAILED PUBLICATION"
+      "status": "INITIAL_SYNC_PENDING_FIRST_RUN; NOT YET A FAILED PUBLICATION"
     },
     "scheduledTaskGithubPublishSupervisor": {
       "taskStatus": "ENABLED_INDEFINITE",
       "durableStateGitHub": "Herbertofury/ProjectDump/project-constellation/Scheduled-Task-Supervisor-State.json",
       "durableStateDriveId": "1L5Dz0ALgYj51UTRdILqpnc_y93_sccwH9cc6N7hnPDI"
     },
-    "redundantSupervisor": {
-      "taskStatus": "ENABLED_PENDING_FIRST_WATCH_RUN",
-      "lastRun": null,
-      "scope": "Safety net for the two permanent Minecraft tasks and primary supervisor only"
+    "redundantScheduleSupervisor": {
+      "taskStatus": "ENABLED",
+      "lastRun": "2026-08-29T22:16:44Z",
+      "scope": "Safety net for the two permanent Minecraft tasks and primary supervisor"
     }
   }
 }
