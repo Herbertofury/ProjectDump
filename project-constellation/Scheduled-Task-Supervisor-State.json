@@ -1,81 +1,93 @@
 {
-  "schema": "scheduled-task-supervisor.state/18",
-  "updatedAt": "2026-08-30T05:13:00Z",
-  "currentTaskCount": 4,
-  "enabledCurrentTaskCount": 4,
+  "schema": "scheduled-task-supervisor.state/19",
+  "updatedAt": "2026-08-30T08:34:00Z",
+  "currentTaskCount": 8,
+  "enabledCurrentTaskCount": 8,
   "pausedIncompleteCurrentTaskCount": 0,
   "completedCurrentTaskCount": 0,
   "currentTaskSet": [
+    "JetSetCraft Daily Improvement",
+    "JetSetCraft Head Compat",
+    "GameSync Performance Pass",
+    "Hidden Mob Gems Watch",
     "Track New Minecraft Mods",
     "Minecraft Vault HTML Sync",
-    "Scheduled Task + GitHub Publish Supervisor",
-    "Redundant Schedule Supervisor"
+    "Redundant Schedule Supervisor",
+    "Scheduled Task + GitHub Publish Supervisor"
   ],
-  "scopePolicy": "Only the current active automation inventory is authoritative. Deleted/inactive historical task records are out of scope and are not recreated or carried as obligations.",
+  "scopePolicy": "Only the current live automation inventory is authoritative. User-deleted tasks are permanently out of scope unless explicitly recreated by the user.",
   "materialChangesThisRun": [
     {
-      "area": "Track New Minecraft Mods publication audit",
-      "result": "AUG_29_SCOUT_DUAL_PUBLICATION_INDEPENDENTLY_VERIFIED",
-      "detail": "The material 2026-08-29 ecosystem scout is present on GitHub at commit b57b18ba892c45931925f944334a044a408af62b as reports/daily-scout/2026-08-29-category-leaderboard.md. Its own persistence claims were independently checked against Drive: the canonical Master Tracker is present at Drive ID 1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg and updated 2026-08-29T22:28:18.260Z; the Curated Master Guide is updated 2026-08-29T22:28:56.112Z; and the dated Drive checkpoint Minecraft Ecosystem Category Scout — 2026-08-29 exists at Drive ID 1HvDKE9a1PMwioSPqvFTZv854PPo6QZFHmiPYVqT3OJQ."
+      "area": "Current task schedule health",
+      "result": "FOUR_STALE_OR_COLLIDING_SCHEDULES_REPHASED_AND_ENABLED",
+      "detail": "JetSetCraft Daily Improvement was moved to 02:30 every 2 hours; JetSetCraft Head Compat to 03:30 every 2 hours so the two writers are deliberately staggered; GameSync Performance Pass to 02:45 every 100 minutes; Hidden Mob Gems Watch to 03:00 daily. All remained enabled. The other four current tasks were already enabled."
     },
     {
-      "area": "Minecraft Vault HTML Sync current-source check",
-      "result": "GITHUB_EXPLORER_REMAINS_CURRENT; NO_REBUILD_DELTA",
-      "detail": "The authoritative Sheet modified time remains 2026-08-29T22:28:18.260Z, matching the verified Explorer build provenance. GitHub main still contains the verified 374830-byte Explorer with SHA-256 ea1a6b64bab80bc88521ec138f2e364fbeeebb1d2c2796aaebc520ece9c0f979 and 673-byte build metadata with SHA-256 ccf6717a356cf57f14fb3ebd067fe609ca3a1f4cb92827037fbd4be68d6b1e67. No newer repository commit after c8189b90bf448c63654e084904f8499fe71d5ece was required by the most recent sync pass."
+      "area": "Minecraft Vault Explorer Drive-to-GitHub recovery",
+      "result": "OVERDUE_CURRENT_EXPLORER_PUBLISHED_AND_REMOTE_VERIFIED",
+      "detail": "Drive held the newer complete Explorer HTML at 1,070,247 bytes / SHA-256 c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077, backed by source ZIP SHA-256 447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461 and QA PASS. GitHub staging had stalled at an incomplete/corrupt 7-of-8 payload. The missing/corrupt staging was repaired atomically in commit 38856de1e537e1737bf7a9da1d40a5b7d37e26b6. Build Explorer From Canonical Sheet run 33301881264 completed success and published final commit 4320c290266289743efddee3b0a312c5ef8becfd. The workflow re-fetched origin/main and verified the exact HTML/build/builder bytes; an independent repository-tree re-read confirmed the final Explorer is 1,070,247 bytes."
     },
     {
-      "area": "Drive Explorer publication debt recheck",
-      "result": "RAW_HTML_STILL_ABSENT; CONNECTOR_EGRESS_BLOCKER_RECONFIRMED",
-      "detail": "An exact Drive name query for Minecraft Recommendations Vault - Explorer.html returned no file. The verified GitHub Actions artifact 9726196258 was downloaded and independently unpacked; its Explorer and build JSON exactly matched the expected SHA-256 identities. A fresh attempt to send the extracted raw HTML into Drive was blocked by connector file-egress policy, and direct cross-connector artifact forwarding remains incompatible with the current upload wrapper. The HTML Sync task remains enabled and the raw Drive HTML obligation remains open; no user-only action is currently required."
+      "area": "GameSync Performance publication audit",
+      "result": "BRANCH_PR_AND_DRIVE_EVIDENCE_CURRENT",
+      "detail": "GameSync-Next PR #7 remains open/draft/branch-only at exact head 4dffe7b59094ca629836a23fbcba5902e3dbff95 on base cd906ff0831bf7fc33b41fea31b6f0c004cc1562. Drive document GameSync Performance Pass - Latest independently matches that exact head. Exact-head Secret Scan run 32885661932 / job 97925372077 failed before executable steps and is not treated as a product/security result. No current task has authority to bypass the branch-only merge contract."
+    },
+    {
+      "area": "JetSetCraft and Hidden Mob publication audit",
+      "result": "NO_UNPUBLISHED_MATERIAL_OUTPUT_FOUND",
+      "detail": "JetSetCraft GitHub and Drive continuity are aligned with the latest material work; no newer Drive-only publishable artifact was found. Hidden Mob Gems Watch had no material publication claim requiring repair."
     }
   ],
   "health": {
     "currentScheduledTasks": "ALL_CURRENT_TASKS_ENABLED",
-    "currentTaskCount": 4,
-    "enabledCurrentTaskCount": 4,
+    "currentTaskCount": 8,
+    "enabledCurrentTaskCount": 8,
     "incompletePausedCurrentTasks": 0,
     "completedCurrentTasks": 0,
     "userEscalationRequired": false,
-    "remainingPublicationDebt": "DRIVE_RAW_EXPLORER_ONLY; GITHUB_EXPLORER_AND_AUG_29_SCOUT_DUAL_PUBLICATION_VERIFIED"
+    "remainingPublicationDebt": "NONE_CURRENTLY_REPAIRABLE_ON_GITHUB"
   },
   "publicationLedger": {
-    "trackNewMinecraftMods": {
+    "minecraftVaultExplorer": {
       "taskStatus": "ENABLED",
       "canonicalRepository": "Herbertofury/Minecraft-Mod-Vault",
-      "currentRepositoryHead": "c8189b90bf448c63654e084904f8499fe71d5ece",
-      "latestVerifiedMaterialScout": {
-        "date": "2026-08-29",
-        "githubCommit": "b57b18ba892c45931925f944334a044a408af62b",
-        "githubPath": "reports/daily-scout/2026-08-29-category-leaderboard.md",
-        "driveCheckpointId": "1HvDKE9a1PMwioSPqvFTZv854PPo6QZFHmiPYVqT3OJQ",
-        "canonicalSheetId": "1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg",
-        "drivePublication": "VERIFIED_PRESENT",
-        "githubPublication": "VERIFIED_PRESENT"
-      },
-      "status": "ENABLED; LATEST MATERIAL SCOUT PUBLICATION VERIFIED ON BOTH GITHUB AND DRIVE"
+      "driveHtmlId": "144ibWQ8XUA3L6Xp_d8Nt_aMs-LiSC2hq",
+      "driveHtmlBytes": 1070247,
+      "artifactSha256": "c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077",
+      "sourceZipId": "1vRty6Q7cE7ImM3PUDe4fqXmh2zGXOHLD",
+      "sourceZipSha256": "447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461",
+      "sourceWorkbookId": "1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg",
+      "sourceWorkbookSha256": "5b8b09fd9d87a4e411f5a00f6321b06c5e17b5b11b2326dc259e74136ed5bd7d",
+      "qa": "PASS",
+      "stagingRepairCommit": "38856de1e537e1737bf7a9da1d40a5b7d37e26b6",
+      "workflowRun": 33301881264,
+      "publishedCommit": "4320c290266289743efddee3b0a312c5ef8becfd",
+      "githubTree": "5357a0dd42d79bc652675a664a9c660d83548b92",
+      "githubArtifactBytes": 1070247,
+      "githubStatus": "VERIFIED_CURRENT"
     },
-    "minecraftVaultHtmlSync": {
+    "gameSyncPerformance": {
       "taskStatus": "ENABLED",
-      "authoritativeSheet": {
-        "title": "Minecraft Recommendations Vault — Master Tracker",
-        "driveId": "1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg",
-        "modifiedTime": "2026-08-29T22:28:18.260Z",
-        "workbookBytes": 208302,
-        "workbookSha256": "610bc5f74ad4c842a0e7bd690aacf89f932e68a3b7cc016faa382591f3f6dd2a"
-      },
-      "githubDestination": "Herbertofury/Minecraft-Mod-Vault main",
-      "publishedCommit": "c8189b90bf448c63654e084904f8499fe71d5ece",
-      "workflowRun": 33291849597,
-      "workflowArtifactId": 9726196258,
-      "expectedArtifact": "Minecraft Recommendations Vault - Explorer.html",
-      "artifactBytes": 374830,
-      "artifactSha256": "ea1a6b64bab80bc88521ec138f2e364fbeeebb1d2c2796aaebc520ece9c0f979",
-      "buildJsonBytes": 673,
-      "buildJsonSha256": "ccf6717a356cf57f14fb3ebd067fe609ca3a1f4cb92827037fbd4be68d6b1e67",
-      "githubStatus": "VERIFIED_CURRENT",
-      "driveDestination": "Minecraft Mod Vault folder 1nkX40V3f0psEQldm0WjAZH9o-gnAO-Ln",
-      "driveRawHtmlStatus": "PENDING_CONNECTOR_FILE_EGRESS",
-      "status": "GITHUB CURRENT AND VERIFIED; SOURCE UNCHANGED; DRIVE RAW HTML REMAINS PENDING"
+      "publicationMode": "BRANCH_PR_PLUS_DRIVE",
+      "repository": "Herbertofury/GameSync-Next",
+      "pr": 7,
+      "head": "4dffe7b59094ca629836a23fbcba5902e3dbff95",
+      "base": "cd906ff0831bf7fc33b41fea31b6f0c004cc1562",
+      "githubState": "OPEN_DRAFT_BRANCH_ONLY",
+      "driveCheckpointId": "1ihaBjEQJ5h-AIe9RcUWkD08RPaOkhC_tyWxGVSDaobs",
+      "status": "GITHUB_AND_DRIVE_CURRENT"
+    },
+    "jetSetCraft": {
+      "tasks": ["JetSetCraft Daily Improvement", "JetSetCraft Head Compat"],
+      "status": "ENABLED_STAGGERED_AND_PUBLICATION_CURRENT"
+    },
+    "hiddenMobGemsWatch": {
+      "taskStatus": "ENABLED_REPHASED",
+      "status": "NO_CURRENT_PUBLICATION_DEBT"
+    },
+    "trackNewMinecraftMods": {
+      "taskStatus": "ENABLED",
+      "canonicalRepository": "Herbertofury/Minecraft-Mod-Vault"
     },
     "scheduledTaskGithubPublishSupervisor": {
       "taskStatus": "ENABLED_INDEFINITE",
@@ -84,7 +96,7 @@
     },
     "redundantScheduleSupervisor": {
       "taskStatus": "ENABLED",
-      "scope": "Safety net for current permanent Minecraft tasks and primary supervisor"
+      "status": "HEALTHY_REDUNDANT_SAFETY_NET"
     }
   }
 }
