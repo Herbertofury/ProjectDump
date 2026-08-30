@@ -1,6 +1,6 @@
 {
-  "schema": "scheduled-task-supervisor.state/16",
-  "updatedAt": "2026-08-29T22:17:07Z",
+  "schema": "scheduled-task-supervisor.state/17",
+  "updatedAt": "2026-08-30T04:12:00Z",
   "currentTaskCount": 4,
   "enabledCurrentTaskCount": 4,
   "pausedIncompleteCurrentTaskCount": 0,
@@ -11,27 +11,27 @@
     "Scheduled Task + GitHub Publish Supervisor",
     "Redundant Schedule Supervisor"
   ],
-  "scopePolicy": "Only the current active automation inventory is authoritative. Disabled historical entries are treated as deleted/out of scope and are not recreated or carried as obligations.",
+  "scopePolicy": "Only the current active automation inventory is authoritative. Deleted/inactive historical task records are out of scope and are not recreated or carried as obligations.",
   "materialChangesThisRun": [
     {
-      "area": "Live task inventory",
-      "result": "RECONCILED_TO_FOUR_CURRENT_ENABLED_TASKS",
-      "detail": "The final live automation inventory contains exactly four active tasks and all four are enabled. The prior durable supervisor checkpoint incorrectly carried historical deleted task obligations and stale publication/escalation state; those records have been removed from current scope."
+      "area": "Minecraft Vault Explorer GitHub publication",
+      "result": "PLACEHOLDER_REPLACED_WITH_VERIFIED_CURRENT_EXPLORER",
+      "detail": "GitHub main still contained a literal PLACEHOLDER for Minecraft Recommendations Vault - Explorer.html even though an authenticated staged payload existed. The publication workflow was repaired to trigger on current-explorer staging changes, validate dynamic staged parts, and verify remote output against the staged manifest instead of stale hard-coded artifact identities. A second defect was then isolated: the staged build JSON was 673 bytes / SHA-256 ccf6717a356cf57f14fb3ebd067fe609ca3a1f4cb92827037fbd4be68d6b1e67 while the manifest still declared an obsolete 676-byte identity. The manifest was corrected and the workflow completed successfully."
     },
     {
-      "area": "Minecraft publication ledger",
-      "result": "CURRENT_CANONICAL_REPOSITORY_ADVANCED_TO_V0_15_0_TRIAGE",
-      "detail": "Herbertofury/Minecraft-Mod-Vault currently includes canonical v0.15.0 triage work through commit ecc46fe42c83bfcbcda7aeddd87ce5b286d2db4c. This supersedes the old v0.10.0 repository head stored in the previous supervisor checkpoint."
+      "area": "Minecraft Vault Explorer remote verification",
+      "result": "GITHUB_ROUND_TRIP_VERIFIED",
+      "detail": "Workflow run 33291849597 completed successfully and published commit c8189b90bf448c63654e084904f8499fe71d5ece. The workflow independently fetched the remote branch and verified the Explorer, build JSON, reusable builder, provenance fields, and acceptance markers. Explorer identity: 374830 bytes / SHA-256 ea1a6b64bab80bc88521ec138f2e364fbeeebb1d2c2796aaebc520ece9c0f979. Build metadata identity: 673 bytes / SHA-256 ccf6717a356cf57f14fb3ebd067fe609ca3a1f4cb92827037fbd4be68d6b1e67."
     },
     {
-      "area": "Minecraft Vault HTML Sync",
-      "result": "NEW_CURRENT_TASK_REGISTERED_PENDING_FIRST_SYNC_PASS",
-      "detail": "The HTML sync task is enabled and has not yet run. Its authoritative source is Google Sheet Minecraft Recommendations Vault (Drive ID 1lReleqgCnDXvdseHqVdU9qzTVHP5MuXMpUzJqxeCr_s). Its required publication targets are the Minecraft vault Drive project area and the Herbertofury/Minecraft-Mod-Vault source tree. A recursive current GitHub tree inspection did not find the exact Explorer filename, but because this task is newly created and still awaiting its first run this is pending initial synchronization, not a failed publication claim."
+      "area": "Minecraft Vault HTML Sync source authority",
+      "result": "SOURCE_IDENTITY_CORRECTED",
+      "detail": "The current authoritative source is Google Sheet Minecraft Recommendations Vault — Master Tracker, Drive ID 1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg, modified 2026-08-29T22:28:18.260Z. The prior supervisor checkpoint carried a stale/incorrect Sheet ID and has been corrected. Source workbook identity recorded by the verified build is 208302 bytes / SHA-256 610bc5f74ad4c842a0e7bd690aacf89f932e68a3b7cc016faa382591f3f6dd2a."
     },
     {
-      "area": "Redundant supervisor",
-      "result": "FIRST_WATCH_PASS_OBSERVED_HEALTHY",
-      "detail": "Redundant Schedule Supervisor completed its first observed watch pass at 2026-08-29T22:16:44Z and remained enabled. The final task scan still shows all four current tasks enabled."
+      "area": "Drive Explorer publication",
+      "result": "RAW_HTML_STILL_PENDING_CONNECTOR_FILE_EGRESS",
+      "detail": "No current raw Drive file named Minecraft Recommendations Vault - Explorer.html was found after the source update. The verified GitHub workflow artifact was downloaded locally, but cross-provider/local file egress into the Drive upload/import actions is blocked by the connector runtime. The HTML Sync task remains enabled; this is not treated as completed dual publication and no user action is currently requested."
     }
   ],
   "health": {
@@ -40,32 +40,40 @@
     "enabledCurrentTaskCount": 4,
     "incompletePausedCurrentTasks": 0,
     "completedCurrentTasks": 0,
-    "historicalDisabledTasks": "OUT_OF_SCOPE_USER_DELETED_OR_INACTIVE",
-    "userEscalationRequired": false
+    "userEscalationRequired": false,
+    "remainingPublicationDebt": "DRIVE_RAW_EXPLORER_ONLY; GITHUB_PUBLICATION_VERIFIED"
   },
   "publicationLedger": {
     "trackNewMinecraftMods": {
       "taskStatus": "ENABLED",
       "canonicalRepository": "Herbertofury/Minecraft-Mod-Vault",
-      "currentRepositoryHead": "ecc46fe42c83bfcbcda7aeddd87ce5b286d2db4c",
-      "currentCanonicalLine": "v0.15.0 triage",
-      "lastRun": "2026-08-26T06:33:32Z",
-      "lastTaskDefinitionUpdate": "2026-08-29T22:14:08Z",
+      "currentRepositoryHead": "c8189b90bf448c63654e084904f8499fe71d5ece",
       "materialScoutPublicationClaimedThisRun": false,
-      "status": "ENABLED; HEALTHY_NO_OP_ALLOWED; NEXT_MATERIAL_REPORT_MUST_DUAL_PUBLISH_AND_REMOTE_VERIFY"
+      "status": "ENABLED; HEALTHY_NO_OP_ALLOWED; NEXT_MATERIAL_SCOUT_REPORT_MUST_DUAL_PUBLISH_AND_VERIFY"
     },
     "minecraftVaultHtmlSync": {
-      "taskStatus": "ENABLED_PENDING_FIRST_RUN",
-      "lastRun": null,
+      "taskStatus": "ENABLED",
       "authoritativeSheet": {
-        "title": "Minecraft Recommendations Vault",
-        "driveId": "1lReleqgCnDXvdseHqVdU9qzTVHP5MuXMpUzJqxeCr_s"
+        "title": "Minecraft Recommendations Vault — Master Tracker",
+        "driveId": "1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg",
+        "modifiedTime": "2026-08-29T22:28:18.260Z",
+        "workbookBytes": 208302,
+        "workbookSha256": "610bc5f74ad4c842a0e7bd690aacf89f932e68a3b7cc016faa382591f3f6dd2a"
       },
+      "githubDestination": "Herbertofury/Minecraft-Mod-Vault main",
+      "githubWorkflowRepairCommit": "9934f61424d73f2c15fbd938c0733288a68c93db",
+      "stagedIdentityRepairCommit": "ec0e30fc70bc712d96470dd624859b4da018d945",
+      "publishedCommit": "c8189b90bf448c63654e084904f8499fe71d5ece",
+      "workflowRun": 33291849597,
       "expectedArtifact": "Minecraft Recommendations Vault - Explorer.html",
-      "githubDestination": "Herbertofury/Minecraft-Mod-Vault source tree",
-      "driveDestination": "canonical Minecraft vault project area",
-      "githubExactFilenameObservedAtAudit": false,
-      "status": "INITIAL_SYNC_PENDING_FIRST_RUN; NOT YET A FAILED PUBLICATION"
+      "artifactBytes": 374830,
+      "artifactSha256": "ea1a6b64bab80bc88521ec138f2e364fbeeebb1d2c2796aaebc520ece9c0f979",
+      "buildJsonBytes": 673,
+      "buildJsonSha256": "ccf6717a356cf57f14fb3ebd067fe609ca3a1f4cb92827037fbd4be68d6b1e67",
+      "githubStatus": "VERIFIED_CURRENT",
+      "driveDestination": "Minecraft Mod Vault folder 1nkX40V3f0psEQldm0WjAZH9o-gnAO-Ln",
+      "driveRawHtmlStatus": "PENDING_CONNECTOR_FILE_EGRESS",
+      "status": "GITHUB_REPAIRED_AND_VERIFIED; DRIVE_RAW_HTML_REMAINS_PENDING"
     },
     "scheduledTaskGithubPublishSupervisor": {
       "taskStatus": "ENABLED_INDEFINITE",
@@ -74,8 +82,7 @@
     },
     "redundantScheduleSupervisor": {
       "taskStatus": "ENABLED",
-      "lastRun": "2026-08-29T22:16:44Z",
-      "scope": "Safety net for the two permanent Minecraft tasks and primary supervisor"
+      "scope": "Safety net for current permanent Minecraft tasks and primary supervisor"
     }
   }
 }
