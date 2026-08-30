@@ -1,6 +1,6 @@
 {
   "schema": "scheduled-task-supervisor.state/19",
-  "updatedAt": "2026-08-30T08:34:00Z",
+  "updatedAt": "2026-08-30T08:36:00Z",
   "currentTaskCount": 8,
   "enabledCurrentTaskCount": 8,
   "pausedIncompleteCurrentTaskCount": 0,
@@ -25,7 +25,7 @@
     {
       "area": "Minecraft Vault Explorer Drive-to-GitHub recovery",
       "result": "OVERDUE_CURRENT_EXPLORER_PUBLISHED_AND_REMOTE_VERIFIED",
-      "detail": "Drive held the newer complete Explorer HTML at 1,070,247 bytes / SHA-256 c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077, backed by source ZIP SHA-256 447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461 and QA PASS. GitHub staging had stalled at an incomplete/corrupt 7-of-8 payload. The missing/corrupt staging was repaired atomically in commit 38856de1e537e1737bf7a9da1d40a5b7d37e26b6. Build Explorer From Canonical Sheet run 33301881264 completed success and published final commit 4320c290266289743efddee3b0a312c5ef8becfd. The workflow re-fetched origin/main and verified the exact HTML/build/builder bytes; an independent repository-tree re-read confirmed the final Explorer is 1,070,247 bytes."
+      "detail": "Drive held the newer complete Explorer HTML at 1,070,247 bytes / SHA-256 c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077, backed by source ZIP SHA-256 447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461 and QA PASS. GitHub staging had stalled at an incomplete/corrupt 7-of-8 payload. The missing/corrupt staging was repaired atomically in commit 38856de1e537e1737bf7a9da1d40a5b7d37e26b6. Build Explorer From Canonical Sheet run 33301881264 completed success and published final commit 4320ddeb655456c15e491417243d95d37956aaa7. The workflow re-fetched origin/main and verified the exact HTML/build/builder bytes; an independent repository-tree re-read confirmed the final Explorer is 1,070,247 bytes."
     },
     {
       "area": "GameSync Performance publication audit",
@@ -61,7 +61,7 @@
       "qa": "PASS",
       "stagingRepairCommit": "38856de1e537e1737bf7a9da1d40a5b7d37e26b6",
       "workflowRun": 33301881264,
-      "publishedCommit": "4320c290266289743efddee3b0a312c5ef8becfd",
+      "publishedCommit": "4320ddeb655456c15e491417243d95d37956aaa7",
       "githubTree": "5357a0dd42d79bc652675a664a9c660d83548b92",
       "githubArtifactBytes": 1070247,
       "githubStatus": "VERIFIED_CURRENT"
