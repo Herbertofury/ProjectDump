@@ -1,26 +1,31 @@
 {
-  "schema": "scheduled-task-supervisor.state/22",
-  "updatedAt": "2026-08-30T11:34:00Z",
+  "schema": "scheduled-task-supervisor.state/23",
+  "updatedAt": "2026-08-30T13:42:00Z",
   "currentTaskCount": 3,
   "enabledCurrentTaskCount": 3,
   "pausedIncompleteCurrentTaskCount": 0,
   "completedCurrentTaskCount": 0,
   "currentTaskSet": [
-    "Minecraft Vault HTML Sync",
     "Redundant Schedule Supervisor",
+    "Minecraft Vault HTML Sync",
     "Scheduled Task + GitHub Publish Supervisor"
   ],
-  "scopePolicy": "Only tasks present as current/live in the scheduler are authoritative. Non-current/deleted historical tasks and their obligations are excluded unless the user explicitly recreates them.",
+  "scopePolicy": "Only tasks present as current/live in the scheduler are authoritative. User-deleted/non-current tasks and their obligations are excluded unless the user explicitly recreates them.",
   "materialChangesThisRun": [
     {
-      "area": "Current task inventory",
-      "result": "DURABLE_LEDGER_PRUNED_TO_THREE_CURRENT_TASKS",
-      "detail": "The live scheduler currently contains three current tasks. The prior durable supervisor ledger overstated the current inventory. It has been corrected to the three live tasks without recreating, re-enabling, referencing as obligations, or inferring work from non-current tasks. All three current tasks are enabled and no incomplete current task is paused."
+      "area": "Current task health",
+      "result": "ALL_THREE_CURRENT_TASKS_ENABLED",
+      "detail": "The live scheduler contains three current tasks. All three are enabled and no incomplete current task is paused or disabled."
     },
     {
-      "area": "Minecraft Recommendations Vault publication audit",
-      "result": "GITHUB_AND_DRIVE_EXPLORER_CURRENT_NO_REBUILD_REQUIRED",
-      "detail": "The canonical source Sheet remains unchanged at modifiedTime 2026-08-29T22:28:18.260Z. The canonical Drive Explorer remains 1,070,247 bytes. GitHub main independently lists Minecraft Recommendations Vault - Explorer.html at the same 1,070,247 bytes, and the current HTML embeds the same canonical source ID, modifiedTime, source workbook SHA-256, and normalized dataset SHA-256. No newer logical source revision or current publication debt was found."
+      "area": "Minecraft Recommendations Vault Explorer HTML",
+      "result": "HTML_PUBLICATION_REMAINS_VERIFIED_CURRENT",
+      "detail": "The canonical Explorer HTML remains reconciled on Google Drive and GitHub at 1,070,247 bytes with SHA-256 c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077. No newer canonical Sheet revision was found that requires a rebuild."
+    },
+    {
+      "area": "Minecraft Recommendations Vault reproducible source package",
+      "result": "GITHUB_PUBLICATION_DEBT_IDENTIFIED_AND_RECOVERY_PATHS_EXHAUSTED_WITH_CURRENT_AUTHORITY",
+      "detail": "The complete reproducible source package exists on connected Google Drive as Minecraft Recommendations Vault - Explorer Source.zip, Drive file 1vRty6Q7cE7ImM3PUDe4fqXmh2zGXOHLD, exactly 596,027 bytes with SHA-256 447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461 and valid ZIP integrity. The expected GitHub root artifact is still missing. Existing large base64 staging is not a viable publication path because connected GitHub file-content writes clamp large payloads, leaving incomplete staging. A safer small-chunk staging path was partially exercised but is not itself publication. A direct GitHub Actions Drive-to-GitHub recovery workflow was added and triggered with exact byte/hash/ZIP verification and remote round-trip verification, but the public runner could not retrieve the private Drive object, so no root ZIP was published. The connected Drive tool exposes no sharing/permission action and the connected GitHub tool exposes no direct binary upload from the mounted Drive file. The publication debt remains open; no incomplete or failed artifact has been promoted."
     }
   ],
   "health": {
@@ -29,29 +34,40 @@
     "enabledCurrentTaskCount": 3,
     "incompletePausedCurrentTasks": 0,
     "completedCurrentTasks": 0,
-    "userEscalationRequired": false,
-    "remainingPublicationDebt": "NONE_FOUND_FOR_CURRENT_TASK_SET"
+    "userEscalationRequired": true,
+    "userEscalationAction": "Make Google Drive file 1vRty6Q7cE7ImM3PUDe4fqXmh2zGXOHLD (Minecraft Recommendations Vault - Explorer Source.zip) accessible to Anyone with the link as Viewer so the existing GitHub recovery workflow can download, verify, publish, and round-trip verify the exact artifact.",
+    "remainingPublicationDebt": "MINECRAFT_VAULT_EXPLORER_SOURCE_ZIP_MISSING_ON_GITHUB"
   },
   "publicationLedger": {
-    "minecraftVaultExplorer": {
+    "minecraftVaultExplorerHtml": {
       "governingTask": "Minecraft Vault HTML Sync",
       "taskStatus": "ENABLED",
       "canonicalRepository": "Herbertofury/Minecraft-Mod-Vault",
       "githubPath": "Minecraft Recommendations Vault - Explorer.html",
       "driveHtmlId": "144ibWQ8XUA3L6Xp_d8Nt_aMs-LiSC2hq",
-      "driveHtmlBytes": 1070247,
+      "artifactBytes": 1070247,
       "artifactSha256": "c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077",
       "sourceWorkbookId": "1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg",
       "sourceModifiedTime": "2026-08-29T22:28:18.260Z",
-      "sourceWorkbookSha256": "5b8b09fd9d87a4e411f5a00f6321b06c5e17b5b11b2326dc259e74136ed5bd7d",
-      "normalizedDatasetSha256": "cbcd35aab726978e654ef52e8cbac068b8d5250196cca3e828b4b4ee24f59910",
-      "publishedCommit": "4320ddeb655456c15e491417243d95d37956aaa7",
       "githubStatus": "VERIFIED_CURRENT",
       "driveStatus": "VERIFIED_CURRENT"
     },
+    "minecraftVaultExplorerSourceZip": {
+      "governingTask": "Minecraft Vault HTML Sync",
+      "canonicalRepository": "Herbertofury/Minecraft-Mod-Vault",
+      "githubPath": "Minecraft Recommendations Vault - Explorer Source.zip",
+      "driveFileId": "1vRty6Q7cE7ImM3PUDe4fqXmh2zGXOHLD",
+      "artifactBytes": 596027,
+      "artifactSha256": "447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461",
+      "driveStatus": "VERIFIED_COMPLETE",
+      "githubStatus": "MISSING",
+      "recoveryWorkflow": ".github/workflows/publish-explorer-source-from-drive.yml",
+      "recoveryRun": 33315033835,
+      "recoveryResult": "FAILED_BEFORE_PUBLICATION; PRIVATE_DRIVE_OBJECT_NOT_AVAILABLE_TO_PUBLIC_RUNNER",
+      "status": "OPEN_PUBLICATION_DEBT_REQUIRING_ONE_USER_PERMISSION_ACTION"
+    },
     "redundantScheduleSupervisor": {
       "taskStatus": "ENABLED",
-      "lastObservedRun": "2026-08-30T11:20:01.476661Z",
       "status": "HEALTHY_REDUNDANT_SAFETY_NET"
     },
     "scheduledTaskGithubPublishSupervisor": {
