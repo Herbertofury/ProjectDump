@@ -1,6 +1,6 @@
 {
-  "schema": "scheduled-task-supervisor.state/23",
-  "updatedAt": "2026-08-30T13:42:00Z",
+  "schema": "scheduled-task-supervisor.state/24",
+  "updatedAt": "2026-08-30T14:20:00Z",
   "currentTaskCount": 3,
   "enabledCurrentTaskCount": 3,
   "pausedIncompleteCurrentTaskCount": 0,
@@ -10,22 +10,22 @@
     "Minecraft Vault HTML Sync",
     "Scheduled Task + GitHub Publish Supervisor"
   ],
-  "scopePolicy": "Only tasks present as current/live in the scheduler are authoritative. User-deleted/non-current tasks and their obligations are excluded unless the user explicitly recreates them.",
+  "scopePolicy": "Only tasks present as enabled/current in the live scheduler are authoritative. Disabled/deleted historical tasks and their obligations remain out of scope unless explicitly recreated by the user.",
   "materialChangesThisRun": [
     {
       "area": "Current task health",
       "result": "ALL_THREE_CURRENT_TASKS_ENABLED",
-      "detail": "The live scheduler contains three current tasks. All three are enabled and no incomplete current task is paused or disabled."
+      "detail": "The live scheduler has three current tasks and all three remain enabled; no incomplete current task is paused."
     },
     {
-      "area": "Minecraft Recommendations Vault Explorer HTML",
-      "result": "HTML_PUBLICATION_REMAINS_VERIFIED_CURRENT",
-      "detail": "The canonical Explorer HTML remains reconciled on Google Drive and GitHub at 1,070,247 bytes with SHA-256 c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077. No newer canonical Sheet revision was found that requires a rebuild."
+      "area": "Explorer source-package identity",
+      "result": "STALE_HASH_CLAIM_CORRECTED",
+      "detail": "The connected Drive source package was freshly fetched and independently hashed at 596,027 bytes / SHA-256 447a8a54d3976e9d41c3028504da74a1ebfc86310a7b03bed52ffc2d75ee58bc. Earlier supervisor/workflow state incorrectly carried SHA-256 447a6438... and is superseded. ZIP integrity is valid."
     },
     {
-      "area": "Minecraft Recommendations Vault reproducible source package",
-      "result": "GITHUB_PUBLICATION_DEBT_IDENTIFIED_AND_RECOVERY_PATHS_EXHAUSTED_WITH_CURRENT_AUTHORITY",
-      "detail": "The complete reproducible source package exists on connected Google Drive as Minecraft Recommendations Vault - Explorer Source.zip, Drive file 1vRty6Q7cE7ImM3PUDe4fqXmh2zGXOHLD, exactly 596,027 bytes with SHA-256 447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461 and valid ZIP integrity. The expected GitHub root artifact is still missing. Existing large base64 staging is not a viable publication path because connected GitHub file-content writes clamp large payloads, leaving incomplete staging. A safer small-chunk staging path was partially exercised but is not itself publication. A direct GitHub Actions Drive-to-GitHub recovery workflow was added and triggered with exact byte/hash/ZIP verification and remote round-trip verification, but the public runner could not retrieve the private Drive object, so no root ZIP was published. The connected Drive tool exposes no sharing/permission action and the connected GitHub tool exposes no direct binary upload from the mounted Drive file. The publication debt remains open; no incomplete or failed artifact has been promoted."
+      "area": "GitHub publication recovery",
+      "result": "VERIFICATION_WORKFLOWS_REPAIRED_AND_AUTONOMOUS_STAGING_PLAN_PERSISTED",
+      "detail": "Both source-package publication workflows were corrected to the freshly verified Drive SHA-256. The staging publisher fix landed as Minecraft-Mod-Vault commit 00c1c739be5101e2914427636dd5c234692e8922 and the direct Drive recovery verifier fix as edc012c1e467dee22ff5604375e97908b4c0d0d6. A PROGRESS.json checkpoint was added in commit c770215302438a851dc3d0435b5c914bda7cc661 with the exact 794,704-character base64 transport identity (SHA-256 1ccb9e6752b3bec7421be71f70caf17df5149dc914ca4c426ad73516fa92c8ae), safe 19,000-character chunk size, target 42 parts, and explicit instruction not to arm READY.json until every part verifies. The eight legacy staged parts are marked invalid for the current artifact and will be replaced incrementally by future supervisor runs rather than requiring a user permission change."
     }
   ],
   "health": {
@@ -34,9 +34,9 @@
     "enabledCurrentTaskCount": 3,
     "incompletePausedCurrentTasks": 0,
     "completedCurrentTasks": 0,
-    "userEscalationRequired": true,
-    "userEscalationAction": "Make Google Drive file 1vRty6Q7cE7ImM3PUDe4fqXmh2zGXOHLD (Minecraft Recommendations Vault - Explorer Source.zip) accessible to Anyone with the link as Viewer so the existing GitHub recovery workflow can download, verify, publish, and round-trip verify the exact artifact.",
-    "remainingPublicationDebt": "MINECRAFT_VAULT_EXPLORER_SOURCE_ZIP_MISSING_ON_GITHUB"
+    "userEscalationRequired": false,
+    "userEscalationAction": null,
+    "remainingPublicationDebt": "MINECRAFT_VAULT_EXPLORER_SOURCE_ZIP_MISSING_ON_GITHUB; AUTONOMOUS_SMALL_CHUNK_RECOVERY_IN_PROGRESS"
   },
   "publicationLedger": {
     "minecraftVaultExplorerHtml": {
@@ -58,13 +58,18 @@
       "githubPath": "Minecraft Recommendations Vault - Explorer Source.zip",
       "driveFileId": "1vRty6Q7cE7ImM3PUDe4fqXmh2zGXOHLD",
       "artifactBytes": 596027,
-      "artifactSha256": "447a64380fc71e50076b03da52f4c7a5357eaae50943bc28cc597d5f86c97461",
+      "artifactSha256": "447a8a54d3976e9d41c3028504da74a1ebfc86310a7b03bed52ffc2d75ee58bc",
+      "artifactBase64Bytes": 794704,
+      "artifactBase64Sha256": "1ccb9e6752b3bec7421be71f70caf17df5149dc914ca4c426ad73516fa92c8ae",
       "driveStatus": "VERIFIED_COMPLETE",
       "githubStatus": "MISSING",
-      "recoveryWorkflow": ".github/workflows/publish-explorer-source-from-drive.yml",
-      "recoveryRun": 33315033835,
-      "recoveryResult": "FAILED_BEFORE_PUBLICATION; PRIVATE_DRIVE_OBJECT_NOT_AVAILABLE_TO_PUBLIC_RUNNER",
-      "status": "OPEN_PUBLICATION_DEBT_REQUIRING_ONE_USER_PERMISSION_ACTION"
+      "directRecoveryWorkflow": ".github/workflows/publish-explorer-source-from-drive.yml",
+      "stagingRecoveryWorkflow": ".github/workflows/publish-recommendations-explorer-source-package.yml",
+      "progressCheckpoint": ".github/mrv-explorer-source-staging/PROGRESS.json",
+      "transportChunkChars": 19000,
+      "targetPartCount": 42,
+      "verifiedCurrentParts": 0,
+      "status": "OPEN_PUBLICATION_DEBT_AUTONOMOUS_RECOVERY_IN_PROGRESS"
     },
     "redundantScheduleSupervisor": {
       "taskStatus": "ENABLED",
