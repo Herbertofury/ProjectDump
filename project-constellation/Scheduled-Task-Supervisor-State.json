@@ -1,12 +1,11 @@
 {
-  "schema": "scheduled-task-supervisor.state/20",
-  "updatedAt": "2026-08-30T09:19:34Z",
-  "currentTaskCount": 5,
-  "enabledCurrentTaskCount": 5,
+  "schema": "scheduled-task-supervisor.state/21",
+  "updatedAt": "2026-08-30T10:20:00Z",
+  "currentTaskCount": 4,
+  "enabledCurrentTaskCount": 4,
   "pausedIncompleteCurrentTaskCount": 0,
   "completedCurrentTaskCount": 0,
   "currentTaskSet": [
-    "JetSetCraft Head Compat",
     "Track New Minecraft Mods",
     "Minecraft Vault HTML Sync",
     "Redundant Schedule Supervisor",
@@ -16,34 +15,19 @@
   "materialChangesThisRun": [
     {
       "area": "Current task inventory",
-      "result": "DURABLE_LEDGER_RECONCILED_TO_FIVE_CURRENT_TASKS",
-      "detail": "The durable supervisor checkpoint still contained historical obligations that are no longer in the current live task set. They were removed from the active ledger without recreating or re-enabling them. All five current tasks are enabled and no incomplete current task is paused."
+      "result": "DURABLE_LEDGER_PRUNED_TO_FOUR_CURRENT_TASKS",
+      "detail": "The live scheduler now contains four current tasks. The durable ledger was pruned to match that live inventory without recreating, re-enabling, or inferring obligations from non-current tasks. All four current tasks are enabled and no incomplete current task is paused."
     },
     {
       "area": "Minecraft Recommendations Vault publication audit",
-      "result": "GITHUB_AND_DRIVE_EXPLORER_REMAIN_VERIFIED_CURRENT",
-      "detail": "The canonical Drive Explorer remains file 144ibWQ8XUA3L6Xp_d8Nt_aMs-LiSC2hq at the previously verified 1,070,247 bytes / SHA-256 c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077. GitHub main independently re-read the real self-contained Explorer and confirms the same canonical source Drive ID, source modifiedTime 2026-08-29T22:28:18.260Z, raw export SHA-256 5b8b09fd9d87a4e411f5a00f6321b06c5e17b5b11b2326dc259e74136ed5bd7d, normalized dataset SHA-256 cbcd35aab726978e654ef52e8cbac068b8d5250196cca3e828b4b4ee24f59910, 272 items, 587 source rows, and 34 leaders. Final verified publish commit remains 4320ddeb655456c15e491417243d95d37956aaa7."
-    },
-    {
-      "area": "Track New Minecraft Mods",
-      "result": "HEALTHY_NO_MATERIAL_PUBLICATION_DELTA",
-      "detail": "The current recurring scout is enabled. Its latest run occurred after the canonical recommendation Sheet's recorded source modifiedTime, and no newer material tracker publication or newer canonical Sheet logical revision was found. No GitHub churn was fabricated."
-    },
-    {
-      "area": "JetSetCraft Head Compat",
-      "result": "ENABLED_FIRST_CURRENT_RUN_PENDING_NO_PUBLICATION_DEBT",
-      "detail": "The current compatibility task is enabled and has not yet executed its first scheduled run. Existing JetSetCraft GitHub and Drive continuity predates this task; no newer Drive-only head-compat or Boombox publishable artifact was found, so there is no current publication claim to repair before its first run."
-    },
-    {
-      "area": "Supervisor redundancy",
-      "result": "BOTH_CURRENT_SUPERVISORS_ENABLED",
-      "detail": "The primary supervisor and redundant supervisor are both present in the current live set and enabled. The redundant supervisor completed a recent health pass without creating a publication debt."
+      "result": "GITHUB_AND_DRIVE_EXPLORER_INDEPENDENTLY_VERIFIED_CURRENT",
+      "detail": "The canonical Drive Explorer was downloaded and independently hashed at 1,070,247 bytes / SHA-256 c03e33ceb2728b58fe47e81e63f6921ac8c576e2246dc9ba2cad8ce90df50077. GitHub main independently reports the same 1,070,247-byte Explorer and current build metadata records the same artifact SHA-256, canonical source Drive ID, source modifiedTime, source workbook hash, normalized dataset hash, row/item/leader counts, and verified publish commit 4320ddeb655456c15e491417243d95d37956aaa7. No newer canonical Sheet revision was found, so no rebuild or publication churn is required."
     }
   ],
   "health": {
     "currentScheduledTasks": "ALL_CURRENT_TASKS_ENABLED",
-    "currentTaskCount": 5,
-    "enabledCurrentTaskCount": 5,
+    "currentTaskCount": 4,
+    "enabledCurrentTaskCount": 4,
     "incompletePausedCurrentTasks": 0,
     "completedCurrentTasks": 0,
     "userEscalationRequired": false,
@@ -63,20 +47,14 @@
       "sourceWorkbookSha256": "5b8b09fd9d87a4e411f5a00f6321b06c5e17b5b11b2326dc259e74136ed5bd7d",
       "normalizedDatasetSha256": "cbcd35aab726978e654ef52e8cbac068b8d5250196cca3e828b4b4ee24f59910",
       "publishedCommit": "4320ddeb655456c15e491417243d95d37956aaa7",
-      "githubStatus": "VERIFIED_CURRENT"
+      "githubStatus": "VERIFIED_CURRENT",
+      "driveStatus": "VERIFIED_CURRENT"
     },
     "trackNewMinecraftMods": {
       "taskStatus": "ENABLED",
       "canonicalRepository": "Herbertofury/Minecraft-Mod-Vault",
       "canonicalSheetId": "1N5rGN1E6jk3LMcPLNoRVWi3-8QmFtOikBguvoCaAMMg",
       "status": "HEALTHY_NO_MATERIAL_DELTA"
-    },
-    "jetSetCraftHeadCompat": {
-      "taskStatus": "ENABLED",
-      "canonicalRepository": "Herbertofury/JetSetCraft",
-      "latestObservedMainCommit": "94d34b9943055364dde33ecbbcff85e25eaeda74",
-      "driveAtlasId": "1XMz9w0BZexT9WhU66WmGQeaBsbPxuPYoqkZ3L0AVf68",
-      "status": "FIRST_RUN_PENDING_NO_CURRENT_PUBLICATION_DEBT"
     },
     "redundantScheduleSupervisor": {
       "taskStatus": "ENABLED",
