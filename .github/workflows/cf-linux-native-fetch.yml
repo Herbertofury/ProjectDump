@@ -1,0 +1,37 @@
+name: CurseForge Linux Native Fetch
+
+on:
+  push:
+    branches:
+      - cf-linux-native-verify-20260903
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fetch official CurseForge Linux package
+        run: |
+          set -euxo pipefail
+          curl -fL --retry 3 --retry-all-errors \
+            https://curseforge.overwolf.com/downloads/curseforge-latest-linux.deb \
+            -o curseforge-latest-linux.deb
+          dpkg-deb --show curseforge-latest-linux.deb > curseforge-package.txt
+          dpkg-deb --showformat='Package: ${Package}\nVersion: ${Version}\nArchitecture: ${Architecture}\nInstalled-Size: ${Installed-Size}\n' \
+            --show curseforge-latest-linux.deb >> curseforge-package.txt
+          sha256sum curseforge-latest-linux.deb | tee curseforge-latest-linux.deb.sha256
+          stat -c 'Bytes: %s' curseforge-latest-linux.deb >> curseforge-package.txt
+
+      - name: Upload exact package
+        uses: actions/upload-artifact@v4
+        with:
+          name: curseforge-linux-native
+          path: |
+            curseforge-latest-linux.deb
+            curseforge-latest-linux.deb.sha256
+            curseforge-package.txt
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
