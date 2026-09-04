@@ -1,0 +1,32 @@
+name: CurseForge Linux Runtime Fixtures
+
+on:
+  push:
+    branches:
+      - cf-linux-native-verify-20260903
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Fetch official CurseForge startup overrides
+        run: |
+          set -euxo pipefail
+          curl -fL --retry 3 --retry-all-errors \
+            https://curseforge.overwolf.com/downloads/client-overrides-v2.json \
+            -o client-overrides-v2.json
+          sha256sum client-overrides-v2.json | tee client-overrides-v2.json.sha256
+          python3 -m json.tool client-overrides-v2.json >/dev/null
+      - name: Upload startup fixture
+        uses: actions/upload-artifact@v4
+        with:
+          name: curseforge-linux-runtime-fixtures
+          path: |
+            client-overrides-v2.json
+            client-overrides-v2.json.sha256
+          compression-level: 0
+          if-no-files-found: error
+          retention-days: 1
