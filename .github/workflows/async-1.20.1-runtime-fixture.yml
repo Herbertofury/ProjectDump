@@ -24,13 +24,6 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Vulkan runtime
-        shell: bash
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools
-          vulkaninfo --summary | tee vulkaninfo-summary.txt
-
       - name: Harden dense-pair fixture without rebuilding the mod
         shell: bash
         run: |
@@ -47,7 +40,7 @@ jobs:
           t = t.replace(old, new, 1)
 
           old = '192 fully-overlapping cows have 18,336 true pairs,'
-          new = '256 fully-overlapping cows have 32,640 true pairs,'
+          new = '256 initially-overlapping cows provide a dense live verification set,'
           if t.count(old) != 1:
               raise SystemExit('fixture population comment drifted')
           t = t.replace(old, new, 1)
@@ -58,10 +51,27 @@ jobs:
               raise SystemExit('fixture summon count drifted')
           t = t.replace(old, new, 1)
 
+          # Pair-capacity growth is adaptive optimization telemetry, not a
+          # correctness precondition. Waiting for it before /async gpu test hid
+          # the actual exact/GPU pair counts and prevented fallback/save/restart
+          # acceptance from running when a live batch simply fit in 16,384 pairs.
+          capacity_wait = '            wait_for("Vulkan broad-phase learned pair capacity", 90)\n'
+          if t.count(capacity_wait) != 2:
+              raise SystemExit(f'expected two capacity waits, found {t.count(capacity_wait)}')
+          t = t.replace(capacity_wait, '')
+
           p.write_text(t, encoding='utf-8')
           PY
           grep -F 'gamerule maxEntityCramming 0' minecraft/async-1.20.1-ultimate/runtime_server_qa.py
           grep -F 'for _ in range(256):' minecraft/async-1.20.1-ultimate/runtime_server_qa.py
+          ! grep -F 'wait_for("Vulkan broad-phase learned pair capacity"' minecraft/async-1.20.1-ultimate/runtime_server_qa.py
+
+      - name: Install Vulkan runtime
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools
+          vulkaninfo --summary | tee vulkaninfo-summary.txt
 
       - name: Download exact already-built candidate
         shell: bash
@@ -106,17 +116,17 @@ jobs:
           motd=HariMultiThread Runtime Fixture Diagnostic
           EOF
 
-      - name: Run exact packaged JAR through hardened runtime gate
+      - name: Run exact packaged JAR through full correctness gate
         shell: bash
         run: |
           python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
             qa-server evidence/runtime
 
-      - name: Summarize decisive markers
+      - name: Summarize decisive markers and live pair counts
         if: always()
         shell: bash
         run: |
-          grep -Eh 'Compile-checked Vulkan collision backend initialized|Vulkan broad-phase learned pair capacity|Vulkan push broad-phase sustained|Live GPU Verification PASS|Vanilla push replay fallback is active|HMT_QA_RESTART_ENTITIES_PRESENT|packaged Forge dense-pair' \
+          grep -Eh 'Compile-checked Vulkan collision backend initialized|Vulkan broad-phase learned pair capacity|Vulkan push broad-phase sustained|Live GPU Verification PASS|Exact pairs:|GPU candidates:|Conservative extras:|Vanilla push replay fallback is active|HMT_QA_RESTART_ENTITIES_PRESENT|packaged Forge dense-pair' \
             evidence/runtime/packaged-server-*.log 2>/dev/null || true
           mkdir -p evidence/runtime
           cp reused-jar.sha256 evidence/runtime/ 2>/dev/null || true
