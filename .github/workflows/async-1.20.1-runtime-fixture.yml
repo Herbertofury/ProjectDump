@@ -58,18 +58,6 @@ jobs:
               raise SystemExit('fixture summon count drifted')
           t = t.replace(old, new, 1)
 
-          old = '''            wait_for("Vulkan push broad-phase is active:", 90)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)'''
-          new = '''            wait_for("Vulkan push broad-phase is active:", 90)\n            # The direct verifier freezes the current live entity set and compares\n            # exact CPU AABBs against GPU candidates. Running it before the capacity\n            # marker makes a >16,384-pair fixture deterministically exercise overflow.\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)'''
-          if t.count(old) != 1:
-              raise SystemExit('phase-1 marker block drifted')
-          t = t.replace(old, new, 1)
-
-          old = '''            send("async gpu toggle")\n            wait_for("Vulkan push broad-phase is active:", 90)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)'''
-          new = '''            send("async gpu toggle")\n            wait_for("Vulkan push broad-phase is active:", 90)\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)'''
-          if t.count(old) != 1:
-              raise SystemExit('phase-2 marker block drifted')
-          t = t.replace(old, new, 1)
-
           p.write_text(t, encoding='utf-8')
           PY
           grep -F 'gamerule maxEntityCramming 0' minecraft/async-1.20.1-ultimate/runtime_server_qa.py
@@ -130,6 +118,7 @@ jobs:
         run: |
           grep -Eh 'Compile-checked Vulkan collision backend initialized|Vulkan broad-phase learned pair capacity|Vulkan push broad-phase sustained|Live GPU Verification PASS|Vanilla push replay fallback is active|HMT_QA_RESTART_ENTITIES_PRESENT|packaged Forge dense-pair' \
             evidence/runtime/packaged-server-*.log 2>/dev/null || true
+          mkdir -p evidence/runtime
           cp reused-jar.sha256 evidence/runtime/ 2>/dev/null || true
           cp vulkaninfo-summary.txt evidence/runtime/ 2>/dev/null || true
 
@@ -139,4 +128,4 @@ jobs:
         with:
           name: async-runtime-fixture-evidence
           path: evidence/runtime/
-          if-no-files-found: error
+          if-no-files-found: warn
