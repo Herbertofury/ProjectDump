@@ -82,7 +82,9 @@ jobs:
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkDeviceManager.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkBufferManager.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkComputePipeline.java
-          grep -F "include('vulkan-backend')" upstream/settings.gradle
+          ! test -e upstream/vulkan-backend/build.gradle
+          grep -F 'sourceSets {' upstream/forge/build.gradle
+          grep -F 'harimtVulkanBackend' upstream/forge/build.gradle
           grep -F 'compile-checked isolated LWJGL' upstream/common/src/main/java/com/axalotl/async/common/gpu/GpuEntityModule.java
           ! grep -R -F 'Class.forName("org.lwjgl.vulkan' upstream/common/src/main/java
 
@@ -105,12 +107,12 @@ jobs:
       - name: Compile backend and build Forge 1.20.1 release
         shell: bash
         working-directory: upstream
-        run: ./gradlew --no-daemon clean :vulkan-backend:jar :forge:build --stacktrace
+        run: ./gradlew --no-daemon clean :forge:harimtVulkanBackendJar :forge:build --stacktrace
 
       - name: Verify release JAR and isolated backend contents
         shell: bash
         run: |
-          mapfile -t jars < <(find upstream/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' | sort)
+          mapfile -t jars < <(find upstream/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort)
           test "${#jars[@]}" -ge 1
           jarfile="${jars[0]}"
           echo "$jarfile" > RELEASE_JAR_PATH.txt
