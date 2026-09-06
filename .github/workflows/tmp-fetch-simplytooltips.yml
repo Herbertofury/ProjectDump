@@ -1,0 +1,44 @@
+name: Temporary SimplyTooltips transport
+
+on:
+  push:
+    branches:
+      - tmp/simplytooltips-fetch-20260906
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Fetch exact CurseForge file 8715158
+        shell: bash
+        run: |
+          set -euxo pipefail
+          OUT='SimplyTooltips-forge-0.1.5-1.20.1.jar'
+          URL1='https://mediafilez.forgecdn.net/files/8715/158/SimplyTooltips-forge-0.1.5-1.20.1.jar'
+          URL2='https://www.curseforge.com/minecraft/mc-mods/simply-tooltips/download/8715158/file'
+          if ! curl -fL --retry 2 --connect-timeout 20 --max-time 180 "$URL1" -o "$OUT"; then
+            curl -fL --retry 2 --connect-timeout 20 --max-time 180 "$URL2" -o "$OUT"
+          fi
+          test -s "$OUT"
+          unzip -t "$OUT"
+          unzip -p "$OUT" META-INF/mods.toml > mods.toml
+          grep -E 'modId[[:space:]]*=[[:space:]]*"simplytooltips"' mods.toml
+          sha256sum "$OUT" | tee SHA256SUMS.txt
+          stat -c '%n %s bytes' "$OUT" | tee FILESIZE.txt
+
+      - name: Upload exact SimplyTooltips binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: simplytooltips-forge-0.1.5-1.20.1
+          path: |
+            SimplyTooltips-forge-0.1.5-1.20.1.jar
+            SHA256SUMS.txt
+            FILESIZE.txt
+            mods.toml
+          if-no-files-found: error
+          retention-days: 1
