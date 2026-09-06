@@ -59,6 +59,7 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
           python3 minecraft/async-1.20.1-ultimate/apply_platform.py upstream
           python3 minecraft/async-1.20.1-ultimate/apply_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lwjgl_runtime.py upstream
           git -C upstream diff --check
 
       - name: Verify removed unsafe source paths
@@ -78,6 +79,9 @@ jobs:
           grep -F 'isModLoaded("c2meforge")' upstream/common/src/main/java/com/axalotl/async/common/AsyncCommon.java
           grep -F 'waitWorld.getChunkSource().pollTask()' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           ! grep -F 'for (ServerLevel lvl : server.getAllLevels())' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          ! grep -F 'jarJar("org.lwjgl:lwjgl-vulkan' upstream/forge/build.gradle
+          grep -F 'harimtEmbeddedLwjgl' upstream/forge/build.gradle
+          grep -F 'VkRuntime.load(' upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkDeviceManager.java
 
       - name: Compile Vulkan broad-phase shader
         shell: bash
@@ -109,12 +113,21 @@ jobs:
           echo "$jarfile" > RELEASE_JAR_PATH.txt
           jar tf "$jarfile" | grep -Fx 'assets/async/shaders/collision_broadphase.comp.spv'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/GpuPushBatch.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/vulkan/VkRuntime.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/entity/LivingEntityPushMixin.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/accessor/LivingEntityPushInvoker.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/world/PalettedContainerMixin.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/spawn/SpawnStateMixin.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/server/ChunkMapTrackedEntityMixin.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/server/ServerChunkCacheMixin.class'
+          jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-3.3.1.jar'
+          jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-vulkan-3.3.1.jar'
+          jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-3.3.1-natives-linux.jar'
+          jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-3.3.1-natives-windows.jar'
+          if unzip -p "$jarfile" META-INF/jarjar/metadata.json 2>/dev/null | grep -Fq 'lwjgl-vulkan'; then
+            echo 'lwjgl-vulkan must not be exposed as a Forge JarJar module' >&2
+            exit 1
+          fi
           unzip -p "$jarfile" META-INF/mods.toml | grep -F 'GPL-3.0-only'
           unzip -p "$jarfile" META-INF/mods.toml | grep -F 'HariMultiThread Ultimate'
 
