@@ -1,0 +1,41 @@
+name: tmp-mobcharms-kotlinforforge
+
+on:
+  push:
+    branches:
+      - tmp/simplyswords-1.70.2-fetch-20260906
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch KotlinForForge 4.11.0
+        shell: bash
+        run: |
+          set -euo pipefail
+          name='kotlinforforge-4.11.0-all.jar'
+          urls=(
+            'https://mediafilez.forgecdn.net/files/5402/061/kotlinforforge-4.11.0-all.jar'
+            'https://edge.forgecdn.net/files/5402/061/kotlinforforge-4.11.0-all.jar'
+            'https://www.curseforge.com/api/v1/mods/351264/files/5402061/download'
+          )
+          ok=0
+          for url in "${urls[@]}"; do
+            rm -f "$name"
+            if curl -fL --retry 2 --retry-delay 2 --connect-timeout 20 --max-time 180 -A 'Mozilla/5.0' "$url" -o "$name" && unzip -tqq "$name"; then ok=1; break; fi
+          done
+          test "$ok" = 1
+          sha256sum "$name" | tee SHA256SUMS.txt
+          stat -c '%n %s bytes' "$name" | tee FILESIZE.txt
+          unzip -p "$name" META-INF/mods.toml > mods.toml || true
+      - name: Upload KotlinForForge
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlinforforge-4.11.0-all
+          path: |
+            kotlinforforge-4.11.0-all.jar
+            SHA256SUMS.txt
+            FILESIZE.txt
+            mods.toml
+          if-no-files-found: error
+          retention-days: 1
