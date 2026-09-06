@@ -62,6 +62,7 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/apply_lwjgl_runtime.py upstream
           python3 minecraft/async-1.20.1-ultimate/apply_backend_architecture.py \
             upstream minecraft/async-1.20.1-ultimate/backend-overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py upstream
           git -C upstream diff --check
 
       - name: Verify removed unsafe and legacy source paths
@@ -79,6 +80,8 @@ jobs:
           grep -F 'isModLoaded("c2meforge")' upstream/common/src/main/java/com/axalotl/async/common/AsyncCommon.java
           grep -F 'waitWorld.getChunkSource().pollTask()' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           ! grep -F 'for (ServerLevel lvl : server.getAllLevels())' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'SpawnChunkContext.runWith(chunk' upstream/common/src/main/java/com/axalotl/async/common/mixin/server/ServerChunkCacheMixin.java
+          grep -F 'spawn.NaturalSpawnerScheduledChunkMixin' upstream/common/src/main/resources/harimt.common.mixins.json
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkDeviceManager.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkBufferManager.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkComputePipeline.java
@@ -96,6 +99,7 @@ jobs:
           glslangValidator -V "$shader" -o "$spv"
           test -s "$spv"
           test "$(xxd -p -l 4 "$spv")" = "03022307"
+          grep -F 'bool laneActive = gid < uint(entityCount);' "$shader"
           grep -F 'binding = 8' "$shader"
 
       - name: Vulkan environment receipt
@@ -120,6 +124,8 @@ jobs:
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/GpuPushBatch.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/vulkan/VkRuntime.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/vulkan/VulkanCollisionBackend.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/spawn/SpawnChunkContext.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/spawn/NaturalSpawnerScheduledChunkMixin.class'
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar'
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-3.3.1.jar'
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-vulkan-3.3.1.jar'
