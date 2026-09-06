@@ -56,6 +56,7 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/apply_overlay.py \
             upstream minecraft/async-1.20.1-ultimate/overlay
           python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
           git -C upstream diff --check
 
       - name: Verify removed unsafe source paths
@@ -68,6 +69,9 @@ jobs:
           grep -F 'EnderDragon.class' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           grep -F 'availableProcessors() - 1' upstream/common/src/main/java/com/axalotl/async/common/config/AsyncConfig.java
           grep -F 'world.PalettedContainerMixin' upstream/common/src/main/resources/harimt.common.mixins.json
+          grep -F 'GpuPushBatch.clear();' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'mcThreadTracker.clear();' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'tickPool = null;' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
 
       - name: Compile Vulkan broad-phase shader
         shell: bash
