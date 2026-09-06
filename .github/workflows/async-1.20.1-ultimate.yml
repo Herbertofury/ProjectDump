@@ -85,8 +85,11 @@ jobs:
           grep -F 'isModLoaded("c2meforge")' upstream/common/src/main/java/com/axalotl/async/common/AsyncCommon.java
           grep -F 'waitWorld.getChunkSource().pollTask()' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           ! grep -F 'for (ServerLevel lvl : server.getAllLevels())' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
-          grep -F 'SpawnChunkContext.runWith(chunk' upstream/common/src/main/java/com/axalotl/async/common/mixin/server/ServerChunkCacheMixin.java
-          grep -F 'spawn.NaturalSpawnerScheduledChunkMixin' upstream/common/src/main/resources/harimt.common.mixins.json
+          grep -F 'harimt$spawnTasks.add(() -> NaturalSpawner.spawnForChunk(' upstream/common/src/main/java/com/axalotl/async/common/mixin/server/ServerChunkCacheMixin.java
+          ! grep -F 'SpawnChunkContext' upstream/common/src/main/java/com/axalotl/async/common/mixin/server/ServerChunkCacheMixin.java
+          ! grep -F 'spawn.NaturalSpawnerScheduledChunkMixin' upstream/common/src/main/resources/harimt.common.mixins.json
+          ! test -e upstream/common/src/main/java/com/axalotl/async/common/mixin/spawn/NaturalSpawnerScheduledChunkMixin.java
+          ! test -e upstream/common/src/main/java/com/axalotl/async/common/spawn/SpawnChunkContext.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkDeviceManager.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkBufferManager.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkComputePipeline.java
@@ -135,8 +138,14 @@ jobs:
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/entity/LivingEntityPushMixin.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/vulkan/VkRuntime.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/vulkan/VulkanCollisionBackend.class'
-          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/spawn/SpawnChunkContext.class'
-          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/spawn/NaturalSpawnerScheduledChunkMixin.class'
+          if jar tf "$jarfile" | grep -Fqx 'com/axalotl/async/common/spawn/SpawnChunkContext.class'; then
+            echo 'obsolete SpawnChunkContext must not be packaged on Forge 1.20.1' >&2
+            exit 1
+          fi
+          if jar tf "$jarfile" | grep -Fqx 'com/axalotl/async/common/mixin/spawn/NaturalSpawnerScheduledChunkMixin.class'; then
+            echo 'obsolete NaturalSpawnerScheduledChunkMixin must not be packaged on Forge 1.20.1' >&2
+            exit 1
+          fi
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar'
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-3.3.1.jar'
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-vulkan-3.3.1.jar'
