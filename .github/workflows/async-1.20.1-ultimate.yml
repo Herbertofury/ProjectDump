@@ -58,6 +58,7 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
           python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
           python3 minecraft/async-1.20.1-ultimate/apply_platform.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_interop.py upstream
           git -C upstream diff --check
 
       - name: Verify removed unsafe source paths
@@ -74,6 +75,9 @@ jobs:
           grep -F 'mcThreadTracker.clear();' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           grep -F 'tickPool = null;' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           grep -F 'forge_version=47.4.23' upstream/gradle.properties
+          grep -F 'isModLoaded("c2meforge")' upstream/common/src/main/java/com/axalotl/async/common/AsyncCommon.java
+          grep -F 'waitWorld.getChunkSource().pollTask()' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          ! grep -F 'for (ServerLevel lvl : server.getAllLevels())' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
 
       - name: Compile Vulkan broad-phase shader
         shell: bash
