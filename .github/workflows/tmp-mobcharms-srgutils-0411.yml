@@ -1,0 +1,50 @@
+name: tmp-mobcharms-srgutils-0411
+
+on:
+  push:
+    branches:
+      - tmp/simplyswords-1.70.2-fetch-20260906
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch exact Forge srgutils 0.4.11
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='net/minecraftforge/srgutils/0.4.11'
+          jar='srgutils-0.4.11.jar'
+          pom='srgutils-0.4.11.pom'
+          fetch_one() {
+            local name="$1"
+            local ok=0
+            for root in 'https://maven.minecraftforge.net' 'https://maven.creeperhost.net'; do
+              url="$root/$base/$name"
+              echo "Trying $url"
+              rm -f "$name"
+              if curl -fL --retry 2 --retry-delay 2 --connect-timeout 20 --max-time 120 -A 'Mozilla/5.0' "$url" -o "$name"; then
+                ok=1
+                break
+              fi
+            done
+            test "$ok" = 1
+          }
+          fetch_one "$jar"
+          fetch_one "$pom"
+          unzip -tqq "$jar"
+          grep -q '<artifactId>srgutils</artifactId>' "$pom"
+          grep -q '<version>0.4.11</version>' "$pom"
+          sha256sum "$jar" "$pom" | tee SHA256SUMS.txt
+          stat -c '%n %s bytes' "$jar" "$pom" | tee FILESIZE.txt
+      - name: Upload exact local Maven seed
+        uses: actions/upload-artifact@v4
+        with:
+          name: srgutils-0.4.11-maven-seed
+          path: |
+            srgutils-0.4.11.jar
+            srgutils-0.4.11.pom
+            SHA256SUMS.txt
+            FILESIZE.txt
+          if-no-files-found: error
+          retention-days: 1
