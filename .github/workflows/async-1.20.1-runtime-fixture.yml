@@ -1,0 +1,142 @@
+name: Async 1.20.1 Runtime Fixture Diagnostic
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-runtime-fixture]
+    paths: [.github/workflows/async-1.20.1-runtime-fixture.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  runtime-only:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact diagnostic source
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Vulkan runtime
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools
+          vulkaninfo --summary | tee vulkaninfo-summary.txt
+
+      - name: Harden dense-pair fixture without rebuilding the mod
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path('minecraft/async-1.20.1-ultimate/runtime_server_qa.py')
+          t = p.read_text(encoding='utf-8')
+
+          old = '            send("gamerule doMobSpawning false")\n            send("difficulty normal")'
+          new = '            send("gamerule doMobSpawning false")\n            send("gamerule maxEntityCramming 0")\n            send("difficulty normal")'
+          if t.count(old) != 1:
+              raise SystemExit('fixture gamerule insertion point drifted')
+          t = t.replace(old, new, 1)
+
+          old = '192 fully-overlapping cows have 18,336 true pairs,'
+          new = '256 fully-overlapping cows have 32,640 true pairs,'
+          if t.count(old) != 1:
+              raise SystemExit('fixture population comment drifted')
+          t = t.replace(old, new, 1)
+
+          old = '            for _ in range(192):'
+          new = '            for _ in range(256):'
+          if t.count(old) != 1:
+              raise SystemExit('fixture summon count drifted')
+          t = t.replace(old, new, 1)
+
+          old = '''            wait_for("Vulkan push broad-phase is active:", 90)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)'''
+          new = '''            wait_for("Vulkan push broad-phase is active:", 90)\n            # The direct verifier freezes the current live entity set and compares\n            # exact CPU AABBs against GPU candidates. Running it before the capacity\n            # marker makes a >16,384-pair fixture deterministically exercise overflow.\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)'''
+          if t.count(old) != 1:
+              raise SystemExit('phase-1 marker block drifted')
+          t = t.replace(old, new, 1)
+
+          old = '''            send("async gpu toggle")\n            wait_for("Vulkan push broad-phase is active:", 90)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)'''
+          new = '''            send("async gpu toggle")\n            wait_for("Vulkan push broad-phase is active:", 90)\n            send("async gpu test")\n            wait_for("Live GPU Verification PASS", 60)\n            wait_for("Vulkan broad-phase learned pair capacity", 90)\n            wait_for("Vulkan push broad-phase sustained: 10 consecutive verified batches completed", 90)'''
+          if t.count(old) != 1:
+              raise SystemExit('phase-2 marker block drifted')
+          t = t.replace(old, new, 1)
+
+          p.write_text(t, encoding='utf-8')
+          PY
+          grep -F 'gamerule maxEntityCramming 0' minecraft/async-1.20.1-ultimate/runtime_server_qa.py
+          grep -F 'for _ in range(256):' minecraft/async-1.20.1-ultimate/runtime_server_qa.py
+
+      - name: Download exact already-built candidate
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p reused
+          gh run download 34066031095 \
+            --repo Herbertofury/ProjectDump \
+            --name async-1.20.1-ultimate-release-candidate \
+            --dir reused
+          jarfile="$(find reused -type f -name 'HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1.jar' -print -quit)"
+          test -s "$jarfile"
+          echo "$jarfile" > REUSED_JAR_PATH.txt
+          sha256sum "$jarfile" | tee reused-jar.sha256
+          jar tf "$jarfile" | grep -Fx 'harimt.refmap.json'
+          unzip -p "$jarfile" META-INF/MANIFEST.MF | tr -d '\r' | grep -Fx 'MixinConfigs: harimt.common.mixins.json,harimt.forge.mixins.json'
+
+      - name: Install Forge 47.4.23 server
+        shell: bash
+        run: |
+          mkdir -p qa-server evidence/runtime
+          curl -fL --retry 3 \
+            'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar' \
+            -o forge-1.20.1-47.4.23-installer.jar
+          (
+            cd qa-server
+            java -jar ../forge-1.20.1-47.4.23-installer.jar --installServer \
+              > ../evidence/runtime/forge-server-install.log 2>&1
+          )
+          chmod +x qa-server/run.sh
+          mkdir -p qa-server/mods
+          cp "$(cat REUSED_JAR_PATH.txt)" qa-server/mods/HariMultiThread-Ultimate.jar
+          printf 'eula=true\n' > qa-server/eula.txt
+          cat > qa-server/server.properties <<'EOF'
+          online-mode=false
+          level-name=world
+          level-seed=8675309
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          motd=HariMultiThread Runtime Fixture Diagnostic
+          EOF
+
+      - name: Run exact packaged JAR through hardened runtime gate
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
+            qa-server evidence/runtime
+
+      - name: Summarize decisive markers
+        if: always()
+        shell: bash
+        run: |
+          grep -Eh 'Compile-checked Vulkan collision backend initialized|Vulkan broad-phase learned pair capacity|Vulkan push broad-phase sustained|Live GPU Verification PASS|Vanilla push replay fallback is active|HMT_QA_RESTART_ENTITIES_PRESENT|packaged Forge dense-pair' \
+            evidence/runtime/packaged-server-*.log 2>/dev/null || true
+          cp reused-jar.sha256 evidence/runtime/ 2>/dev/null || true
+          cp vulkaninfo-summary.txt evidence/runtime/ 2>/dev/null || true
+
+      - name: Upload runtime-only evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: async-runtime-fixture-evidence
+          path: evidence/runtime/
+          if-no-files-found: error
