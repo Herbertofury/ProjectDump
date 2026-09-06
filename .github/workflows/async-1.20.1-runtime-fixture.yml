@@ -1,4 +1,4 @@
-name: Async 1.20.1 Vulkan Backend Diagnostic
+name: Async 1.20.1 Vulkan Shader Probe
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   actions: read
 
 jobs:
-  backend-runtime:
+  shader-probe:
     runs-on: ubuntu-22.04
     timeout-minutes: 20
     steps:
@@ -24,11 +24,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Vulkan runtime
+      - name: Install Vulkan and shader tools
         shell: bash
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools zip unzip
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools glslang-tools spirv-tools zip unzip
           mkdir -p evidence/runtime
           vulkaninfo --summary | tee evidence/runtime/vulkaninfo-summary.txt
 
@@ -47,45 +47,70 @@ jobs:
           test -s "$base_jar"
           test -s "$source_zip"
           echo "$base_jar" > BASE_JAR_PATH.txt
-          echo "$source_zip" > SOURCE_ZIP_PATH.txt
           sha256sum "$base_jar" | tee evidence/runtime/base-parent-jar.sha256
           test "$(sha256sum "$base_jar" | awk '{print $1}')" = "e6e9a51cc7ba77553cdcc41d6ca1f2d69c408afa0110e857ba436d55e75fad55"
           unzip -q "$source_zip" -d patched-source
           test -s patched-source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
 
-      - name: Apply only the proven device-to-host synchronization delta
+      - name: Add required compute-to-host barrier to isolated backend
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
-
           p = Path('patched-source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java')
           t = p.read_text(encoding='utf-8')
           old = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
-          new = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n\n            // A fence proves execution completion, but shader writes still need\n            // a device->host availability dependency before mapped host reads.\n            VkMemoryBarrier.Buffer hostReadBarrier = VkMemoryBarrier.calloc(1, stack);\n            hostReadBarrier.get(0)\n                    .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER)\n                    .srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT)\n                    .dstAccessMask(VK_ACCESS_HOST_READ_BIT);\n            vkCmdPipelineBarrier(\n                    commandBuffer,\n                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,\n                    VK_PIPELINE_STAGE_HOST_BIT,\n                    0,\n                    hostReadBarrier,\n                    null,\n                    null);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
+          new = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n\n            VkMemoryBarrier.Buffer hostReadBarrier = VkMemoryBarrier.calloc(1, stack);\n            hostReadBarrier.get(0)\n                    .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER)\n                    .srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT)\n                    .dstAccessMask(VK_ACCESS_HOST_READ_BIT);\n            vkCmdPipelineBarrier(\n                    commandBuffer,\n                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,\n                    VK_PIPELINE_STAGE_HOST_BIT,\n                    0,\n                    hostReadBarrier,\n                    null,\n                    null);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
           if t.count(old) != 1:
               raise SystemExit(f'backend dispatch source drift: expected 1 marker, found {t.count(old)}')
           p.write_text(t.replace(old, new, 1), encoding='utf-8')
           PY
-          grep -F 'VK_PIPELINE_STAGE_HOST_BIT' patched-source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
-          grep -F 'VK_ACCESS_HOST_READ_BIT' patched-source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
 
-      - name: Rebuild only the isolated child backend and inject it into the proven parent JAR
+      - name: Compile conservative all-pairs probe shader
+        shell: bash
+        run: |
+          mkdir -p probe inject/assets/async/shaders
+          cat > probe/all_pairs.comp <<'EOF'
+          #version 450
+          layout(local_size_x = 64) in;
+          layout(push_constant) uniform PushConstants {
+              int entityCount;
+              int maxPairs;
+              float reservedFloat;
+              int reservedInt;
+          };
+          layout(std430, binding = 6) writeonly buffer PairsA { int pairsA[]; };
+          layout(std430, binding = 7) writeonly buffer PairsB { int pairsB[]; };
+          layout(std430, binding = 8) coherent buffer PairCount { int pairCounter; };
+          void main() {
+              uint gid = gl_GlobalInvocationID.x;
+              if (gid >= uint(entityCount)) return;
+              for (uint j = gid + 1u; j < uint(entityCount); ++j) {
+                  int slot = atomicAdd(pairCounter, 1);
+                  if (slot < maxPairs) {
+                      pairsA[slot] = int(gid);
+                      pairsB[slot] = int(j);
+                  }
+              }
+          }
+          EOF
+          glslangValidator -V probe/all_pairs.comp -o probe/all_pairs.comp.spv
+          spirv-val probe/all_pairs.comp.spv
+          test "$(xxd -p -l 4 probe/all_pairs.comp.spv)" = "03022307"
+          cp probe/all_pairs.comp.spv inject/assets/async/shaders/collision_broadphase.comp.spv
+          sha256sum probe/all_pairs.comp.spv | tee evidence/runtime/all-pairs-probe-shader.sha256
+
+      - name: Rebuild only child backend and inject backend plus probe shader
         shell: bash
         run: |
           base_jar="$(cat BASE_JAR_PATH.txt)"
           mkdir -p deps backend-classes inject/META-INF/harimt-libs
           unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-3.3.1.jar > deps/lwjgl-3.3.1.jar
           unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-vulkan-3.3.1.jar > deps/lwjgl-vulkan-3.3.1.jar
-          test -s deps/lwjgl-3.3.1.jar
-          test -s deps/lwjgl-vulkan-3.3.1.jar
-
           javac --release 17 \
             -cp "$base_jar:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar" \
             -d backend-classes \
             patched-source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
-
-          test -s backend-classes/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.class
           javap -classpath backend-classes -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend \
             > evidence/runtime/LwjglVulkanBackend.javap.txt
           grep -F 'vkCmdPipelineBarrier' evidence/runtime/LwjglVulkanBackend.javap.txt
@@ -98,14 +123,14 @@ jobs:
           jar cfm patched/harimt-vulkan-backend-3.3.1.jar backend-manifest.mf -C backend-classes .
           cp patched/harimt-vulkan-backend-3.3.1.jar inject/META-INF/harimt-libs/
 
-          patched_jar=patched/HariMultiThread-Ultimate-host-sync-diagnostic.jar
+          patched_jar=patched/HariMultiThread-Ultimate-all-pairs-probe.jar
           cp "$base_jar" "$patched_jar"
-          jar uf "$patched_jar" -C inject META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar
+          jar uf "$patched_jar" \
+            -C inject META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar \
+            -C inject assets/async/shaders/collision_broadphase.comp.spv
           echo "$patched_jar" > PATCHED_JAR_PATH.txt
-          unzip -p "$patched_jar" META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar \
-            > /tmp/embedded-backend.jar
-          javap -classpath /tmp/embedded-backend.jar -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend \
-            | grep -F 'vkCmdPipelineBarrier'
+          unzip -p "$patched_jar" assets/async/shaders/collision_broadphase.comp.spv > /tmp/probe.spv
+          cmp -s /tmp/probe.spv probe/all_pairs.comp.spv
           sha256sum patched/harimt-vulkan-backend-3.3.1.jar "$patched_jar" \
             | tee evidence/runtime/patched-backend-and-parent.sha256
 
@@ -131,30 +156,32 @@ jobs:
           spawn-protection=0
           view-distance=4
           simulation-distance=4
-          motd=HariMultiThread Vulkan Host Sync Diagnostic
+          motd=HariMultiThread Vulkan All-Pairs Probe
           EOF
 
-      - name: Run full packaged correctness gate against patched child backend
+      - name: Run full packaged correctness gate with all-pairs probe
         shell: bash
         run: |
           python3 -m py_compile minecraft/async-1.20.1-ultimate/runtime_server_qa.py
           python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
             qa-server evidence/runtime
 
-      - name: Summarize decisive Vulkan and restart evidence
+      - name: Summarize decisive probe evidence
         if: always()
         shell: bash
         run: |
           grep -Eh 'Compile-checked Vulkan collision backend initialized|Vulkan broad-phase learned pair capacity|Vulkan push broad-phase sustained|Live GPU Verification PASS|Exact pairs:|GPU candidates:|Conservative extras:|GPU VERIFICATION FAILED|Vanilla push replay fallback is active|HMT_QA_RESTART_ENTITIES_PRESENT|packaged Forge dense-pair' \
             evidence/runtime/packaged-server-*.log 2>/dev/null || true
 
-      - name: Upload backend/runtime evidence
+      - name: Upload probe/runtime evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: async-vulkan-host-sync-evidence
+          name: async-vulkan-all-pairs-probe-evidence
           path: |
             evidence/runtime/
+            probe/all_pairs.comp
+            probe/all_pairs.comp.spv
             patched/harimt-vulkan-backend-3.3.1.jar
-            patched/HariMultiThread-Ultimate-host-sync-diagnostic.jar
+            patched/HariMultiThread-Ultimate-all-pairs-probe.jar
           if-no-files-found: warn
