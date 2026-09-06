@@ -31,38 +31,92 @@ jobs:
           java-version: '17'
           cache: gradle
 
+      - name: Install shader compiler and Vulkan software runtime
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends glslang-tools mesa-vulkan-drivers vulkan-tools zip
+
       - name: Clean accidental upstream build state
         shell: bash
         run: |
           rm -rf upstream/**/bin upstream/**/build upstream/**/.gradle upstream/buildSrc/.gradle upstream/buildSrc/build || true
           chmod +x upstream/gradlew
 
-      - name: Record upstream identity
+      - name: Verify and record upstream identity
         shell: bash
         working-directory: upstream
         run: |
           test "$(git rev-parse HEAD)" = "f381611c2d71a85192e2028f9e30c03823a6482b"
           git rev-parse HEAD > ../UPSTREAM_SHA.txt
 
-      - name: Build canonical Forge baseline
+      - name: Apply deterministic release overlay
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/apply_overlay.py \
+            upstream minecraft/async-1.20.1-ultimate/overlay
+          git -C upstream diff --check
+
+      - name: Compile Vulkan broad-phase shader
+        shell: bash
+        run: |
+          shader=upstream/common/src/main/resources/assets/async/shaders/collision_broadphase.comp
+          spv="${shader}.spv"
+          glslangValidator -V "$shader" -o "$spv"
+          test -s "$spv"
+          test "$(xxd -p -l 4 "$spv")" = "03022307"
+
+      - name: Vulkan environment receipt
+        shell: bash
+        run: vulkaninfo --summary || true
+
+      - name: Compile and build Forge 1.20.1 release
         shell: bash
         working-directory: upstream
         run: ./gradlew --no-daemon clean :forge:build --stacktrace
 
-      - name: Package baseline evidence
+      - name: Verify release JAR contents
+        shell: bash
+        run: |
+          mapfile -t jars < <(find upstream/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' | sort)
+          test "${#jars[@]}" -ge 1
+          jarfile="${jars[0]}"
+          echo "$jarfile" > RELEASE_JAR_PATH.txt
+          jar tf "$jarfile" | grep -Fx 'assets/async/shaders/collision_broadphase.comp.spv'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/GpuPushBatch.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/entity/LivingEntityPushMixin.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/accessor/LivingEntityPushInvoker.class'
+          unzip -p "$jarfile" META-INF/mods.toml | grep -F 'GPL-3.0-only'
+          unzip -p "$jarfile" META-INF/mods.toml | grep -F 'HariMultiThread Ultimate'
+
+      - name: Package merged source and verification evidence
         if: always()
         shell: bash
         run: |
-          mkdir -p evidence
+          rm -rf release evidence merged-source
+          mkdir -p release evidence merged-source
           cp UPSTREAM_SHA.txt evidence/ || true
-          cp upstream/forge/build/libs/*.jar evidence/ 2>/dev/null || true
+          (cd upstream && git diff --binary) > evidence/UPSTREAM-TO-ULTIMATE.patch || true
           (cd upstream && git status --porcelain=v1) > evidence/upstream-status.txt || true
-          sha256sum evidence/*.jar > evidence/SHA256SUMS.txt 2>/dev/null || true
+          cp RELEASE_JAR_PATH.txt evidence/ 2>/dev/null || true
+          if test -f RELEASE_JAR_PATH.txt; then
+            jarfile="$(cat RELEASE_JAR_PATH.txt)"
+            cp "$jarfile" release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1.jar
+          fi
+          rsync -a \
+            --exclude='.git/' --exclude='.gradle/' --exclude='build/' --exclude='bin/' \
+            upstream/ merged-source/
+          (cd merged-source && zip -qr ../release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-SOURCE.zip .)
+          cp -r minecraft/async-1.20.1-ultimate evidence/project-overlay
+          sha256sum release/* > release/SHA256SUMS.txt 2>/dev/null || true
+          cp release/SHA256SUMS.txt evidence/ 2>/dev/null || true
 
-      - name: Upload baseline evidence
+      - name: Upload release candidate
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: async-1.20.1-upstream-baseline
-          path: evidence/
-          if-no-files-found: warn
+          name: async-1.20.1-ultimate-release-candidate
+          path: |
+            release/
+            evidence/
+          if-no-files-found: error
