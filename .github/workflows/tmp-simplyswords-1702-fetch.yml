@@ -1,0 +1,48 @@
+name: tmp-simplyswords-1702-fetch
+
+on:
+  push:
+    branches:
+      - tmp/simplyswords-1.70.2-fetch-20260906
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch exact CurseForge provider artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          name='simplyswords-forge-neoforge-1.70.2-1.20.1.jar'
+          urls=(
+            'https://mediafilez.forgecdn.net/files/8746/028/simplyswords-forge-neoforge-1.70.2-1.20.1.jar'
+            'https://edge.forgecdn.net/files/8746/028/simplyswords-forge-neoforge-1.70.2-1.20.1.jar'
+            'https://www.curseforge.com/api/v1/mods/659887/files/8746028/download'
+          )
+          ok=0
+          for url in "${urls[@]}"; do
+            echo "Trying $url"
+            rm -f "$name"
+            if curl -fL --retry 2 --retry-delay 2 --connect-timeout 20 --max-time 180 -A 'Mozilla/5.0' "$url" -o "$name"; then
+              if unzip -tqq "$name" && test "$(stat -c%s "$name")" -gt 10000000; then
+                ok=1
+                break
+              fi
+            fi
+          done
+          test "$ok" = 1
+          sha256sum "$name" | tee SHA256SUMS.txt
+          stat -c '%n %s bytes' "$name" | tee FILESIZE.txt
+          unzip -p "$name" META-INF/mods.toml > mods.toml
+          grep -E 'modId|version|displayName|loaderVersion' mods.toml || true
+      - name: Upload exact artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: simplyswords-forge-neoforge-1.70.2-1.20.1
+          path: |
+            simplyswords-forge-neoforge-1.70.2-1.20.1.jar
+            SHA256SUMS.txt
+            FILESIZE.txt
+            mods.toml
+          if-no-files-found: error
+          retention-days: 1
