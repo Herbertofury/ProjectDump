@@ -1,0 +1,68 @@
+name: Async 1.20.1 Ultimate
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-forge:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout project harness
+        uses: actions/checkout@v4
+
+      - name: Checkout canonical HMT source
+        uses: actions/checkout@v4
+        with:
+          repository: JustHari01/HariMultiThread
+          ref: f381611c2d71a85192e2028f9e30c03823a6482b
+          path: upstream
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Clean accidental upstream build state
+        shell: bash
+        run: |
+          rm -rf upstream/**/bin upstream/**/build upstream/**/.gradle upstream/buildSrc/.gradle upstream/buildSrc/build || true
+          chmod +x upstream/gradlew
+
+      - name: Record upstream identity
+        shell: bash
+        working-directory: upstream
+        run: |
+          test "$(git rev-parse HEAD)" = "f381611c2d71a85192e2028f9e30c03823a6482b"
+          git rev-parse HEAD > ../UPSTREAM_SHA.txt
+
+      - name: Build canonical Forge baseline
+        shell: bash
+        working-directory: upstream
+        run: ./gradlew --no-daemon clean :forge:build --stacktrace
+
+      - name: Package baseline evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence
+          cp UPSTREAM_SHA.txt evidence/ || true
+          cp upstream/forge/build/libs/*.jar evidence/ 2>/dev/null || true
+          (cd upstream && git status --porcelain=v1) > evidence/upstream-status.txt || true
+          sha256sum evidence/*.jar > evidence/SHA256SUMS.txt 2>/dev/null || true
+
+      - name: Upload baseline evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: async-1.20.1-upstream-baseline
+          path: evidence/
+          if-no-files-found: warn
