@@ -1,0 +1,58 @@
+name: tmp-mobcharms-provider-deps
+
+on:
+  push:
+    branches:
+      - tmp/simplyswords-1.70.2-fetch-20260906
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch exact provider dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          fetch() {
+            local project="$1" fileid="$2" split="$3" name="$4"
+            local dir1="${split%/*}" dir2="${split#*/}"
+            local urls=(
+              "https://mediafilez.forgecdn.net/files/${dir1}/${dir2}/${name}"
+              "https://edge.forgecdn.net/files/${dir1}/${dir2}/${name}"
+              "https://www.curseforge.com/api/v1/mods/${project}/files/${fileid}/download"
+            )
+            local ok=0
+            for url in "${urls[@]}"; do
+              echo "Trying $url"
+              rm -f "$name"
+              if curl -fL --retry 2 --retry-delay 2 --connect-timeout 20 --max-time 180 -A 'Mozilla/5.0' "$url" -o "$name"; then
+                if unzip -tqq "$name"; then ok=1; break; fi
+              fi
+            done
+            test "$ok" = 1
+            sha256sum "$name" >> SHA256SUMS.txt
+            stat -c '%n %s bytes' "$name" >> FILESIZE.txt
+            mkdir -p manifests
+            unzip -p "$name" META-INF/mods.toml > "manifests/${name}.mods.toml" || true
+          }
+          : > SHA256SUMS.txt
+          : > FILESIZE.txt
+          fetch 419699 5137938 '5137/938' 'architectury-9.2.14-forge.jar'
+          fetch 1005914 6313552 '6313/552' 'fzzy_config-0.6.6+1.20.1+forge.jar'
+          fetch 1475755 8715158 '8715/158' 'SimplyTooltips-forge-0.1.5-1.20.1.jar'
+          cat SHA256SUMS.txt
+          cat FILESIZE.txt
+          grep -R -E 'modId|version|mandatory|versionRange' manifests || true
+      - name: Upload exact dependency closure seed
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobcharms-provider-deps-1.20.1
+          path: |
+            architectury-9.2.14-forge.jar
+            fzzy_config-0.6.6+1.20.1+forge.jar
+            SimplyTooltips-forge-0.1.5-1.20.1.jar
+            SHA256SUMS.txt
+            FILESIZE.txt
+            manifests/
+          if-no-files-found: error
+          retention-days: 1
