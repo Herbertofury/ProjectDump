@@ -57,6 +57,7 @@ jobs:
             upstream minecraft/async-1.20.1-ultimate/overlay
           python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
           python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_platform.py upstream
           git -C upstream diff --check
 
       - name: Verify removed unsafe source paths
@@ -72,6 +73,7 @@ jobs:
           grep -F 'GpuPushBatch.clear();' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           grep -F 'mcThreadTracker.clear();' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
           grep -F 'tickPool = null;' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'forge_version=47.4.23' upstream/gradle.properties
 
       - name: Compile Vulkan broad-phase shader
         shell: bash
@@ -85,7 +87,9 @@ jobs:
 
       - name: Vulkan environment receipt
         shell: bash
-        run: vulkaninfo --summary || true
+        run: |
+          mkdir -p evidence/runtime
+          vulkaninfo --summary | tee evidence/runtime/vulkaninfo-summary.txt
 
       - name: Compile and build Forge 1.20.1 release
         shell: bash
@@ -110,11 +114,44 @@ jobs:
           unzip -p "$jarfile" META-INF/mods.toml | grep -F 'GPL-3.0-only'
           unzip -p "$jarfile" META-INF/mods.toml | grep -F 'HariMultiThread Ultimate'
 
+      - name: Install real Forge 47.4.23 dedicated server
+        shell: bash
+        run: |
+          mkdir -p qa-server evidence/runtime
+          curl -fL --retry 3 \
+            'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar' \
+            -o forge-1.20.1-47.4.23-installer.jar
+          (
+            cd qa-server
+            java -jar ../forge-1.20.1-47.4.23-installer.jar --installServer \
+              > ../evidence/runtime/forge-server-install.log 2>&1
+          )
+          test -f qa-server/run.sh
+          chmod +x qa-server/run.sh
+          mkdir -p qa-server/mods
+          cp "$(cat RELEASE_JAR_PATH.txt)" qa-server/mods/HariMultiThread-Ultimate.jar
+          printf 'eula=true\n' > qa-server/eula.txt
+          cat > qa-server/server.properties <<'EOF'
+          online-mode=false
+          level-name=world
+          level-seed=8675309
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          motd=HariMultiThread Ultimate Runtime QA
+          EOF
+
+      - name: Packaged Forge Vulkan, fallback, save, restart gate
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
+            qa-server evidence/runtime
+
       - name: Package merged source and verification evidence
         if: always()
         shell: bash
         run: |
-          rm -rf release evidence merged-source
+          rm -rf release merged-source
           mkdir -p release evidence merged-source
           cp UPSTREAM_SHA.txt evidence/ || true
           (cd upstream && git diff --binary) > evidence/UPSTREAM-TO-ULTIMATE.patch || true
