@@ -55,7 +55,19 @@ jobs:
         run: |
           python3 minecraft/async-1.20.1-ultimate/apply_overlay.py \
             upstream minecraft/async-1.20.1-ultimate/overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
           git -C upstream diff --check
+
+      - name: Verify removed unsafe source paths
+        shell: bash
+        run: |
+          ! grep -F 'entityList.parallelStream()' upstream/common/src/main/java/com/axalotl/async/common/mixin/spawn/NaturalSpawnerMixin.java
+          ! grep -F 'CompletableFuture.runAsync' upstream/common/src/main/java/com/axalotl/async/common/mixin/server/ServerChunkCacheMixin.java
+          ! grep -F 'entity.spawn.LocalMobCapCalculatorMixin' upstream/common/src/main/resources/harimt.common.mixins.json
+          ! grep -F 'entity.spawn.PotentialCalculatorMixin' upstream/common/src/main/resources/harimt.common.mixins.json
+          grep -F 'EnderDragon.class' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'availableProcessors() - 1' upstream/common/src/main/java/com/axalotl/async/common/config/AsyncConfig.java
+          grep -F 'world.PalettedContainerMixin' upstream/common/src/main/resources/harimt.common.mixins.json
 
       - name: Compile Vulkan broad-phase shader
         shell: bash
@@ -65,6 +77,7 @@ jobs:
           glslangValidator -V "$shader" -o "$spv"
           test -s "$spv"
           test "$(xxd -p -l 4 "$spv")" = "03022307"
+          grep -F 'binding = 8' "$shader"
 
       - name: Vulkan environment receipt
         shell: bash
@@ -86,6 +99,10 @@ jobs:
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/GpuPushBatch.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/entity/LivingEntityPushMixin.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/accessor/LivingEntityPushInvoker.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/world/PalettedContainerMixin.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/spawn/SpawnStateMixin.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/server/ChunkMapTrackedEntityMixin.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/server/ServerChunkCacheMixin.class'
           unzip -p "$jarfile" META-INF/mods.toml | grep -F 'GPL-3.0-only'
           unzip -p "$jarfile" META-INF/mods.toml | grep -F 'HariMultiThread Ultimate'
 
