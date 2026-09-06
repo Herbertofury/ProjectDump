@@ -63,6 +63,7 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/apply_backend_architecture.py \
             upstream minecraft/async-1.20.1-ultimate/backend-overlay
           python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_world_batch.py upstream
           git -C upstream diff --check
 
       - name: Verify removed unsafe and legacy source paths
@@ -76,6 +77,9 @@ jobs:
           grep -F 'availableProcessors() - 1' upstream/common/src/main/java/com/axalotl/async/common/config/AsyncConfig.java
           grep -F 'world.PalettedContainerMixin' upstream/common/src/main/resources/harimt.common.mixins.json
           grep -F 'GpuPushBatch.clear();' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'GpuPushBatch.beginBatch(world);' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'GpuPushBatch.endBatch(world);' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
+          grep -F 'isBatchActive(level)' upstream/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
           grep -F 'forge_version=47.4.23' upstream/gradle.properties
           grep -F 'isModLoaded("c2meforge")' upstream/common/src/main/java/com/axalotl/async/common/AsyncCommon.java
           grep -F 'waitWorld.getChunkSource().pollTask()' upstream/common/src/main/java/com/axalotl/async/common/ParallelProcessor.java
