@@ -1,0 +1,50 @@
+name: tmp-mobcharms-installertools-144
+
+on:
+  push:
+    branches:
+      - tmp/simplyswords-1.70.2-fetch-20260906
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch exact Forge installertools 1.4.4 fatjar
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='net/minecraftforge/installertools/1.4.4'
+          jar='installertools-1.4.4-fatjar.jar'
+          pom='installertools-1.4.4.pom'
+          fetch_one() {
+            local name="$1"
+            local ok=0
+            for root in 'https://maven.minecraftforge.net' 'https://maven.creeperhost.net'; do
+              url="$root/$base/$name"
+              echo "Trying $url"
+              rm -f "$name"
+              if curl -fL --retry 2 --retry-delay 2 --connect-timeout 20 --max-time 120 -A 'Mozilla/5.0' "$url" -o "$name"; then
+                ok=1
+                break
+              fi
+            done
+            test "$ok" = 1
+          }
+          fetch_one "$jar"
+          fetch_one "$pom"
+          unzip -tqq "$jar"
+          grep -q '<artifactId>installertools</artifactId>' "$pom"
+          grep -q '<version>1.4.4</version>' "$pom"
+          sha256sum "$jar" "$pom" | tee SHA256SUMS.txt
+          stat -c '%n %s bytes' "$jar" "$pom" | tee FILESIZE.txt
+      - name: Upload exact local Maven seed
+        uses: actions/upload-artifact@v4
+        with:
+          name: installertools-1.4.4-fatjar-maven-seed
+          path: |
+            installertools-1.4.4-fatjar.jar
+            installertools-1.4.4.pom
+            SHA256SUMS.txt
+            FILESIZE.txt
+          if-no-files-found: error
+          retention-days: 1
