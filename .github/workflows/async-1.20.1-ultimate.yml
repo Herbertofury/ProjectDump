@@ -1,6 +1,8 @@
 name: Async 1.20.1 Ultimate
 
 on:
+  push:
+    branches: [async-1.20.1-ultimate]
   workflow_dispatch:
 
 permissions:
@@ -62,9 +64,10 @@ jobs:
             upstream minecraft/async-1.20.1-ultimate/backend-overlay
           python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py upstream
           python3 minecraft/async-1.20.1-ultimate/apply_world_batch.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mixin_packaging.py upstream
           git -C upstream diff --check
 
-      - name: Verify removed unsafe and legacy source paths
+      - name: Verify hardening and production packaging invariants
         shell: bash
         run: |
           ! grep -F 'entityList.parallelStream()' upstream/common/src/main/java/com/axalotl/async/common/mixin/spawn/NaturalSpawnerMixin.java
@@ -88,10 +91,10 @@ jobs:
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkBufferManager.java
           ! test -e upstream/common/src/main/java/com/axalotl/async/common/gpu/vulkan/VkComputePipeline.java
           ! test -e upstream/vulkan-backend/build.gradle
-          grep -F 'sourceSets {' upstream/forge/build.gradle
           grep -F 'harimtVulkanBackend' upstream/forge/build.gradle
           grep -F 'compile-checked isolated LWJGL' upstream/common/src/main/java/com/axalotl/async/common/gpu/GpuEntityModule.java
           ! grep -R -F 'Class.forName("org.lwjgl.vulkan' upstream/common/src/main/java
+          grep -F "'MixinConfigs': 'harimt.common.mixins.json,harimt.forge.mixins.json'" upstream/forge/build.gradle
 
       - name: Compile Vulkan broad-phase shader
         shell: bash
@@ -115,15 +118,21 @@ jobs:
         working-directory: upstream
         run: ./gradlew --no-daemon clean :forge:harimtVulkanBackendJar :forge:build --stacktrace
 
-      - name: Verify release JAR and isolated backend contents
+      - name: Verify production JAR, mixin manifest and isolated backend
         shell: bash
         run: |
           mapfile -t jars < <(find upstream/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort)
           test "${#jars[@]}" -ge 1
           jarfile="${jars[0]}"
           echo "$jarfile" > RELEASE_JAR_PATH.txt
+          jar tf "$jarfile" | grep -Fx 'harimt.common.mixins.json'
+          jar tf "$jarfile" | grep -Fx 'harimt.forge.mixins.json'
+          jar tf "$jarfile" | grep -Fx 'harimt.refmap.json'
+          manifest="$(unzip -p "$jarfile" META-INF/MANIFEST.MF | tr -d '\r')"
+          printf '%s\n' "$manifest" | grep -Fx 'MixinConfigs: harimt.common.mixins.json,harimt.forge.mixins.json'
           jar tf "$jarfile" | grep -Fx 'assets/async/shaders/collision_broadphase.comp.spv'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/GpuPushBatch.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/entity/LivingEntityPushMixin.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/vulkan/VkRuntime.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/gpu/vulkan/VulkanCollisionBackend.class'
           jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/spawn/SpawnChunkContext.class'
@@ -159,7 +168,6 @@ jobs:
           mkdir -p qa-server/mods
           cp "$(cat RELEASE_JAR_PATH.txt)" qa-server/mods/HariMultiThread-Ultimate.jar
           printf 'eula=true\n' > qa-server/eula.txt
-          printf '%s\n' '-Dharimt.vulkan.allowCpuDevice=true' >> qa-server/user_jvm_args.txt
           cat > qa-server/server.properties <<'EOF'
           online-mode=false
           level-name=world
