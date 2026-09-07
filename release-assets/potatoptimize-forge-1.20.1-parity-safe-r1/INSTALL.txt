@@ -1,0 +1,6 @@
+INSTALL
+1. Use Minecraft 1.20.1 with Forge 47.4.23 and Java 17.
+2. Put Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar in the instance mods folder.
+3. First launch writes config/potatoptimize.properties.
+4. Leave defaults unchanged for the parity-safe profile.
+5. Experimental/behavior-changing options are opt-in. Back up the world before changing them.

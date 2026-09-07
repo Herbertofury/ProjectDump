@@ -1,0 +1,6 @@
+DEFAULT-ON RULES (exactly three)
+mixin.block_entity.sign_ticking = true
+mixin.logic.data_bits = true
+mixin.unstream.nearest_item = true
+
+Threading, RNG/random, world/save, startup/removal, navigation and other semantic-risk families remain OFF by default.

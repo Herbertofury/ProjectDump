@@ -1,0 +1,9 @@
+POTATOPTIMIZE FORGE 1.20.1 PARITY-SAFE R1
+Status: RELEASE-READY / SERVER+COMMON CERTIFIED
+Source: c74675a97fd415f5fedbd168ba5553c0b55ad6c7
+JAR SHA-256: 5292a29d99eb4f51ef130043b5189b316d8f9274c459a47c8c03a2e0408832c6
+Runtime QA: 34153631803 PASS
+Performance Stack QA: 34153631787 PASS
+Aggressive Profile QA: 34153631764 PASS
+Aggressive failures: 0 family / 0 rule / 0 combination
+Client-only experimental opt-ins are not claimed as dedicated-server certified.
