@@ -1,0 +1,32 @@
+name: Fetch SmartBrainLib for benchmark gate
+
+on:
+  push:
+    branches:
+      - benchmark/potatoptimize-midnight-dimthreads-c2me
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-sbl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch and verify exact SmartBrainLib 1.15
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          curl --fail --location --retry 3 --retry-delay 2 \
+            'https://cdn.modrinth.com/data/PuyPazRT/versions/YkeJNm33/SmartBrainLib-forge-1.20.1-1.15.jar' \
+            --output out/SmartBrainLib-forge-1.20.1-1.15.jar
+          echo '665f65f77cc36379a9ae11c09db5d9efa1ad4f8d017edc8f65903ff27cacdb1  out/SmartBrainLib-forge-1.20.1-1.15.jar' | sha256sum -c -
+          unzip -tq out/SmartBrainLib-forge-1.20.1-1.15.jar
+      - name: Upload verified dependency
+        uses: actions/upload-artifact@v4
+        with:
+          name: smartbrainlib-forge-1.20.1-1.15-verified
+          path: out/SmartBrainLib-forge-1.20.1-1.15.jar
+          if-no-files-found: error
+          compression-level: 0
