@@ -21,7 +21,7 @@ jobs:
       - name: Checkout certified source lineage
         uses: actions/checkout@v4
         with:
-          ref: 3408fbd2449f6de2365c83b81a74bb9d5f1e68dc
+          ref: e84f50586275a9ae799e1f389028781f81b7406f
 
       - uses: actions/setup-java@v5
         with:
@@ -32,7 +32,7 @@ jobs:
         working-directory: minecraft/potatoptimize-forge-1.20.1
         run: |
           set -euxo pipefail
-          test "$(git rev-parse HEAD)" = "3408fbd2449f6de2365c83b81a74bb9d5f1e68dc"
+          test "$(git rev-parse HEAD)" = "e84f50586275a9ae799e1f389028781f81b7406f"
           chmod +x gradlew
           ./gradlew --no-daemon clean build
           JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
@@ -54,7 +54,7 @@ jobs:
           mkdir -p mods config
           cp "$MOD_JAR" mods/
 
-      - name: Force every optional common/server rule on
+      - name: Force every optional rule on for linkage testing
         run: |
           set -euxo pipefail
           SRC=minecraft/potatoptimize-forge-1.20.1/src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
