@@ -108,7 +108,7 @@ jobs:
         run: |
           base_jar="$(cat BASE_JAR_PATH.txt)"
           cp="classes:${base_jar}:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar:deps/lwjgl-3.3.1-natives-linux.jar"
-          java -cp "$cp" com.axalotl.async.vulkanruntime.VulkanLoaderOwnershipProbe production-shader.spv \
+          java -cp "$cp" com.axalotl.async.vulkanruntime.VulkanLoaderOwnershipProbe production-shader.spv 2>&1 \
             | tee evidence/ownership-probe.txt
           grep -Fx 'VULKAN_EXTERNAL_PROVIDER_SURVIVED_FIRST_SHUTDOWN' evidence/ownership-probe.txt
           grep -Fx 'VULKAN_BACKEND_RESTART_WITH_SHARED_PROVIDER_PASS' evidence/ownership-probe.txt
