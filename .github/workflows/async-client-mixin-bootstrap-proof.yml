@@ -57,6 +57,7 @@ jobs:
           grep -Fx 'org.gradle.configureondemand=false' upstream/gradle.properties
           grep -F "config 'harimt.common.mixins.json'" upstream/forge/build.gradle
           grep -F "config 'harimt.forge.mixins.json'" upstream/forge/build.gradle
+          ! grep -F 'args "--mixin.config=${mod_id}.common.mixins.json,${mod_id}.forge.mixins.json"' upstream/forge/build.gradle
           ! grep -F "'MixinConfigs': 'harimt.common.mixins.json,harimt.forge.mixins.json'" upstream/forge/build.gradle
 
       - name: Prove real Forge client reaches Render thread
@@ -106,8 +107,14 @@ jobs:
 
           echo 'Render-thread bootstrap reached successfully.'
           grep -F '[Render thread/INFO]' evidence/client-bootstrap/client-bootstrap.log | head -n 3
-          if grep -F "Error initialising mixin config harimt.common.mixins.json,harimt.forge.mixins.json" evidence/client-bootstrap/client-bootstrap.log; then
-            echo 'Combined MixinConfigs regression detected.' >&2
+          grep -F -- '--mixin.config, harimt.common.mixins.json' evidence/client-bootstrap/client-bootstrap.log
+          grep -F -- '--mixin.config, harimt.forge.mixins.json' evidence/client-bootstrap/client-bootstrap.log
+          if grep -F -- '--mixin.config=harimt.common.mixins.json,harimt.forge.mixins.json' evidence/client-bootstrap/client-bootstrap.log; then
+            echo 'Legacy combined Mixin run argument survived.' >&2
+            exit 1
+          fi
+          if grep -F 'MixinInitialisationError' evidence/client-bootstrap/client-bootstrap.log; then
+            echo 'Mixin initialization regression detected.' >&2
             exit 1
           fi
           kill -TERM -"$CLIENT_PID" 2>/dev/null || true
