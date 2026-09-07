@@ -1,0 +1,120 @@
+name: Checkpoint Potatoptimize Forge 1.20.1 Port
+
+on:
+  push:
+    paths:
+      - '.github/workflows/potatoptimize-forge-port-checkpoint.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  checkpoint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Fetch pinned upstream
+        run: |
+          set -euxo pipefail
+          rm -rf /tmp/potatoptimize-upstream
+          git clone --depth 1 --branch 1.20.1 https://github.com/Tater-Certified/Potatoptimize.git /tmp/potatoptimize-upstream
+          test "$(git -C /tmp/potatoptimize-upstream rev-parse HEAD)" = "35d97cf913ae39d45740a51d23cdd161d06e4a43"
+
+      - name: Reuse proven generator and Forge hardening
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def extract_step(workflow, marker, out):
+              lines = Path(workflow).read_text(encoding='utf-8').splitlines()
+              start = lines.index(f'      - name: {marker}')
+              run_line = next(i for i in range(start + 1, len(lines)) if lines[i].startswith('        run: |'))
+              end = next((i for i in range(run_line + 1, len(lines)) if lines[i].startswith('      - name: ')), len(lines))
+              body = [line[10:] if line.startswith('          ') else line for line in lines[run_line + 1:end]]
+              Path(out).write_text('\n'.join(body) + '\n', encoding='utf-8')
+
+          extract_step('.github/workflows/potatoptimize-forge-port.yml', 'Generate native Forge source tree', '/tmp/generate.sh')
+          extract_step('.github/workflows/potatoptimize-forge-port-recovery.yml', 'Forge hardening and parity-safe defaults', '/tmp/harden.sh')
+          PY
+          bash /tmp/generate.sh
+          (cd minecraft/potatoptimize-forge-1.20.1 && bash /tmp/harden.sh)
+
+      - name: Final strict-parity policy and known conflict guards
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: |
+          set -euxo pipefail
+          DEFAULTS=src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+          sed -i 's/^mixin.memory.reduce_alloc = true$/mixin.memory.reduce_alloc = false/' "$DEFAULTS"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('src/main/java/com/github/tatercertified/potatoptimize/config/ModCompatibility.java')
+          t = p.read_text(encoding='utf-8')
+          needle = '        addModCompatibility("radium", "Radium", new String[]{"mixin.world.explosion"});\n'
+          replacement = needle + '        addModCompatibility("valkyrienskies", "Valkyrien Skies", new String[]{"mixin.unstream.pathfinding"});\n        addModCompatibility("enhancedvisuals", "EnhancedVisuals", new String[]{"mixin.world.explosion"});\n'
+          if needle not in t:
+              raise SystemExit('compatibility insertion point missing')
+          p.write_text(t.replace(needle, replacement), encoding='utf-8')
+
+          p = Path('README.md')
+          t = p.read_text(encoding='utf-8')
+          t += '''\n## Strict parity default\nThe broad `memory.reduce_alloc` family is intentionally OFF by default in this Forge port. Several legacy members reuse mutable arrays that vanilla normally recreates; while useful for allocation pressure, that identity/mutation behavior can be observed by other mods. It remains opt-in rather than being mislabeled as zero-risk.\n\nKnown aggressive-path guards also automatically disable conflicting pathfinding/explosion rewrites when Valkyrien Skies or EnhancedVisuals is present.\n'''
+          p.write_text(t, encoding='utf-8')
+
+          p = Path('PORT-NOTES.md')
+          t = p.read_text(encoding='utf-8')
+          t += '''\n## Additional strict-parity hardening\n- `memory.reduce_alloc` is opt-in because legacy shared-array reuse can change observable object identity/mutation isolation.\n- Valkyrien Skies automatically blocks `unstream.pathfinding` due to a known Pathfinder mixin collision.\n- EnhancedVisuals automatically blocks `world.explosion` due to a known explosion injection collision.\n'''
+          p.write_text(t, encoding='utf-8')
+          PY
+
+          grep -q '^mixin.memory.reduce_alloc = false$' "$DEFAULTS"
+          grep -q 'Valkyrien Skies' src/main/java/com/github/tatercertified/potatoptimize/config/ModCompatibility.java
+          grep -q 'EnhancedVisuals' src/main/java/com/github/tatercertified/potatoptimize/config/ModCompatibility.java
+
+      - name: Build remapped Forge production JAR
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: ./gradlew --no-daemon clean build --stacktrace
+
+      - name: Inspect and hash release candidate
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: |
+          set -euxo pipefail
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
+          test -n "$JAR"
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'modId="potatoptimize"'
+          unzip -p "$JAR" potatoptimize.mixins.json | grep -q 'MixinConfig'
+          unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q '^mixin.memory.reduce_alloc = false$'
+          unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q '^mixin.world.explosion = false$'
+          sha256sum "$JAR" | tee build/SHA256SUMS.txt
+
+      - name: Upload compiled checkpoint before publication
+        uses: actions/upload-artifact@v4
+        with:
+          name: potatoptimize-forge-1.20.1-parity-safe-rc
+          path: |
+            minecraft/potatoptimize-forge-1.20.1/build/libs/*.jar
+            minecraft/potatoptimize-forge-1.20.1/build/SHA256SUMS.txt
+            minecraft/potatoptimize-forge-1.20.1/README.md
+            minecraft/potatoptimize-forge-1.20.1/PORT-NOTES.md
+          if-no-files-found: error
+
+      - name: Publish source checkpoint without losing concurrent main updates
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add minecraft/potatoptimize-forge-1.20.1
+          git commit -m 'minecraft: add compiled Potatoptimize Forge 1.20.1 parity-safe port'
+          git pull --rebase origin main
+          git push origin main
