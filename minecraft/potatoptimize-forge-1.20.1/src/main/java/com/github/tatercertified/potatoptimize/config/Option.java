@@ -11,6 +11,7 @@ import java.util.Set;
 
 public class Option {
     private final String name;
+    private final boolean defaultEnabled;
 
     private Object2BooleanLinkedOpenHashMap<Option> dependencies;
     private Set<String> modDefined = null;
@@ -19,13 +20,16 @@ public class Option {
 
     public Option(String name, boolean enabled, boolean userDefined) {
         this.name = name;
+        this.defaultEnabled = enabled;
         this.enabled = enabled;
-        this.userDefined = userDefined;
+        this.userDefined = userDefined && enabled != this.defaultEnabled;
     }
 
     public void setEnabled(boolean enabled, boolean userDefined) {
         this.enabled = enabled;
-        this.userDefined = userDefined;
+        // The generated config persists every option. Loading an unchanged value is not
+        // a meaningful user override and should not spam the log as a forced setting.
+        this.userDefined = userDefined && enabled != this.defaultEnabled;
     }
 
     public void addModOverride(boolean enabled, String modId) {
