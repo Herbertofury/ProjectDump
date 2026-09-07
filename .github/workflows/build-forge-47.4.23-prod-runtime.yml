@@ -33,16 +33,52 @@ jobs:
           unzip -tq forge-installer.jar
 
       - name: Install production server
+        id: install
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p runtime
+          cd runtime
+          set +e
+          java -jar ../forge-installer.jar --installServer 2>&1 | tee installer-console.log
+          rc=${PIPESTATUS[0]}
+          set -e
+          {
+            printf 'installer_exit_code=%s\n' "$rc"
+            printf 'java=%s\n' "$(java -version 2>&1 | head -1)"
+            printf '\n=== candidate production server jars ===\n'
+            find . -type f \( -name '*server*-srg.jar' -o -name 'forge-1.20.1-47.4.23*.jar' \) -print 2>/dev/null | sort || true
+            printf '\n=== generated launch files ===\n'
+            find . -maxdepth 3 -type f \( -name 'run.sh' -o -name 'run.bat' -o -name 'unix_args.txt' -o -name 'win_args.txt' -o -name 'user_jvm_args.txt' \) -print 2>/dev/null | sort || true
+            printf '\n=== runtime file tree ===\n'
+            find . -maxdepth 8 -type f -printf '%P\n' 2>/dev/null | sort || true
+          } > INSTALL-DIAGNOSTIC.txt
+          if [ -f ../installer.log ]; then cp ../installer.log ./forge-installer.log; fi
+          if [ -f installer.log ]; then cp installer.log ./forge-installer.log; fi
+          exit "$rc"
+
+      - name: Upload installer diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-47.4.23-installer-diagnostics
+          path: |
+            runtime/installer-console.log
+            runtime/forge-installer.log
+            runtime/INSTALL-DIAGNOSTIC.txt
+          if-no-files-found: warn
+          compression-level: 6
+
+      - name: Verify production SRG oracle
         shell: bash
         run: |
           set -euo pipefail
-          mkdir runtime
           cd runtime
-          java -jar ../forge-installer.jar --installServer
+          server='libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-srg.jar'
           test -d libraries
-          test -f libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-srg.jar
-          sha256sum libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-srg.jar | tee production-server-sha256.txt
-          test "$(sha256sum libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-srg.jar | awk '{print $1}')" = '2cab1694e7347ab1591eb5623a18dbe615f7d67fc20272751e2886b352008638'
+          test -f "$server"
+          sha256sum "$server" | tee production-server-sha256.txt
+          test "$(sha256sum "$server" | awk '{print $1}')" = '2cab1694e7347ab1591eb5623a18dbe615f7d67fc20272751e2886b352008638'
           printf 'Forge installer production SRG oracle: PASS\n' | tee PRODUCTION-RUNTIME-VERIFICATION.txt
           printf 'Java: %s\n' "$(java -version 2>&1 | head -1)" >> PRODUCTION-RUNTIME-VERIFICATION.txt
           printf 'Forge: 1.20.1-47.4.23\n' >> PRODUCTION-RUNTIME-VERIFICATION.txt
