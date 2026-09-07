@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: potatoptimize-runtime-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   production-forge-server:
     runs-on: ubuntu-latest
@@ -114,6 +118,13 @@ jobs:
           grep -q '^mixin.random.unsafe = false$' config/potatoptimize.properties
           grep -q '^mixin.logic.main_thread = false$' config/potatoptimize.properties
           grep -q '^mixin.logic.worker_thread = false$' config/potatoptimize.properties
+          grep -q '^mixin.memory.reduce_alloc = false$' config/potatoptimize.properties
+          grep -q '^mixin.logic.fast_bits_blockpos = false$' config/potatoptimize.properties
+          grep -q '^mixin.unstream.player_movement = false$' config/potatoptimize.properties
+          grep -q '^mixin.block_entity.sign_ticking = true$' config/potatoptimize.properties
+          grep -q '^mixin.entity.navigation = true$' config/potatoptimize.properties
+          grep -q '^mixin.logic.data_bits = true$' config/potatoptimize.properties
+          grep -q '^mixin.unstream.nearest_item = true$' config/potatoptimize.properties
           tail -n 200 logs/latest.log
 
       - name: Upload runtime evidence
