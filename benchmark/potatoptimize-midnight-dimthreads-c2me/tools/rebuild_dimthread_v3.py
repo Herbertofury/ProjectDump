@@ -28,12 +28,15 @@ def main() -> None:
         "META-INF/noxviola-dimthread-async-interop.txt": fixture / "noxviola-dimthread-async-interop.txt",
     }
     payload = {}
+    mismatches = []
     for name, path in replacements.items():
         data = path.read_bytes()
         got = sha(data)
         if got != EXPECTED[name]:
-            raise SystemExit(f"fixture hash mismatch for {name}: {got} != {EXPECTED[name]}")
+            mismatches.append(f"fixture hash mismatch for {name}: {got} != {EXPECTED[name]}")
         payload[name] = data
+    if mismatches:
+        raise SystemExit("\n".join(mismatches))
 
     with zipfile.ZipFile(src, "r") as zin:
         names = set(zin.namelist())
