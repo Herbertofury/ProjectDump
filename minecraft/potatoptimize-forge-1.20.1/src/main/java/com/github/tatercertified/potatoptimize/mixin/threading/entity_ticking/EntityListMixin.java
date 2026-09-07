@@ -1,6 +1,5 @@
 package com.github.tatercertified.potatoptimize.mixin.threading.entity_ticking;
 
-import com.github.tatercertified.potatoptimize.utils.interfaces.ServerEntityThreadInterface;
 import net.minecraft.entity.Entity;
 import net.minecraft.world.EntityList;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,20 +42,17 @@ public class EntityListMixin {
     }
 
     /**
-     * @author QPCrummer
-     * @reason Make Concurrent
+     * @author QPCrummer, OpenAI
+     * @reason Keep concurrent entity storage without off-thread world access.
+     *
+     * Forge 1.20.1 entity ticks may synchronously request chunk/world work that must
+     * progress on the server thread. Waiting on worker-thread entity ticks from that
+     * same server thread can therefore deadlock. Iterate the concurrent container on
+     * the caller thread instead: structural mutation safety is retained while entity
+     * gameplay remains on Minecraft's authoritative tick thread.
      */
     @Overwrite
     public void forEach(Consumer<Entity> action) {
-        var iterator = this.concurrentEntities.values().iterator();
-
-        if (iterator.hasNext()) {
-            Entity entity = iterator.next();
-            if (entity.getWorld().isClient) {
-                this.concurrentEntities.forEach((key, value) -> action.accept(value));
-            } else {
-                ((ServerEntityThreadInterface)entity.getServer()).getEntityExecutor().concurrentForEach(6, this.concurrentEntities, action);
-            }
-        }
+        this.concurrentEntities.values().forEach(action);
     }
 }

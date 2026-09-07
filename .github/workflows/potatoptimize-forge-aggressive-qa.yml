@@ -64,6 +64,7 @@ jobs:
           : > "$EVIDENCE/family-failures.txt"
           : > "$EVIDENCE/rule-failures.txt"
           : > "$EVIDENCE/combination-failures.txt"
+          profile_index=0
 
           make_family_config() {
             local family="$1" out="$2"
@@ -94,24 +95,47 @@ jobs:
             sed -E 's/^(mixin\.[^=]+ = )(true|false)$/\1true/' "$SRC" > "$out"
           }
 
+          stop_profile_group() {
+            local pid="$1"
+            if kill -0 "$pid" 2>/dev/null; then
+              kill -TERM -- "-$pid" 2>/dev/null || true
+              for _ in $(seq 1 10); do
+                if ! kill -0 "$pid" 2>/dev/null; then return 0; fi
+                sleep 1
+              done
+              kill -KILL -- "-$pid" 2>/dev/null || true
+            fi
+          }
+
           run_profile() {
             local label="$1" config_file="$2"
             local fifo="$SERVER/server-input-$label"
             local console="$EVIDENCE/$label-console.log"
             local latest="$EVIDENCE/$label-latest.log"
-            local pid ready=0 clean=1 exit_code=0
+            local pid ready=0 clean=1 exit_code=0 port
+
+            profile_index=$((profile_index + 1))
+            port=$((25564 + profile_index))
 
             rm -rf "$SERVER/world" "$SERVER/logs" "$SERVER/crash-reports"
             rm -f "$fifo"
             mkdir -p "$SERVER/config"
             cp "$config_file" "$SERVER/config/potatoptimize.properties"
             cp "$config_file" "$EVIDENCE/$label.properties"
+            cat > "$SERVER/server.properties" <<EOF
+          server-port=$port
+          online-mode=false
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          EOF
             mkfifo "$fifo"
 
             cd "$SERVER" || return 1
             exec 3<>"$fifo"
-            ./run.sh nogui <"$fifo" >"$console" 2>&1 &
+            setsid ./run.sh nogui <"$fifo" >"$console" 2>&1 &
             pid=$!
+            echo "$pid $port" > "$EVIDENCE/$label.process"
 
             for _ in $(seq 1 100); do
               if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then
@@ -148,8 +172,8 @@ jobs:
               sleep 1
             done
             if kill -0 "$pid" 2>/dev/null; then
-              kill "$pid" 2>/dev/null || true
               clean=0
+              stop_profile_group "$pid"
             fi
             wait "$pid" || exit_code=$?
             test -f "$SERVER/logs/latest.log" && cp "$SERVER/logs/latest.log" "$latest"
@@ -162,12 +186,12 @@ jobs:
               clean=0
             fi
             if test "$ready" -ne 1 || test "$clean" -ne 1 || test "$exit_code" -ne 0; then
-              echo "PROFILE FAILED: $label (ready=$ready clean=$clean exit=$exit_code)"
+              echo "PROFILE FAILED: $label (ready=$ready clean=$clean exit=$exit_code port=$port)"
               tail -n 160 "$console" || true
               test -f "$latest" && tail -n 160 "$latest" || true
               return 1
             fi
-            echo "PROFILE PASSED: $label"
+            echo "PROFILE PASSED: $label (port=$port)"
             return 0
           }
 
