@@ -1,6 +1,9 @@
 name: Async Client Task Fix Proof
 
 on:
+  push:
+    branches: [async-1.20.1-ultimate-runtime-fixture]
+    paths: [.github/workflows/async-client-task-fix-proof.yml]
   workflow_dispatch:
 
 permissions:
