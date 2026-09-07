@@ -1,0 +1,148 @@
+name: Potatoptimize Forge 1.20.1 Optimization Stack QA
+
+on:
+  push:
+    paths:
+      - 'minecraft/potatoptimize-forge-1.20.1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  modern-performance-stack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build remapped Potatoptimize JAR
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: |
+          set -euxo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon clean build
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
+          test -n "$JAR"
+          echo "MOD_JAR=$PWD/$JAR" >> "$GITHUB_ENV"
+
+      - name: Install clean Forge 47.4.23 server
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/potatoptimize-stack
+          cd /tmp/potatoptimize-stack
+          curl --fail --location --retry 3 --output forge-installer.jar \
+            https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar
+          java -jar forge-installer.jar --installServer
+          chmod +x run.sh
+          printf 'eula=true\n' > eula.txt
+          mkdir -p mods
+          cp "$MOD_JAR" mods/
+
+      - name: Resolve current Forge 1.20.1 performance-mod releases
+        working-directory: /tmp/potatoptimize-stack
+        run: |
+          set -euxo pipefail
+          fetch_modrinth() {
+            project="$1"
+            out="$2"
+            curl --fail --silent --show-error --get \
+              --data-urlencode 'loaders=["forge"]' \
+              --data-urlencode 'game_versions=["1.20.1"]' \
+              "https://api.modrinth.com/v2/project/${project}/version" > "/tmp/${project}.json"
+            url=$(jq -r '[.[] | select(.version_type == "release")] | sort_by(.date_published) | reverse | .[0].files | (map(select(.primary == true))[0] // .[0]).url' "/tmp/${project}.json")
+            version=$(jq -r '[.[] | select(.version_type == "release")] | sort_by(.date_published) | reverse | .[0].version_number' "/tmp/${project}.json")
+            test -n "$url" && test "$url" != null
+            echo "${project}: ${version}"
+            curl --fail --location --retry 3 --output "mods/${out}.jar" "$url"
+            sha256sum "mods/${out}.jar"
+          }
+
+          fetch_modrinth modernfix modernfix
+          fetch_modrinth servercore servercore
+          fetch_modrinth ferrite-core ferritecore
+          fetch_modrinth krypton-fnp krypton-reno
+          ls -lh mods
+
+      - name: Boot and exercise compatibility stack
+        working-directory: /tmp/potatoptimize-stack
+        run: |
+          set -euxo pipefail
+          mkfifo server-input
+          exec 3<>server-input
+          ./run.sh nogui <server-input >server-console.log 2>&1 &
+          SERVER_PID=$!
+
+          READY=0
+          for i in $(seq 1 180); do
+            if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then
+              READY=1
+              break
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          if test "$READY" -ne 1; then
+            echo 'Compatibility server did not reach Done.'
+            tail -n 300 server-console.log || true
+            test -f logs/latest.log && tail -n 300 logs/latest.log || true
+            kill "$SERVER_PID" 2>/dev/null || true
+            exit 1
+          fi
+
+          printf 'gamerule doMobSpawning false\n' >&3
+          printf 'forceload add 0 0\n' >&3
+          printf 'setblock 0 100 0 minecraft:oak_sign[rotation=0]\n' >&3
+          printf 'summon minecraft:zombie 2 100 2\n' >&3
+          printf 'summon minecraft:villager 4 100 4\n' >&3
+          printf 'summon minecraft:item 3 100 2 {Item:{id:"minecraft:emerald",Count:1b}}\n' >&3
+          printf 'save-all flush\n' >&3
+          sleep 8
+          printf 'stop\n' >&3
+
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if kill -0 "$SERVER_PID" 2>/dev/null; then
+            kill "$SERVER_PID" || true
+            echo 'Compatibility server failed to stop cleanly.'
+            exit 1
+          fi
+          wait "$SERVER_PID"
+
+      - name: Assert compatibility guards and runtime health
+        working-directory: /tmp/potatoptimize-stack
+        run: |
+          set -euxo pipefail
+          LOG=logs/latest.log
+          grep -q 'Done (' "$LOG"
+          grep -q 'ModernFix detected' "$LOG"
+          grep -q 'ServerCore detected' "$LOG"
+          grep -Eq 'Krypton (Reno|Reforged|detected)' "$LOG"
+          ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError|ClassNotFoundException' "$LOG"
+          ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' "$LOG"
+          tail -n 250 "$LOG"
+
+      - name: Upload stack evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: potatoptimize-forge-1.20.1-compat-stack-evidence
+          path: |
+            /tmp/potatoptimize-stack/logs/latest.log
+            /tmp/potatoptimize-stack/server-console.log
+            /tmp/potatoptimize-stack/config/potatoptimize.properties
+            /tmp/modernfix.json
+            /tmp/servercore.json
+            /tmp/ferrite-core.json
+            /tmp/krypton-fnp.json
+          if-no-files-found: warn
