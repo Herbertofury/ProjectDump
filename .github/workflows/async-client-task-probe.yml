@@ -1,0 +1,67 @@
+name: Async Client Task Probe
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-runtime-fixture]
+    paths: [.github/workflows/async-client-task-probe.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe-client-task:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout project harness
+        uses: actions/checkout@v4
+
+      - name: Checkout canonical HMT source
+        uses: actions/checkout@v4
+        with:
+          repository: JustHari01/HariMultiThread
+          ref: f381611c2d71a85192e2028f9e30c03823a6482b
+          path: upstream
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Reconstruct exact current source
+        shell: bash
+        run: |
+          rm -rf upstream/**/bin upstream/**/build upstream/**/.gradle upstream/buildSrc/.gradle upstream/buildSrc/build || true
+          chmod +x upstream/gradlew
+          python3 minecraft/async-1.20.1-ultimate/apply_overlay.py upstream minecraft/async-1.20.1-ultimate/overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_platform.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lwjgl_runtime.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_backend_architecture.py upstream minecraft/async-1.20.1-ultimate/backend-overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_world_batch.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mixin_packaging.py upstream
+          git -C upstream diff --check
+
+      - name: List exact Forge task graph
+        shell: bash
+        working-directory: upstream
+        run: |
+          ./gradlew --no-daemon --console=plain :forge:tasks --all > ../forge-tasks.txt
+          echo '=== CLIENT / RUN TASKS ==='
+          grep -Ei '(^|:)(run|client)|client|runs?' ../forge-tasks.txt || true
+          echo '=== EXACT TASK NAMES ==='
+          awk '/^[A-Za-z0-9_.:-]+([[:space:]]+-|$)/ {print $1}' ../forge-tasks.txt | grep -Ei 'run|client' || true
+
+      - name: Upload task graph
+        uses: actions/upload-artifact@v4
+        with:
+          name: async-client-task-graph
+          path: forge-tasks.txt
+          if-no-files-found: error
