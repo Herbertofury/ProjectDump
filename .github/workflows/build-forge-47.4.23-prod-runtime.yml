@@ -1,0 +1,67 @@
+name: Build Forge 47.4.23 production runtime
+
+on:
+  push:
+    branches:
+      - benchmark/potatoptimize-midnight-dimthreads-c2me
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-runtime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Download and verify official Forge installer
+        shell: bash
+        run: |
+          set -euo pipefail
+          base='https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23'
+          curl --fail --location --retry 3 --retry-delay 2 "$base/forge-1.20.1-47.4.23-installer.jar" -o forge-installer.jar
+          curl --fail --location --retry 3 --retry-delay 2 "$base/forge-1.20.1-47.4.23-installer.jar.sha256" -o forge-installer.jar.sha256
+          expected="$(tr -d '\r\n ' < forge-installer.jar.sha256)"
+          actual="$(sha256sum forge-installer.jar | awk '{print $1}')"
+          printf 'installer expected=%s\ninstaller actual=%s\n' "$expected" "$actual"
+          test "$actual" = "$expected"
+          unzip -tq forge-installer.jar
+
+      - name: Install production server
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir runtime
+          cd runtime
+          java -jar ../forge-installer.jar --installServer
+          test -d libraries
+          test -f libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-srg.jar
+          sha256sum libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-srg.jar | tee production-server-sha256.txt
+          test "$(sha256sum libraries/net/minecraft/server/1.20.1-20230612.114412/server-1.20.1-20230612.114412-srg.jar | awk '{print $1}')" = '2cab1694e7347ab1591eb5623a18dbe615f7d67fc20272751e2886b352008638'
+          printf 'Forge installer production SRG oracle: PASS\n' | tee PRODUCTION-RUNTIME-VERIFICATION.txt
+          printf 'Java: %s\n' "$(java -version 2>&1 | head -1)" >> PRODUCTION-RUNTIME-VERIFICATION.txt
+          printf 'Forge: 1.20.1-47.4.23\n' >> PRODUCTION-RUNTIME-VERIFICATION.txt
+          printf 'Server SRG SHA-256: 2cab1694e7347ab1591eb5623a18dbe615f7d67fc20272751e2886b352008638\n' >> PRODUCTION-RUNTIME-VERIFICATION.txt
+          find . -maxdepth 2 -type f -printf '%P\n' | sort >> PRODUCTION-RUNTIME-VERIFICATION.txt
+
+      - name: Package production runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          tar -C runtime -czf forge-1.20.1-47.4.23-production-runtime.tar.gz .
+          sha256sum forge-1.20.1-47.4.23-production-runtime.tar.gz | tee forge-runtime-archive-sha256.txt
+
+      - name: Upload production runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-1.20.1-47.4.23-production-runtime
+          path: |
+            forge-1.20.1-47.4.23-production-runtime.tar.gz
+            forge-runtime-archive-sha256.txt
+          if-no-files-found: error
+          compression-level: 0
