@@ -1,0 +1,4 @@
+Noxviola DimThread async interop repair
+- removes global class monitor that serialized dimension ticks and deadlocked cross-dimension async chunk requests
+- exception-safe main-thread pointer restoration via finally
+- no watchdogs, caps, timeouts, or async disable

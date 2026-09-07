@@ -1,0 +1,198 @@
+name: Potatoptimize Midnight DimThreads C2ME Native Benchmark
+
+on:
+  push:
+    branches:
+      - benchmark/potatoptimize-midnight-dimthreads-c2me
+    paths:
+      - 'benchmark/potatoptimize-midnight-dimthreads-c2me/**'
+      - '.github/workflows/potatoptimize-midnight-dimthreads-c2me-benchmark.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: potatoptimize-midnight-dimthreads-c2me-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  native-ab-benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout benchmark branch
+        uses: actions/checkout@v4
+
+      - name: Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Resolve exact public inputs and certified Potatoptimize
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ROOT="$GITHUB_WORKSPACE/benchmark/potatoptimize-midnight-dimthreads-c2me"
+          mkdir -p /tmp/potatobench/downloads /tmp/potatobench/evidence
+          cd /tmp/potatobench/downloads
+          curl --fail --location --retry 4 --retry-delay 2 -o forge-installer.jar \
+            https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar
+          curl --fail --location --retry 4 --retry-delay 2 -o dimthread-stock.jar \
+            https://mediafilez.forgecdn.net/files/5937/939/dimthread-FORGE-mc1.20.1-v1.2.1.jar
+          curl --fail --location --retry 4 --retry-delay 2 -o c2me-9.1-stock.jar \
+            https://mediafilez.forgecdn.net/files/8821/786/c2meforge-0.2.0-forge.9.1-all.jar
+          curl --fail --location --retry 4 --retry-delay 2 -o midnight-stock.jar \
+            https://mediafilez.forgecdn.net/files/6585/605/midnight-1.20.1-0.6.7.jar
+          curl --fail --location --retry 4 --retry-delay 2 -o smartbrainlib.jar \
+            https://mediafilez.forgecdn.net/files/5654/964/SmartBrainLib-forge-1.20.1-1.15.jar
+          curl --fail --location --retry 4 --retry-delay 2 -o potatoptimize-r1.jar \
+            https://raw.githubusercontent.com/Herbertofury/ProjectDump/e831e135b24ff24d3208c83dd1cd6089106ceace/release-assets/potatoptimize-forge-1.20.1-parity-safe-r1/Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar
+          unzip -t dimthread-stock.jar >/dev/null
+          unzip -t c2me-9.1-stock.jar >/dev/null
+          unzip -t midnight-stock.jar >/dev/null
+          unzip -t smartbrainlib.jar >/dev/null
+          unzip -t potatoptimize-r1.jar >/dev/null
+          test "$(sha256sum potatoptimize-r1.jar | awk '{print $1}')" = '5292a29d99eb4f51ef130043b5189b316d8f9274c459a47c8c03a2e0408832c6'
+          unzip -p dimthread-stock.jar META-INF/mods.toml | grep -q 'modId="dimthread"'
+          unzip -p dimthread-stock.jar META-INF/mods.toml | grep -q 'version="1.2.1"'
+          unzip -p c2me-9.1-stock.jar META-INF/mods.toml | grep -Eq 'modId="c2meforge"|modId = "c2meforge"'
+          unzip -p midnight-stock.jar META-INF/mods.toml | grep -qi 'midnight'
+          sha256sum *.jar | tee /tmp/potatobench/evidence/PUBLIC-INPUT-SHA256SUMS.txt
+          cp <(unzip -p midnight-stock.jar META-INF/mods.toml) /tmp/potatobench/evidence/midnight-mods.toml
+          cp <(unzip -p c2me-9.1-stock.jar META-INF/mods.toml) /tmp/potatobench/evidence/c2me-9.1-mods.toml
+
+      - name: Reconstruct latest DimThread PER-OBJECT-INTEROP-v3 content
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ROOT="$GITHUB_WORKSPACE/benchmark/potatoptimize-midnight-dimthreads-c2me"
+          python3 "$ROOT/tools/rebuild_dimthread_v3.py" \
+            /tmp/potatobench/downloads/dimthread-stock.jar \
+            "$ROOT/fixtures/dimthread-v3" \
+            /tmp/potatobench/dimthread-v3.jar | tee /tmp/potatobench/evidence/dimthread-rebuild.txt
+          unzip -t /tmp/potatobench/dimthread-v3.jar >/dev/null
+          unzip -p /tmp/potatobench/dimthread-v3.jar META-INF/mods.toml > /tmp/potatobench/evidence/dimthread-mods.toml
+          sha256sum /tmp/potatobench/dimthread-v3.jar | tee -a /tmp/potatobench/evidence/STACK-SHA256SUMS.txt
+
+      - name: Carry Noxviola C2ME hardening to 9.1 and apply DimThread interop v4
+        shell: bash
+        run: |
+          set -euxo pipefail
+          ROOT="$GITHUB_WORKSPACE/benchmark/potatoptimize-midnight-dimthreads-c2me"
+          SRC="$ROOT/tools"
+          BUILD=/tmp/potatobench/patch-build
+          mkdir -p "$BUILD/classes-v3" "$BUILD/classes-v4" "$BUILD/src-v3" "$BUILD/src-v4"
+          C2ME_BASE_SHA=$(sha256sum /tmp/potatobench/downloads/c2me-9.1-stock.jar | awk '{print $1}')
+
+          # Same accepted PERF-HARDENED-v3 transforms, carried forward to the 9.1 hotfix after structural gates.
+          gzip -dc "$SRC/C2MEPerformanceSafePatcherV3Standalone.java.gz" > "$BUILD/src-v3/base.java"
+          sed \
+            -e 's/0\.2\.0-forge\.9/0.2.0-forge.9.1/g' \
+            -e "s/1e4a4b1f1eb263f15727be5c385c6f3caa09a732ba2d66d4e5ae961f91a22eb5/$C2ME_BASE_SHA/g" \
+            "$BUILD/src-v3/base.java" > "$BUILD/src-v3/C2MEPerformanceSafePatcherV3Standalone.java"
+          javac -source 17 -target 17 \
+            --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+            --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+            -d "$BUILD/classes-v3" "$BUILD/src-v3/C2MEPerformanceSafePatcherV3Standalone.java"
+          java \
+            --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+            --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+            -cp "$BUILD/classes-v3" C2MEPerformanceSafePatcherV3Standalone \
+            /tmp/potatobench/downloads/c2me-9.1-stock.jar /tmp/potatobench/c2me-9.1-perf-v3.jar
+          unzip -t /tmp/potatobench/c2me-9.1-perf-v3.jar >/dev/null
+          PERF_SHA=$(sha256sum /tmp/potatobench/c2me-9.1-perf-v3.jar | awk '{print $1}')
+
+          # Pin the v4 interop patcher to the exact just-produced 9.1+PERF-v3 bytes; no wildcard live patching.
+          gzip -dc "$SRC/NoxviolaAsyncCompatPatcher.java.gz" > "$BUILD/src-v4/base.java"
+          sed "s/private static final String STOCK_C2ME_SHA256 = \"[^\"]*\";/private static final String STOCK_C2ME_SHA256 = \"$PERF_SHA\";/" \
+            "$BUILD/src-v4/base.java" > "$BUILD/src-v4/NoxviolaAsyncCompatPatcher.java"
+          gzip -dc "$SRC/NoxviolaDimThreadInterop.java.gz" > "$BUILD/src-v4/NoxviolaDimThreadInterop.java"
+          javac -source 17 -target 17 \
+            --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+            --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+            -d "$BUILD/classes-v4" \
+            "$BUILD/src-v4/NoxviolaAsyncCompatPatcher.java" "$BUILD/src-v4/NoxviolaDimThreadInterop.java"
+          java \
+            --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+            --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+            -cp "$BUILD/classes-v4" noxviola.repair.NoxviolaAsyncCompatPatcher \
+            c2me /tmp/potatobench/c2me-9.1-perf-v3.jar /tmp/potatobench/c2me-9.1-perf-v3-interop-v4.jar \
+            "$BUILD/classes-v4/com/ishland/c2me/noxviola/NoxviolaDimThreadInterop.class" \
+            | tee /tmp/potatobench/evidence/c2me-v4-patch.txt
+          unzip -t /tmp/potatobench/c2me-9.1-perf-v3-interop-v4.jar >/dev/null
+          sha256sum /tmp/potatobench/c2me-9.1-perf-v3.jar /tmp/potatobench/c2me-9.1-perf-v3-interop-v4.jar \
+            | tee -a /tmp/potatobench/evidence/STACK-SHA256SUMS.txt
+          cp "$BUILD/src-v3/C2MEPerformanceSafePatcherV3Standalone.java" /tmp/potatobench/evidence/
+          cp "$BUILD/src-v4/NoxviolaAsyncCompatPatcher.java" /tmp/potatobench/evidence/
+
+      - name: Apply Midnight rift tracker thread-safety repair
+        shell: bash
+        run: |
+          set -euxo pipefail
+          BUILD=/tmp/potatobench/patch-build
+          java \
+            --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
+            --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
+            -cp "$BUILD/classes-v4" noxviola.repair.NoxviolaAsyncCompatPatcher \
+            midnight /tmp/potatobench/downloads/midnight-stock.jar /tmp/potatobench/midnight-rift-threadsafe-v1.jar \
+            | tee /tmp/potatobench/evidence/midnight-v1-patch.txt
+          unzip -t /tmp/potatobench/midnight-rift-threadsafe-v1.jar >/dev/null
+          sha256sum /tmp/potatobench/midnight-rift-threadsafe-v1.jar \
+            | tee -a /tmp/potatobench/evidence/STACK-SHA256SUMS.txt
+
+      - name: Install clean Forge 47.4.23 and assemble common stack
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/potatobench/server /tmp/potatobench/common-mods /tmp/potatobench/template
+          cd /tmp/potatobench/server
+          cp /tmp/potatobench/downloads/forge-installer.jar .
+          java -jar forge-installer.jar --installServer
+          chmod +x run.sh
+          printf 'eula=true\n' > eula.txt
+          cat > user_jvm_args.txt <<'EOF'
+          -Xms2G
+          -Xmx5G
+          -XX:+UseG1GC
+          EOF
+          cp /tmp/potatobench/dimthread-v3.jar /tmp/potatobench/common-mods/dimthread-v3.jar
+          cp /tmp/potatobench/c2me-9.1-perf-v3-interop-v4.jar /tmp/potatobench/common-mods/c2me-9.1-perf-v3-interop-v4.jar
+          cp /tmp/potatobench/midnight-rift-threadsafe-v1.jar /tmp/potatobench/common-mods/midnight-rift-threadsafe-v1.jar
+          cp /tmp/potatobench/downloads/smartbrainlib.jar /tmp/potatobench/common-mods/smartbrainlib.jar
+          sha256sum /tmp/potatobench/common-mods/*.jar /tmp/potatobench/downloads/potatoptimize-r1.jar \
+            | tee -a /tmp/potatobench/evidence/STACK-SHA256SUMS.txt
+          java -version 2> /tmp/potatobench/evidence/java-version.txt
+          nproc | tee /tmp/potatobench/evidence/runner-nproc.txt
+          lscpu > /tmp/potatobench/evidence/runner-lscpu.txt
+
+      - name: Run same-world ABBAAB native benchmark
+        shell: bash
+        env:
+          SERVER: /tmp/potatobench/server
+          COMMON_MODS: /tmp/potatobench/common-mods
+          POTATO_JAR: /tmp/potatobench/downloads/potatoptimize-r1.jar
+          EVIDENCE: /tmp/potatobench/evidence
+          TEMPLATE: /tmp/potatobench/template/world
+        run: |
+          set -euxo pipefail
+          benchmark/potatoptimize-midnight-dimthreads-c2me/tools/run_benchmark.sh
+
+      - name: Analyze measured MSPT and fresh-generation timings
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          if find /tmp/potatobench/evidence/runs -name '*.console.log' -print -quit 2>/dev/null | grep -q .; then
+            python3 benchmark/potatoptimize-midnight-dimthreads-c2me/tools/analyze_benchmark.py \
+              /tmp/potatobench/evidence | tee /tmp/potatobench/evidence/analyzer-console.txt
+          fi
+
+      - name: Upload native benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: potatoptimize-midnight-dimthreads-c2me-native-benchmark
+          path: /tmp/potatobench/evidence/**
+          if-no-files-found: warn
