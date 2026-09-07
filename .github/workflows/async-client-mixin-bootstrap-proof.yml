@@ -1,0 +1,122 @@
+name: Async Client Mixin Bootstrap Proof
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-runtime-fixture]
+    paths: [.github/workflows/async-client-mixin-bootstrap-proof.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  client-bootstrap:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout project harness
+        uses: actions/checkout@v4
+
+      - name: Checkout canonical HMT source
+        uses: actions/checkout@v4
+        with:
+          repository: JustHari01/HariMultiThread
+          ref: f381611c2d71a85192e2028f9e30c03823a6482b
+          path: upstream
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install native client runtime
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends xvfb xdotool openbox libgl1-mesa-dri mesa-vulkan-drivers
+
+      - name: Reconstruct exact current source
+        shell: bash
+        run: |
+          rm -rf upstream/**/bin upstream/**/build upstream/**/.gradle upstream/buildSrc/.gradle upstream/buildSrc/build || true
+          chmod +x upstream/gradlew
+          python3 minecraft/async-1.20.1-ultimate/apply_overlay.py upstream minecraft/async-1.20.1-ultimate/overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_platform.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lwjgl_runtime.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_backend_architecture.py upstream minecraft/async-1.20.1-ultimate/backend-overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_world_batch.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mixin_packaging.py upstream
+          git -C upstream diff --check
+          grep -Fx 'org.gradle.configureondemand=false' upstream/gradle.properties
+          grep -F "config 'harimt.common.mixins.json'" upstream/forge/build.gradle
+          grep -F "config 'harimt.forge.mixins.json'" upstream/forge/build.gradle
+          ! grep -F "'MixinConfigs': 'harimt.common.mixins.json,harimt.forge.mixins.json'" upstream/forge/build.gradle
+
+      - name: Prove real Forge client reaches Render thread
+        shell: bash
+        env:
+          DISPLAY: ':99'
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          ALSOFT_DRIVERS: 'null'
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/client-bootstrap
+          Xvfb :99 -screen 0 800x600x24 -nolisten tcp > evidence/client-bootstrap/xvfb.log 2>&1 &
+          XVFB_PID=$!
+          trap 'kill "$XVFB_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 50); do
+            if xdpyinfo -display :99 >/dev/null 2>&1; then break; fi
+            sleep 0.2
+          done
+          openbox --sm-disable > evidence/client-bootstrap/openbox.log 2>&1 &
+          WM_PID=$!
+          trap 'kill "$WM_PID" "$XVFB_PID" 2>/dev/null || true' EXIT
+
+          cd upstream
+          setsid ./gradlew --no-daemon --console=plain :forge:runClient --args='--width 800 --height 600' > ../evidence/client-bootstrap/client-bootstrap.log 2>&1 &
+          CLIENT_PID=$!
+          cd ..
+
+          passed=0
+          for i in $(seq 1 180); do
+            if grep -F '[Render thread/INFO]' evidence/client-bootstrap/client-bootstrap.log >/dev/null 2>&1; then
+              passed=1
+              break
+            fi
+            if ! kill -0 "$CLIENT_PID" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$passed" -ne 1 ]; then
+            echo 'Client failed before Render-thread bootstrap:'
+            tail -n 160 evidence/client-bootstrap/client-bootstrap.log || true
+            kill -TERM -"$CLIENT_PID" 2>/dev/null || true
+            wait "$CLIENT_PID" 2>/dev/null || true
+            exit 1
+          fi
+
+          echo 'Render-thread bootstrap reached successfully.'
+          grep -F '[Render thread/INFO]' evidence/client-bootstrap/client-bootstrap.log | head -n 3
+          if grep -F "Error initialising mixin config harimt.common.mixins.json,harimt.forge.mixins.json" evidence/client-bootstrap/client-bootstrap.log; then
+            echo 'Combined MixinConfigs regression detected.' >&2
+            exit 1
+          fi
+          kill -TERM -"$CLIENT_PID" 2>/dev/null || true
+          wait "$CLIENT_PID" 2>/dev/null || true
+
+      - name: Upload bootstrap evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: async-client-mixin-bootstrap-evidence
+          path: evidence/client-bootstrap/
+          if-no-files-found: error
