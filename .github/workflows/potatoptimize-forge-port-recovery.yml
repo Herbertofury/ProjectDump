@@ -47,19 +47,67 @@ jobs:
           PY
           bash /tmp/generate-potatoptimize.sh
 
-      - name: Forge platform, Gradle 8.8, conservative defaults
+      - name: Forge hardening and parity-safe defaults
         working-directory: minecraft/potatoptimize-forge-1.20.1
         run: |
           set -euxo pipefail
           sed -i 's/gradle-8\.7-bin\.zip/gradle-8.8-bin.zip/' gradle/wrapper/gradle-wrapper.properties
           printf '\nloom.platform=forge\n' >> gradle.properties
+
           DEFAULTS=src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
           sed -i 's/^mixin.logic.main_thread = true$/mixin.logic.main_thread = false/' "$DEFAULTS"
           sed -i 's/^mixin.logic.worker_thread = true$/mixin.logic.worker_thread = false/' "$DEFAULTS"
+          sed -i 's/^mixin.logic.json = true$/mixin.logic.json = false/' "$DEFAULTS"
+          sed -i 's/^mixin.startup.dfu = true$/mixin.startup.dfu = false/' "$DEFAULTS"
+          sed -i 's/^mixin.world.biome_access = true$/mixin.world.biome_access = false/' "$DEFAULTS"
+
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('src/main/java/com/github/tatercertified/potatoptimize')
+
+          # Forge/Mixin compiler does not permit injector methods in an interface mixin.
+          p = root / 'mixin/memory/reduce_random/RandomCreationMixin.java'
+          t = p.read_text(encoding='utf-8').replace('public interface RandomCreationMixin {', 'public abstract class RandomCreationMixin {')
+          p.write_text(t, encoding='utf-8')
+
+          # Fabric-only side annotations are unnecessary: client-only mixins are separated in mixin JSON,
+          # and the server/common classes are selected by the mixin plugin.
+          for p in root.rglob('*.java'):
+              t = p.read_text(encoding='utf-8')
+              original = t
+              t = t.replace('import net.fabricmc.api.EnvType;\n', '')
+              t = t.replace('import net.fabricmc.api.Environment;\n', '')
+              t = t.replace('@Environment(EnvType.CLIENT)\n', '')
+              t = t.replace('@Environment(EnvType.SERVER)\n', '')
+              if t != original:
+                  p.write_text(t, encoding='utf-8')
+
+          # Mixin plugins execute before normal @Mod initialization. Use Forge's loading-time mod list,
+          # not only the runtime ModList singleton, for reliable compatibility guards.
+          p = root / 'config/ModCompatibility.java'
+          p.write_text('''package com.github.tatercertified.potatoptimize.config;\n\nimport net.minecraftforge.fml.loading.FMLLoader;\nimport org.apache.logging.log4j.LogManager;\nimport org.apache.logging.log4j.Logger;\n\nimport java.util.ArrayList;\nimport java.util.Arrays;\nimport java.util.List;\n\npublic final class ModCompatibility {\n    private static final Logger LOGGER = LogManager.getLogger("PotatoptimizeConfig");\n    private static final List<String> DISABLED_MIXINS = new ArrayList<>();\n\n    private ModCompatibility() {}\n\n    public static boolean testFor(String mixin) {\n        return DISABLED_MIXINS.contains(mixin);\n    }\n\n    public static void prepareMixins() {\n        DISABLED_MIXINS.clear();\n        addModCompatibility("krypton", "Krypton", new String[]{"mixin.logic.var_int"});\n        addModCompatibility("kryptonreforged", "Krypton Reforged", new String[]{"mixin.logic.var_int"});\n        addModCompatibility("modernfix", "ModernFix", new String[]{"mixin.logic.worker_thread", "mixin.startup.dfu"});\n        addModCompatibility("servercore", "ServerCore", new String[]{"mixin.item.map_chunk_loading", "mixin.unstream.pathfinding"});\n        addModCompatibility("chronos-carpet-addons", "Chronos Carpet Addons", new String[]{"mixin.entity.collisions"});\n        addModCompatibility("faster-random", "FasterRandom", new String[]{"mixin.random.entity", "mixin.random.math", "mixin.random.world", "mixin.memory.reduce_random"});\n        addModCompatibility("c2me", "C2ME", new String[]{"mixin.world.saving"});\n        addModCompatibility("lithium", "Lithium", new String[]{"mixin.world.explosion"});\n        addModCompatibility("canary", "Canary", new String[]{"mixin.world.explosion"});\n        addModCompatibility("radium", "Radium", new String[]{"mixin.world.explosion"});\n    }\n\n    private static void addModCompatibility(String modId, String visualName, String[] mixins) {\n        if (FMLLoader.getLoadingModList() != null && FMLLoader.getLoadingModList().getModFileById(modId) != null) {\n            LOGGER.info("{} detected; disabling overlapping Potatoptimize rules: {}", visualName, Arrays.toString(mixins));\n            DISABLED_MIXINS.addAll(Arrays.asList(mixins));\n        }\n    }\n}\n''', encoding='utf-8')
+
+          # Make first-run configuration self-documenting: write every effective default explicitly.
+          p = root / 'config/PotatoptimizeConfig.java'
+          t = p.read_text(encoding='utf-8')
+          t = t.replace('writeDefaultConfig(file);', 'config.writeDefaultConfig(file);')
+          t = t.replace('private static void writeDefaultConfig(File file) throws IOException {', 'private void writeDefaultConfig(File file) throws IOException {')
+          old = '''            writer.write("# By default, this file will be empty except for this notice.\\n");'''
+          new = '''            writer.write("# PARITY-SAFE PROFILE: all behavior-changing / experimental optimizations are OFF by default.\\n");\n            writer.write("# Set individual options to true only when you explicitly want the associated tradeoff.\\n");\n            writer.write("#\\n");\n            java.util.List<String> keys = new java.util.ArrayList<>(this.options.keySet());\n            java.util.Collections.sort(keys);\n            for (String key : keys) {\n                writer.write(key + " = " + this.options.get(key).isEnabled() + "\\n");\n            }'''
+          if old not in t:
+              raise SystemExit('expected default-config writer marker not found')
+          t = t.replace(old, new)
+          p.write_text(t, encoding='utf-8')
+          PY
+
           grep -q 'gradle-8.8-bin.zip' gradle/wrapper/gradle-wrapper.properties
           grep -q '^loom.platform=forge$' gradle.properties
           grep -q '^mixin.logic.main_thread = false$' "$DEFAULTS"
           grep -q '^mixin.logic.worker_thread = false$' "$DEFAULTS"
+          grep -q '^mixin.logic.json = false$' "$DEFAULTS"
+          grep -q '^mixin.startup.dfu = false$' "$DEFAULTS"
+          grep -q '^mixin.world.biome_access = false$' "$DEFAULTS"
+          ! grep -R -nE 'net\.fabricmc\.api|FabricLoader|fabric\.api' src/main/java
 
       - name: Build Forge production JAR
         working-directory: minecraft/potatoptimize-forge-1.20.1
@@ -77,6 +125,8 @@ jobs:
           unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.world.explosion = false'
           unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.logic.main_thread = false'
           unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.logic.worker_thread = false'
+          unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.logic.json = false'
+          unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.startup.dfu = false'
           sha256sum "$JAR" | tee build/SHA256SUMS.txt
 
       - name: Commit verified source checkpoint
