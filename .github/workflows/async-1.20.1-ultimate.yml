@@ -6,12 +6,12 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-forge:
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 120
     steps:
       - name: Checkout project harness
         uses: actions/checkout@v4
@@ -25,17 +25,19 @@ jobs:
           fetch-depth: 1
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
 
-      - name: Install shader compiler and Vulkan software runtime
+      - name: Install native QA toolchain
         shell: bash
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends glslang-tools mesa-vulkan-drivers vulkan-tools zip
+          sudo apt-get install -y --no-install-recommends \
+            glslang-tools mesa-vulkan-drivers vulkan-tools \
+            xvfb openbox xdotool x11-utils imagemagick libgl1-mesa-dri zip
 
       - name: Clean accidental upstream build state
         shell: bash
@@ -67,7 +69,7 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/apply_mixin_packaging.py upstream
           git -C upstream diff --check
 
-      - name: Verify hardening and production packaging invariants
+      - name: Verify hardening and production invariants
         shell: bash
         run: |
           ! grep -F 'entityList.parallelStream()' upstream/common/src/main/java/com/axalotl/async/common/mixin/spawn/NaturalSpawnerMixin.java
@@ -97,9 +99,15 @@ jobs:
           grep -F 'harimtVulkanBackend' upstream/forge/build.gradle
           grep -F 'compile-checked isolated LWJGL' upstream/common/src/main/java/com/axalotl/async/common/gpu/GpuEntityModule.java
           ! grep -R -F 'Class.forName("org.lwjgl.vulkan' upstream/common/src/main/java
+          grep -F '.descriptorCount(1)' upstream/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          grep -F 'VK_PIPELINE_STAGE_HOST_BIT' upstream/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          grep -F 'enableGpuCollisionLocal' upstream/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java
+          grep -F '.define("enableGpuCollision", enableGpuCollision.getValue())' upstream/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java
+          grep -F 'enableGpuCollision.setValue(enableGpuCollisionLocal.get())' upstream/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java
+          grep -F 'enableGpuCollisionLocal.set(enableGpuCollision.getValue())' upstream/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java
           grep -F "'MixinConfigs': 'harimt.common.mixins.json,harimt.forge.mixins.json'" upstream/forge/build.gradle
 
-      - name: Compile Vulkan broad-phase shader
+      - name: Compile and validate Vulkan shader
         shell: bash
         run: |
           shader=upstream/common/src/main/resources/assets/async/shaders/collision_broadphase.comp
@@ -109,19 +117,15 @@ jobs:
           test "$(xxd -p -l 4 "$spv")" = "03022307"
           grep -F 'bool laneActive = gid < uint(entityCount);' "$shader"
           grep -F 'binding = 8' "$shader"
-
-      - name: Vulkan environment receipt
-        shell: bash
-        run: |
-          mkdir -p evidence/runtime
-          vulkaninfo --summary | tee evidence/runtime/vulkaninfo-summary.txt
+          mkdir -p evidence/runtime/server
+          vulkaninfo --summary | tee evidence/runtime/server/vulkaninfo-summary.txt
 
       - name: Compile backend and build Forge 1.20.1 release
         shell: bash
         working-directory: upstream
         run: ./gradlew --no-daemon clean :forge:harimtVulkanBackendJar :forge:build --stacktrace
 
-      - name: Verify production JAR, mixin manifest and isolated backend
+      - name: Verify production JAR, Mixin packaging and isolated backend
         shell: bash
         run: |
           mapfile -t jars < <(find upstream/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort)
@@ -152,7 +156,9 @@ jobs:
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-3.3.1-natives-linux.jar'
           jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/lwjgl-3.3.1-natives-windows.jar'
           unzip -p "$jarfile" META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar > /tmp/harimt-vulkan-backend.jar
-          jar tf /tmp/harimt-vulkan-backend.jar | grep -Fx 'com/axalotl/async/vulkanruntime/LwjglVulkanBackend.class'
+          javap -classpath /tmp/harimt-vulkan-backend.jar -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend > /tmp/LwjglVulkanBackend.javap.txt
+          grep -F 'descriptorCount' /tmp/LwjglVulkanBackend.javap.txt
+          grep -F 'vkCmdPipelineBarrier' /tmp/LwjglVulkanBackend.javap.txt
           if unzip -p "$jarfile" META-INF/jarjar/metadata.json 2>/dev/null | grep -Fq 'lwjgl-vulkan'; then
             echo 'lwjgl-vulkan must not be exposed as a Forge JarJar module' >&2
             exit 1
@@ -163,14 +169,14 @@ jobs:
       - name: Install real Forge 47.4.23 dedicated server
         shell: bash
         run: |
-          mkdir -p qa-server evidence/runtime
+          mkdir -p qa-server evidence/runtime/server
           curl -fL --retry 3 \
             'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar' \
             -o forge-1.20.1-47.4.23-installer.jar
           (
             cd qa-server
             java -jar ../forge-1.20.1-47.4.23-installer.jar --installServer \
-              > ../evidence/runtime/forge-server-install.log 2>&1
+              > ../evidence/runtime/server/forge-server-install.log 2>&1
           )
           test -f qa-server/run.sh
           chmod +x qa-server/run.sh
@@ -187,40 +193,65 @@ jobs:
           motd=HariMultiThread Ultimate Runtime QA
           EOF
 
-      - name: Packaged Forge sustained Vulkan, fallback, save, restart gate
+      - name: Packaged Forge Vulkan, fallback, save and restart gate
         shell: bash
         run: |
           python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
-            qa-server evidence/runtime
+            qa-server evidence/runtime/server
 
-      - name: Package merged source and verification evidence
-        if: always()
+      - name: Real Forge client and integrated-server gate
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/runtime_client_qa.py \
+            upstream qa-server/world evidence/runtime/client
+
+      - name: Package final release and evidence
         shell: bash
         run: |
           rm -rf release merged-source
-          mkdir -p release evidence merged-source
-          cp UPSTREAM_SHA.txt evidence/ || true
-          (cd upstream && git diff --binary) > evidence/UPSTREAM-TO-ULTIMATE.patch || true
-          (cd upstream && git status --porcelain=v1) > evidence/upstream-status.txt || true
-          cp RELEASE_JAR_PATH.txt evidence/ 2>/dev/null || true
-          if test -f RELEASE_JAR_PATH.txt; then
-            jarfile="$(cat RELEASE_JAR_PATH.txt)"
-            cp "$jarfile" release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1.jar
-          fi
+          mkdir -p release merged-source evidence
+          cp UPSTREAM_SHA.txt evidence/
+          (cd upstream && git diff --binary) > evidence/UPSTREAM-TO-ULTIMATE.patch
+          (cd upstream && git status --porcelain=v1) > evidence/upstream-status.txt
+          cp RELEASE_JAR_PATH.txt evidence/
+          jarfile="$(cat RELEASE_JAR_PATH.txt)"
+          cp "$jarfile" release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1.jar
           rsync -a \
-            --exclude='.git/' --exclude='.gradle/' --exclude='build/' --exclude='bin/' \
+            --exclude='.git/' --exclude='.gradle/' --exclude='build/' --exclude='bin/' --exclude='run/' \
             upstream/ merged-source/
           (cd merged-source && zip -qr ../release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-SOURCE.zip .)
-          cp -r minecraft/async-1.20.1-ultimate evidence/project-overlay
-          sha256sum release/* > release/SHA256SUMS.txt 2>/dev/null || true
-          cp release/SHA256SUMS.txt evidence/ 2>/dev/null || true
+          zip -qr release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-EVIDENCE.zip evidence
+          sha256sum \
+            release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1.jar \
+            release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-SOURCE.zip \
+            release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-EVIDENCE.zip \
+            > release/SHA256SUMS.txt
 
-      - name: Upload release candidate
-        if: always()
+      - name: Upload final release bundle
         uses: actions/upload-artifact@v4
         with:
-          name: async-1.20.1-ultimate-release-candidate
+          name: async-1.20.1-ultimate-RELEASE-bundle
           path: |
             release/
             evidence/
           if-no-files-found: error
+
+      - name: Publish GitHub release last
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag='harimt-ultimate-1.20.1-2.1.0-noxviola.1'
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release tag $tag already exists; refusing to replace an existing release" >&2
+            exit 1
+          fi
+          gh release create "$tag" \
+            --target "$GITHUB_SHA" \
+            --title 'HariMultiThread Ultimate 2.1.0-noxviola.1 — Forge 1.20.1' \
+            --notes-file minecraft/async-1.20.1-ultimate/overlay/RELEASE-NOTES-2.1.0-noxviola.1.md \
+            release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1.jar \
+            release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-SOURCE.zip \
+            release/HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-EVIDENCE.zip \
+            release/SHA256SUMS.txt
