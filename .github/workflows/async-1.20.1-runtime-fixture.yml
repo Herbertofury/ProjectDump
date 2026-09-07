@@ -1,4 +1,4 @@
-name: Async 1.20.1 Vulkan Micro Probe
+name: Async 1.20.1 Packaged Vulkan Fix QA
 
 on:
   push:
@@ -11,11 +11,11 @@ permissions:
   actions: read
 
 jobs:
-  micro-probe:
+  packaged-runtime:
     runs-on: ubuntu-22.04
-    timeout-minutes: 10
+    timeout-minutes: 25
     steps:
-      - name: Checkout diagnostic sources
+      - name: Checkout exact QA harness
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -24,20 +24,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Vulkan and shader tools
+      - name: Install Vulkan runtime
         shell: bash
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools glslang-tools spirv-tools unzip
-          mkdir -p evidence
-          vulkaninfo --summary | tee evidence/vulkaninfo-summary.txt
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools zip unzip
+          mkdir -p evidence/runtime
+          vulkaninfo --summary | tee evidence/runtime/vulkaninfo-summary.txt
 
-      - name: Download exact proven parent JAR and source
+      - name: Download exact proven parent JAR and merged source
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p reused source deps classes shaders
+          mkdir -p reused source deps backend-classes patched inject/META-INF/harimt-libs
           gh run download 34066031095 \
             --repo Herbertofury/ProjectDump \
             --name async-1.20.1-ultimate-release-candidate \
@@ -51,16 +51,17 @@ jobs:
           unzip -q "$source_zip" -d source
           unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-3.3.1.jar > deps/lwjgl-3.3.1.jar
           unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-vulkan-3.3.1.jar > deps/lwjgl-vulkan-3.3.1.jar
-          unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-3.3.1-natives-linux.jar > deps/lwjgl-3.3.1-natives-linux.jar
           test -s deps/lwjgl-3.3.1.jar
           test -s deps/lwjgl-vulkan-3.3.1.jar
-          test -s deps/lwjgl-3.3.1-natives-linux.jar
+          unzip -p "$base_jar" assets/async/shaders/collision_broadphase.comp.spv > production-shader-before.spv
+          sha256sum "$base_jar" production-shader-before.spv | tee evidence/runtime/base-parent-and-production-shader.sha256
 
-      - name: Fix descriptor write count and compute-to-host availability
+      - name: Apply only the proven child-backend fixes
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
+
           p = Path('source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java')
           t = p.read_text(encoding='utf-8')
 
@@ -73,106 +74,89 @@ jobs:
           old = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
           new = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n\n            VkMemoryBarrier.Buffer hostReadBarrier = VkMemoryBarrier.calloc(1, stack);\n            hostReadBarrier.get(0)\n                    .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER)\n                    .srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT)\n                    .dstAccessMask(VK_ACCESS_HOST_READ_BIT);\n            vkCmdPipelineBarrier(\n                    commandBuffer,\n                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,\n                    VK_PIPELINE_STAGE_HOST_BIT,\n                    0,\n                    hostReadBarrier,\n                    null,\n                    null);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
           if t.count(old) != 1:
-              raise SystemExit(f'backend dispatch source drift: expected 1 marker, found {t.count(old)}')
+              raise SystemExit(f'dispatch source drift: expected 1 marker, found {t.count(old)}')
           p.write_text(t.replace(old, new, 1), encoding='utf-8')
           PY
           grep -F '.descriptorCount(1)' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          grep -F 'VK_PIPELINE_STAGE_HOST_BIT' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
 
-      - name: Compile isolated backend and standalone probe
+      - name: Rebuild only the isolated child backend and inject it
         shell: bash
         run: |
           base_jar="$(cat BASE_JAR_PATH.txt)"
-          cp="${base_jar}:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar"
-          javac --release 17 -cp "$cp" -d classes \
-            source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java \
-            minecraft/async-1.20.1-ultimate/diagnostics/VulkanBackendProbe.java
-          javap -classpath classes -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend \
-            > evidence/LwjglVulkanBackend.javap.txt
-          grep -F 'vkCmdPipelineBarrier' evidence/LwjglVulkanBackend.javap.txt
-          grep -F 'descriptorCount' evidence/LwjglVulkanBackend.javap.txt
+          javac --release 17 \
+            -cp "$base_jar:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar" \
+            -d backend-classes \
+            source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          javap -classpath backend-classes -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend \
+            > evidence/runtime/LwjglVulkanBackend.fixed.javap.txt
+          grep -F 'descriptorCount' evidence/runtime/LwjglVulkanBackend.fixed.javap.txt
+          grep -F 'vkCmdPipelineBarrier' evidence/runtime/LwjglVulkanBackend.fixed.javap.txt
 
-      - name: Compile sentinel, push-constant, and AABB shaders
+          cat > backend-manifest.mf <<'EOF'
+          Manifest-Version: 1.0
+          Implementation-Title: HariMultiThread Ultimate Vulkan Backend
+          Implementation-Version: 3.3.1
+          EOF
+          jar cfm patched/harimt-vulkan-backend-3.3.1.jar backend-manifest.mf -C backend-classes .
+          cp patched/harimt-vulkan-backend-3.3.1.jar inject/META-INF/harimt-libs/
+
+          patched_jar=patched/HariMultiThread-Ultimate-descriptor-fix-diagnostic.jar
+          cp "$base_jar" "$patched_jar"
+          jar uf "$patched_jar" -C inject META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar
+          echo "$patched_jar" > PATCHED_JAR_PATH.txt
+
+          unzip -p "$patched_jar" assets/async/shaders/collision_broadphase.comp.spv > production-shader-after.spv
+          cmp -s production-shader-before.spv production-shader-after.spv
+          sha256sum patched/harimt-vulkan-backend-3.3.1.jar "$patched_jar" production-shader-after.spv \
+            | tee evidence/runtime/patched-backend-parent-and-production-shader.sha256
+
+      - name: Install Forge 47.4.23 server
         shell: bash
         run: |
-          cat > shaders/sentinel.comp <<'EOF'
-          #version 450
-          layout(local_size_x = 1) in;
-          layout(std430, binding = 6) writeonly buffer PairsA { int pairsA[]; };
-          layout(std430, binding = 7) writeonly buffer PairsB { int pairsB[]; };
-          layout(std430, binding = 8) coherent buffer PairCount { int pairCounter; };
-          void main() {
-              if (gl_GlobalInvocationID.x == 0u) {
-                  pairsA[0] = 0;
-                  pairsB[0] = 1;
-                  pairCounter = 1;
-              }
-          }
+          mkdir -p qa-server/mods
+          curl -fL --retry 3 \
+            'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar' \
+            -o forge-1.20.1-47.4.23-installer.jar
+          (
+            cd qa-server
+            java -jar ../forge-1.20.1-47.4.23-installer.jar --installServer \
+              > ../evidence/runtime/forge-server-install.log 2>&1
+          )
+          chmod +x qa-server/run.sh
+          cp "$(cat PATCHED_JAR_PATH.txt)" qa-server/mods/HariMultiThread-Ultimate.jar
+          printf 'eula=true\n' > qa-server/eula.txt
+          cat > qa-server/server.properties <<'EOF'
+          online-mode=false
+          level-name=world
+          level-seed=8675309
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          motd=HariMultiThread Descriptor Fix Packaged QA
           EOF
 
-          cat > shaders/push.comp <<'EOF'
-          #version 450
-          layout(local_size_x = 1) in;
-          layout(push_constant) uniform PushConstants {
-              int entityCount;
-              int maxPairs;
-              float reservedFloat;
-              int reservedInt;
-          };
-          layout(std430, binding = 6) writeonly buffer PairsA { int pairsA[]; };
-          layout(std430, binding = 7) writeonly buffer PairsB { int pairsB[]; };
-          layout(std430, binding = 8) coherent buffer PairCount { int pairCounter; };
-          void main() {
-              if (gl_GlobalInvocationID.x == 0u && entityCount == 3 && maxPairs >= 1) {
-                  pairsA[0] = 0;
-                  pairsB[0] = 1;
-                  pairCounter = 1;
-              }
-          }
-          EOF
-
-          cp minecraft/async-1.20.1-ultimate/diagnostics/global_memory_aabb_probe.comp shaders/aabb.comp
-
-          for shader in sentinel push aabb; do
-            glslangValidator -V "shaders/${shader}.comp" -o "shaders/${shader}.spv"
-            spirv-val "shaders/${shader}.spv"
-            test "$(xxd -p -l 4 "shaders/${shader}.spv")" = "03022307"
-          done
-          sha256sum shaders/*.spv | tee evidence/probe-shaders.sha256
-
-      - name: Run sentinel output-descriptor/readback probe
+      - name: Run full packaged GPU verifier, fallback, save and restart gate
         shell: bash
         run: |
-          base_jar="$(cat BASE_JAR_PATH.txt)"
-          cp="classes:${base_jar}:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar:deps/lwjgl-3.3.1-natives-linux.jar"
-          java -cp "$cp" com.axalotl.async.vulkanruntime.VulkanBackendProbe shaders/sentinel.spv \
-            | tee evidence/sentinel.txt
-          grep -Fx 'VULKAN_BACKEND_PROBE_PASS' evidence/sentinel.txt
+          python3 -m py_compile minecraft/async-1.20.1-ultimate/runtime_server_qa.py
+          python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
+            qa-server evidence/runtime
 
-      - name: Run push-constant probe
+      - name: Summarize decisive runtime evidence
+        if: always()
         shell: bash
         run: |
-          base_jar="$(cat BASE_JAR_PATH.txt)"
-          cp="classes:${base_jar}:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar:deps/lwjgl-3.3.1-natives-linux.jar"
-          java -cp "$cp" com.axalotl.async.vulkanruntime.VulkanBackendProbe shaders/push.spv \
-            | tee evidence/push.txt
-          grep -Fx 'VULKAN_BACKEND_PROBE_PASS' evidence/push.txt
+          grep -Eh 'Compile-checked Vulkan collision backend initialized|Vulkan broad-phase learned pair capacity|Vulkan push broad-phase sustained|Live GPU Verification PASS|Exact pairs:|GPU candidates:|Conservative extras:|GPU VERIFICATION FAILED|Vanilla push replay fallback is active|HMT_QA_ENTITIES_PRESENT|HMT_QA_RESTART_ENTITIES_PRESENT|packaged Forge dense-pair' \
+            evidence/runtime/packaged-server-*.log 2>/dev/null || true
 
-      - name: Run global-memory AABB input probe
-        shell: bash
-        run: |
-          base_jar="$(cat BASE_JAR_PATH.txt)"
-          cp="classes:${base_jar}:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar:deps/lwjgl-3.3.1-natives-linux.jar"
-          java -cp "$cp" com.axalotl.async.vulkanruntime.VulkanBackendProbe shaders/aabb.spv \
-            | tee evidence/aabb.txt
-          grep -Fx 'VULKAN_BACKEND_PROBE_PASS' evidence/aabb.txt
-
-      - name: Upload micro-probe evidence
+      - name: Upload packaged proof evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: async-vulkan-micro-probe-evidence
+          name: async-packaged-vulkan-descriptor-fix-evidence
           path: |
-            evidence/
-            shaders/*.comp
-            shaders/*.spv
-          if-no-files-found: error
+            evidence/runtime/
+            patched/harimt-vulkan-backend-3.3.1.jar
+            patched/HariMultiThread-Ultimate-descriptor-fix-diagnostic.jar
+          if-no-files-found: warn
