@@ -1,0 +1,23 @@
+# Example opt-ins for experienced users. Copy selected lines to config/potatoptimize.properties.
+# These are NOT enabled by default because they may intentionally alter vanilla behavior,
+# RNG sequences, chunk-loading semantics, timings, or have higher mod-compatibility risk.
+mixin.block_entity.chest_chunk_loading = true
+mixin.entity.bee = true
+mixin.entity.collisions = true
+mixin.entity.fall_damage = true
+mixin.entity.pathfinding = true
+mixin.entity.spawning = true
+mixin.entity.statistics = true
+mixin.entity.teleport = true
+mixin.entity.villager = true
+mixin.item.map_chunk_loading = true
+mixin.item.treasure_map_lookup = true
+mixin.logic.chunk_query = true
+mixin.random.creation = true
+mixin.random.entity = true
+mixin.random.generators = true
+mixin.random.math = true
+mixin.random.world = true
+mixin.threading.client_tick = true
+mixin.world.explosion = true
+mixin.world.saving = true

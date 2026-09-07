@@ -1,0 +1,29 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="GPL-3.0-only"
+issueTrackerURL="https://github.com/Tater-Certified/Potatoptimize/issues"
+
+[[mods]]
+modId="potatoptimize"
+version="${file.jarVersion}"
+displayName="Potatoptimize Forge 1.20.1 - Parity Safe Port"
+displayURL="https://github.com/Tater-Certified/Potatoptimize"
+authors="QPCrummer / Tater-Certified; Forge 1.20.1 port maintained for Herbertofury"
+description='''
+Native Forge 1.20.1 port of Potatoptimize with conservative vanilla-parity defaults.
+Optimizations that intentionally alter gameplay, RNG sequences, loading semantics, or experimental threading are opt-in.
+'''
+
+[[dependencies.potatoptimize]]
+modId="forge"
+mandatory=true
+versionRange="[47.4.0,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.potatoptimize]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
