@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: potatoptimize-compat-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   modern-performance-stack:
     runs-on: ubuntu-latest
@@ -30,6 +34,7 @@ jobs:
           JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
           test -n "$JAR"
           echo "MOD_JAR=$PWD/$JAR" >> "$GITHUB_ENV"
+          sha256sum "$JAR"
 
       - name: Install clean Forge 47.4.23 server
         run: |
@@ -130,6 +135,11 @@ jobs:
           grep -Eq 'Krypton (Reno|Reforged|detected)' "$LOG"
           ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError|ClassNotFoundException' "$LOG"
           ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' "$LOG"
+          test -f config/potatoptimize.properties
+          grep -q '^mixin.memory.reduce_alloc = false$' config/potatoptimize.properties
+          grep -q '^mixin.logic.fast_bits_blockpos = false$' config/potatoptimize.properties
+          grep -q '^mixin.unstream.player_movement = false$' config/potatoptimize.properties
+          grep -q '^mixin.world.explosion = false$' config/potatoptimize.properties
           tail -n 250 "$LOG"
 
       - name: Upload stack evidence
