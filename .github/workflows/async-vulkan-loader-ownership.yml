@@ -1,0 +1,123 @@
+name: Async Vulkan Loader Ownership Probe
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-runtime-fixture]
+    paths: [.github/workflows/async-vulkan-loader-ownership.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  ownership:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout diagnostic sources
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install Vulkan runtime
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools unzip
+          mkdir -p evidence
+          vulkaninfo --summary | tee evidence/vulkaninfo-summary.txt
+
+      - name: Download exact proven parent JAR and source
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p reused source deps classes
+          gh run download 34066031095 \
+            --repo Herbertofury/ProjectDump \
+            --name async-1.20.1-ultimate-release-candidate \
+            --dir reused
+          base_jar="$(find reused -type f -name 'HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1.jar' -print -quit)"
+          source_zip="$(find reused -type f -name 'HariMultiThread-Ultimate-1.20.1-2.1.0-noxviola.1-SOURCE.zip' -print -quit)"
+          test -s "$base_jar"
+          test -s "$source_zip"
+          test "$(sha256sum "$base_jar" | awk '{print $1}')" = "e6e9a51cc7ba77553cdcc41d6ca1f2d69c408afa0110e857ba436d55e75fad55"
+          echo "$base_jar" > BASE_JAR_PATH.txt
+          unzip -q "$source_zip" -d source
+          unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-3.3.1.jar > deps/lwjgl-3.3.1.jar
+          unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-vulkan-3.3.1.jar > deps/lwjgl-vulkan-3.3.1.jar
+          unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-3.3.1-natives-linux.jar > deps/lwjgl-3.3.1-natives-linux.jar
+          unzip -p "$base_jar" assets/async/shaders/collision_broadphase.comp.spv > production-shader.spv
+          test -s deps/lwjgl-3.3.1.jar
+          test -s deps/lwjgl-vulkan-3.3.1.jar
+          test -s deps/lwjgl-3.3.1-natives-linux.jar
+          test -s production-shader.spv
+
+      - name: Apply proven descriptor/barrier fixes and preserve external VK ownership
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java')
+          t = p.read_text(encoding='utf-8')
+
+          replacements = [
+              (
+                  '''                writes.get(i)\n                        .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)\n                        .dstSet(descriptorSet)\n                        .dstBinding(i)\n                        .descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)\n                        .pBufferInfo(VkDescriptorBufferInfo.create(infos.get(i).address(), 1));\n''',
+                  '''                writes.get(i)\n                        .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)\n                        .dstSet(descriptorSet)\n                        .dstBinding(i)\n                        .descriptorCount(1)\n                        .descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)\n                        .pBufferInfo(VkDescriptorBufferInfo.create(infos.get(i).address(), 1));\n'''
+              ),
+              (
+                  '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n''',
+                  '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n\n            VkMemoryBarrier.Buffer hostReadBarrier = VkMemoryBarrier.calloc(1, stack);\n            hostReadBarrier.get(0)\n                    .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER)\n                    .srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT)\n                    .dstAccessMask(VK_ACCESS_HOST_READ_BIT);\n            vkCmdPipelineBarrier(\n                    commandBuffer,\n                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,\n                    VK_PIPELINE_STAGE_HOST_BIT,\n                    0,\n                    hostReadBarrier,\n                    null,\n                    null);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
+              ),
+              (
+                  '        try { VK.destroy(); } catch (Throwable ignored) { }\n',
+                  '''        // HMT owns its VkInstance/VkDevice, not LWJGL's process-global\n        // Vulkan function provider. Never destroy a provider another mod may own.\n'''
+              ),
+          ]
+          for old, new in replacements:
+              if t.count(old) != 1:
+                  raise SystemExit(f'backend source drift: {old[:100]!r} count={t.count(old)}')
+              t = t.replace(old, new, 1)
+          p.write_text(t, encoding='utf-8')
+          PY
+          grep -F '.descriptorCount(1)' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          grep -F 'VK_PIPELINE_STAGE_HOST_BIT' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          ! grep -F 'try { VK.destroy();' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+
+      - name: Compile isolated backend and ownership probe
+        shell: bash
+        run: |
+          base_jar="$(cat BASE_JAR_PATH.txt)"
+          cp="${base_jar}:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar"
+          javac --release 17 -cp "$cp" -d classes \
+            source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java \
+            minecraft/async-1.20.1-ultimate/diagnostics/VulkanLoaderOwnershipProbe.java
+          javap -classpath classes -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend \
+            > evidence/LwjglVulkanBackend.ownership-fixed.javap.txt
+          grep -F 'descriptorCount' evidence/LwjglVulkanBackend.ownership-fixed.javap.txt
+          grep -F 'vkCmdPipelineBarrier' evidence/LwjglVulkanBackend.ownership-fixed.javap.txt
+
+      - name: Prove external Vulkan provider survives HMT stop and restart
+        shell: bash
+        run: |
+          base_jar="$(cat BASE_JAR_PATH.txt)"
+          cp="classes:${base_jar}:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar:deps/lwjgl-3.3.1-natives-linux.jar"
+          java -cp "$cp" com.axalotl.async.vulkanruntime.VulkanLoaderOwnershipProbe production-shader.spv \
+            | tee evidence/ownership-probe.txt
+          grep -Fx 'VULKAN_EXTERNAL_PROVIDER_SURVIVED_FIRST_SHUTDOWN' evidence/ownership-probe.txt
+          grep -Fx 'VULKAN_BACKEND_RESTART_WITH_SHARED_PROVIDER_PASS' evidence/ownership-probe.txt
+          grep -Fx 'VULKAN_LOADER_OWNERSHIP_PASS' evidence/ownership-probe.txt
+
+      - name: Upload ownership evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: async-vulkan-loader-ownership-evidence
+          path: evidence/
+          if-no-files-found: error
