@@ -1,6 +1,9 @@
 name: Potatoptimize Forge 1.20.1 Aggressive Profile QA
 
 on:
+  push:
+    paths:
+      - '.github/workflows/potatoptimize-forge-aggressive-qa.yml'
   workflow_dispatch:
 
 permissions:
