@@ -3,6 +3,7 @@ name: Potatoptimize Forge 1.20.1 Aggressive Profile QA
 on:
   push:
     paths:
+      - 'minecraft/potatoptimize-forge-1.20.1/**'
       - '.github/workflows/potatoptimize-forge-aggressive-qa.yml'
   workflow_dispatch:
 
@@ -18,10 +19,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
-      - name: Checkout certified source lineage
+      - name: Checkout tested tree
         uses: actions/checkout@v4
-        with:
-          ref: e84f50586275a9ae799e1f389028781f81b7406f
 
       - uses: actions/setup-java@v5
         with:
@@ -32,7 +31,7 @@ jobs:
         working-directory: minecraft/potatoptimize-forge-1.20.1
         run: |
           set -euxo pipefail
-          test "$(git rev-parse HEAD)" = "e84f50586275a9ae799e1f389028781f81b7406f"
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
           chmod +x gradlew
           ./gradlew --no-daemon clean build
           JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
