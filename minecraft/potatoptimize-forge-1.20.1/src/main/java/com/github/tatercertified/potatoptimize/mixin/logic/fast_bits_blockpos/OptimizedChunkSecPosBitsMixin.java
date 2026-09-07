@@ -17,8 +17,6 @@ public abstract class OptimizedChunkSecPosBitsMixin extends Vec3i {
         return null;
     }
 
-
-
     public OptimizedChunkSecPosBitsMixin(int x, int y, int z) {
         super(x, y, z);
     }
@@ -124,11 +122,11 @@ public abstract class OptimizedChunkSecPosBitsMixin extends Vec3i {
 
     /**
      * @author QPCrummer
-     * @reason Inline
+     * @reason Inline while preserving vanilla-provided vertical bounds.
      */
     @Overwrite
     public static Stream<ChunkSectionPos> stream(ChunkPos center, int radius, int minY, int maxY) {
-        return stream(center.x - radius, 0, center.z - radius, center.x + radius, 15, center.z + radius);
+        return stream(center.x - radius, minY, center.z - radius, center.x + radius, maxY, center.z + radius);
     }
 
 }
