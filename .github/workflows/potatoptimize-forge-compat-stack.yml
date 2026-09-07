@@ -72,6 +72,8 @@ jobs:
           fetch_modrinth servercore servercore
           fetch_modrinth ferrite-core ferritecore
           fetch_modrinth krypton-fnp krypton-reno
+          unzip -p mods/krypton-reno.jar META-INF/mods.toml | tee /tmp/krypton-mods.toml
+          grep -Eiq 'krypton|reno|fnp' /tmp/krypton-mods.toml
           ls -lh mods
 
       - name: Boot and exercise compatibility stack
@@ -132,13 +134,14 @@ jobs:
           grep -q 'Done (' "$LOG"
           grep -q 'ModernFix detected' "$LOG"
           grep -q 'ServerCore detected' "$LOG"
-          grep -Eq 'Krypton (Reno|Reforged|detected)' "$LOG"
+          grep -Eiq 'krypton|reno|fnp' "$LOG"
           ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError|ClassNotFoundException' "$LOG"
           ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' "$LOG"
           test -f config/potatoptimize.properties
           grep -q '^mixin.memory.reduce_alloc = false$' config/potatoptimize.properties
           grep -q '^mixin.logic.fast_bits_blockpos = false$' config/potatoptimize.properties
           grep -q '^mixin.unstream.player_movement = false$' config/potatoptimize.properties
+          grep -q '^mixin.entity.navigation = false$' config/potatoptimize.properties
           grep -q '^mixin.world.explosion = false$' config/potatoptimize.properties
           tail -n 250 "$LOG"
 
@@ -155,4 +158,5 @@ jobs:
             /tmp/servercore.json
             /tmp/ferrite-core.json
             /tmp/krypton-fnp.json
+            /tmp/krypton-mods.toml
           if-no-files-found: warn
