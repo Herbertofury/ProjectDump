@@ -1,0 +1,33 @@
+name: Async Release Publication Blocker
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-runtime-fixture]
+    paths: [.github/workflows/async-release-publication-blocker.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  block:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - name: Create private draft release circuit breaker
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag='harimt-ultimate-1.20.1-2.1.0-noxviola.1'
+          if gh release view "$tag" --repo Herbertofury/ProjectDump >/dev/null 2>&1; then
+            echo "release blocker already exists"
+            exit 0
+          fi
+          gh release create "$tag" \
+            --repo Herbertofury/ProjectDump \
+            --target b97ad7abbacb65267fadf4391f518e18b57d295c \
+            --draft \
+            --title 'BLOCKED — HariMultiThread Ultimate final regression QA' \
+            --notes 'Temporary private draft release used only as a publication circuit breaker while the final Vulkan loader-ownership regression is verified. Do not publish this draft.'
+          gh release view "$tag" --repo Herbertofury/ProjectDump --json isDraft,tagName,name
