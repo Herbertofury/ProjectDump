@@ -1,0 +1,401 @@
+name: Build Potatoptimize Forge 1.20.1 Safe Port
+
+on:
+  push:
+    paths:
+      - '.github/workflows/potatoptimize-forge-port.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  port-build-test-publish-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout ProjectDump
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Fetch pinned upstream 1.20.1 source
+        run: |
+          set -euxo pipefail
+          rm -rf /tmp/potatoptimize-upstream
+          git clone --depth 1 --branch 1.20.1 https://github.com/Tater-Certified/Potatoptimize.git /tmp/potatoptimize-upstream
+          test "$(git -C /tmp/potatoptimize-upstream rev-parse HEAD)" = "35d97cf913ae39d45740a51d23cdd161d06e4a43"
+
+      - name: Generate native Forge source tree
+        run: |
+          set -euxo pipefail
+          TARGET="$GITHUB_WORKSPACE/minecraft/potatoptimize-forge-1.20.1"
+          rm -rf "$TARGET"
+          mkdir -p "$TARGET"
+          cp -a /tmp/potatoptimize-upstream/. "$TARGET/"
+          rm -rf "$TARGET/.git"
+          cd "$TARGET"
+
+          cat > settings.gradle <<'EOF'
+          pluginManagement {
+              repositories {
+                  maven { url = 'https://maven.fabricmc.net/' }
+                  maven { url = 'https://maven.architectury.dev/' }
+                  maven { url = 'https://maven.minecraftforge.net/' }
+                  gradlePluginPortal()
+              }
+          }
+          rootProject.name = 'potatoptimize-forge-1.20.1'
+          EOF
+
+          cat > gradle.properties <<'EOF'
+          org.gradle.jvmargs=-Xmx3G
+          org.gradle.parallel=true
+          org.gradle.caching=true
+          minecraft_version=1.20.1
+          yarn_mappings=1.20.1+build.10
+          forge_version=47.4.23
+          mod_version=1.0.0
+          maven_group=com.github.tatercertified
+          archives_base_name=potatoptimize-forge-1.20.1
+          EOF
+
+          cat > build.gradle <<'EOF'
+          plugins {
+              id 'dev.architectury.loom' version '1.7-SNAPSHOT'
+              id 'maven-publish'
+          }
+
+          version = project.mod_version
+          group = project.maven_group
+
+          base {
+              archivesName = project.archives_base_name
+          }
+
+          loom {
+              accessWidenerPath = file('src/main/resources/potatoptimize.accesswidener')
+              forge {
+                  convertAccessWideners = true
+                  extraAccessWideners.add loom.accessWidenerPath.get().asFile.name
+                  mixinConfig 'potatoptimize.mixins.json'
+              }
+          }
+
+          repositories {
+              mavenCentral()
+              maven { url = 'https://maven.minecraftforge.net/' }
+              maven { url = 'https://maven.architectury.dev/' }
+              maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+          }
+
+          dependencies {
+              minecraft "com.mojang:minecraft:${project.minecraft_version}"
+              mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+              forge "net.minecraftforge:forge:${project.minecraft_version}-${project.forge_version}"
+
+              compileOnly(annotationProcessor('io.github.llamalad7:mixinextras-common:0.3.5'))
+              implementation(include('io.github.llamalad7:mixinextras-forge:0.3.5'))
+          }
+
+          tasks.withType(JavaCompile).configureEach {
+              options.encoding = 'UTF-8'
+              options.release = 17
+          }
+
+          java {
+              withSourcesJar()
+              toolchain.languageVersion = JavaLanguageVersion.of(17)
+          }
+
+          jar {
+              from('LICENSE') {
+                  rename { "LICENSE_${project.archives_base_name}" }
+              }
+              manifest {
+                  attributes([
+                      'Specification-Title': 'potatoptimize',
+                      'Specification-Vendor': 'Tater-Certified / Forge 1.20.1 port',
+                      'Specification-Version': '1',
+                      'Implementation-Title': project.archives_base_name,
+                      'Implementation-Version': project.version,
+                      'Implementation-Vendor': 'Tater-Certified / Herbertofury port',
+                      'MixinConfigs': 'potatoptimize.mixins.json'
+                  ])
+              }
+          }
+          EOF
+
+          rm -f src/main/resources/fabric.mod.json
+          mkdir -p src/main/resources/META-INF
+          cat > src/main/resources/META-INF/mods.toml <<'EOF'
+          modLoader="javafml"
+          loaderVersion="[47,)"
+          license="GPL-3.0-only"
+          issueTrackerURL="https://github.com/Tater-Certified/Potatoptimize/issues"
+
+          [[mods]]
+          modId="potatoptimize"
+          version="${file.jarVersion}"
+          displayName="Potatoptimize Forge 1.20.1 - Parity Safe Port"
+          displayURL="https://github.com/Tater-Certified/Potatoptimize"
+          authors="QPCrummer / Tater-Certified; Forge 1.20.1 port maintained for Herbertofury"
+          description='''
+          Native Forge 1.20.1 port of Potatoptimize with conservative vanilla-parity defaults.
+          Optimizations that intentionally alter gameplay, RNG sequences, loading semantics, or experimental threading are opt-in.
+          '''
+
+          [[dependencies.potatoptimize]]
+          modId="forge"
+          mandatory=true
+          versionRange="[47.4.0,)"
+          ordering="NONE"
+          side="BOTH"
+
+          [[dependencies.potatoptimize]]
+          modId="minecraft"
+          mandatory=true
+          versionRange="[1.20.1,1.20.2)"
+          ordering="NONE"
+          side="BOTH"
+          EOF
+
+          cat > src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties <<'EOF'
+          # PARITY-SAFE DEFAULT PROFILE
+          # true = enabled by default; false = opt-in because semantics/parity/risk are not strict enough yet.
+          # User overrides live in config/potatoptimize.properties.
+          mixin.block_entity.chest_chunk_loading = false
+          mixin.block_entity.sign_ticking = true
+          mixin.entity.bat = false
+          mixin.entity.bee = false
+          mixin.entity.collisions = false
+          mixin.entity.fall_damage = false
+          mixin.entity.halloween = false
+          mixin.entity.navigation = true
+          mixin.entity.pathfinding = false
+          mixin.entity.spawning = false
+          mixin.entity.speed = false
+          mixin.entity.statistics = false
+          mixin.entity.suffocation = false
+          mixin.entity.teleport = false
+          mixin.entity.ticking = false
+          mixin.entity.villager = false
+          mixin.fastmath.intrinsic = false
+          mixin.fastmath.joml = false
+          mixin.fastmath.rounding = false
+          mixin.item.map_chunk_loading = false
+          mixin.item.treasure_map_lookup = false
+          mixin.logic.chunk_query = false
+          mixin.logic.data_bits = true
+          mixin.logic.reduce_ray_casting = false
+          mixin.logic.fast_rotations = false
+          mixin.logic.fast_bits_blockpos = true
+          mixin.logic.json = true
+          mixin.logic.main_thread = true
+          mixin.logic.shape = false
+          mixin.logic.worker_thread = true
+          mixin.memory.memory_reserve = false
+          mixin.memory.reduce_alloc = true
+          mixin.memory.reduce_random = false
+          mixin.networking.block_breaking = false
+          mixin.random.creation = false
+          mixin.random.entity = false
+          mixin.random.generators = false
+          mixin.random.math = false
+          mixin.random.unsafe = false
+          mixin.random.world = false
+          mixin.remove.profiler = false
+          mixin.startup.dfu = true
+          mixin.threading.client_tick = false
+          mixin.threading.entity_ticking = false
+          mixin.unstream.nearest_item = true
+          mixin.unstream.pathfinding = false
+          mixin.unstream.player_movement = true
+          mixin.unstream.tacs = false
+          mixin.world.blending = false
+          mixin.world.biome_access = true
+          mixin.world.explosion = false
+          mixin.world.farmland = false
+          mixin.world.saving = false
+          EOF
+
+          cat > src/main/resources/assets/potatoptimize/potatoptimize-aggressive.properties.example <<'EOF'
+          # Example opt-ins for experienced users. Copy selected lines to config/potatoptimize.properties.
+          # These are NOT enabled by default because they may intentionally alter vanilla behavior,
+          # RNG sequences, chunk-loading semantics, timings, or have higher mod-compatibility risk.
+          mixin.block_entity.chest_chunk_loading = true
+          mixin.entity.bee = true
+          mixin.entity.collisions = true
+          mixin.entity.fall_damage = true
+          mixin.entity.pathfinding = true
+          mixin.entity.spawning = true
+          mixin.entity.statistics = true
+          mixin.entity.teleport = true
+          mixin.entity.villager = true
+          mixin.item.map_chunk_loading = true
+          mixin.item.treasure_map_lookup = true
+          mixin.logic.chunk_query = true
+          mixin.random.creation = true
+          mixin.random.entity = true
+          mixin.random.generators = true
+          mixin.random.math = true
+          mixin.random.world = true
+          mixin.threading.client_tick = true
+          mixin.world.explosion = true
+          mixin.world.saving = true
+          EOF
+
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path('src/main/java/com/github/tatercertified/potatoptimize')
+
+          # Forge-native bootstrap.
+          (root / 'Potatoptimize.java').write_text('''package com.github.tatercertified.potatoptimize;\n\nimport com.github.tatercertified.potatoptimize.config.PotatoptimizeConfig;\nimport net.minecraft.server.MinecraftServer;\nimport net.minecraftforge.common.MinecraftForge;\nimport net.minecraftforge.event.server.ServerStartingEvent;\nimport net.minecraftforge.fml.common.Mod;\n\nimport java.util.concurrent.ExecutorService;\nimport java.util.concurrent.Executors;\n\n@Mod(Potatoptimize.MOD_ID)\npublic class Potatoptimize {\n    public static final String MOD_ID = "potatoptimize";\n    public static PotatoptimizeConfig CONFIG;\n    public static MinecraftServer almightyServerInstance;\n    public static final ExecutorService clientTickExecutor = Executors.newSingleThreadExecutor(r -> {\n        Thread t = new Thread(r, "Potatoptimize Client Tick Worker");\n        t.setDaemon(true);\n        return t;\n    });\n    public static boolean isUnsafeRandomEnabled;\n\n    public Potatoptimize() {\n        MinecraftForge.EVENT_BUS.addListener(this::onServerStarting);\n    }\n\n    private void onServerStarting(ServerStartingEvent event) {\n        almightyServerInstance = event.getServer();\n    }\n}\n''', encoding='utf-8')
+
+          (root / 'client' / 'PotatoptimizeClient.java').write_text('''package com.github.tatercertified.potatoptimize.client;\n\n/** Forge needs no separate client initializer for this optimization-only port. */\npublic final class PotatoptimizeClient {\n    private PotatoptimizeClient() {}\n}\n''', encoding='utf-8')
+
+          # Forge-native mod detection.
+          compat = root / 'config' / 'ModCompatibility.java'
+          text = compat.read_text(encoding='utf-8')
+          text = text.replace('import net.fabricmc.loader.api.FabricLoader;', 'import net.minecraftforge.fml.ModList;')
+          text = text.replace('FabricLoader.getInstance().isModLoaded(modId)', 'ModList.get().isLoaded(modId)')
+          # Forge-side ecosystem aliases / overlap guards.
+          text = text.replace('addModCompatibility("krypton", "Krypton", new String[] {"mixin.logic.var_int"});',
+                              'addModCompatibility("krypton", "Krypton", new String[] {"mixin.logic.var_int"});\n        addModCompatibility("kryptonreforged", "Krypton Reforged", new String[] {"mixin.logic.var_int"});')
+          text = text.replace('addModCompatibility("lithium", "Lithium", new String[] {"mixin.world.explosion"});',
+                              'addModCompatibility("lithium", "Lithium", new String[] {"mixin.world.explosion"});\n        addModCompatibility("canary", "Canary", new String[] {"mixin.world.explosion"});\n        addModCompatibility("radium", "Radium", new String[] {"mixin.world.explosion"});')
+          compat.write_text(text, encoding='utf-8')
+
+          # Fabric metadata overrides do not map cleanly to Forge mods.toml. Keep user config + built-in compat.
+          cfg = root / 'config' / 'PotatoptimizeConfig.java'
+          text = cfg.read_text(encoding='utf-8')
+          for imp in [
+              'import net.fabricmc.loader.api.FabricLoader;\n',
+              'import net.fabricmc.loader.api.ModContainer;\n',
+              'import net.fabricmc.loader.api.metadata.CustomValue;\n',
+              'import net.fabricmc.loader.api.metadata.ModMetadata;\n'
+          ]:
+              text = text.replace(imp, '')
+          text = text.replace('        config.applyModOverrides();\n\n', '')
+          start = text.find('    private void applyModOverrides() {')
+          end = text.find('    /**\n     * Returns the effective option', start)
+          if start != -1 and end != -1:
+              text = text[:start] + '    // Forge port: built-in ModCompatibility plus user properties replace Fabric custom metadata overrides.\n\n' + text[end:]
+          cfg.write_text(text, encoding='utf-8')
+
+          # Remove Fabric environment annotations; Forge side separation is handled by mixin client section.
+          for rel in [
+              'mixin/entity/ticking/LivingEntityMixin.java',
+              'mixin/threading/client_tick/ClientTickMixin.java'
+          ]:
+              p = root / rel
+              t = p.read_text(encoding='utf-8')
+              t = t.replace('import net.fabricmc.api.EnvType;\n', '').replace('import net.fabricmc.api.Environment;\n', '')
+              t = t.replace('@Environment(EnvType.CLIENT)\n', '')
+              p.write_text(t, encoding='utf-8')
+
+          # The FabricBlockView marker is unnecessary for the actual raycast implementation.
+          p = root / 'mixin/logic/reduce_ray_casting/BlockViewCastingMixin.java'
+          t = p.read_text(encoding='utf-8')
+          t = t.replace('import net.fabricmc.fabric.api.blockview.v2.FabricBlockView;\n', '')
+          t = t.replace('public interface BlockViewCastingMixin extends HeightLimitView, FabricBlockView {',
+                        'public interface BlockViewCastingMixin extends HeightLimitView {')
+          p.write_text(t, encoding='utf-8')
+
+          # Backport the modern navigation parity fix: only suppress navigation for non-living vehicles.
+          p = root / 'mixin/entity/navigation/CancelNavigationMixin.java'
+          p.write_text('''package com.github.tatercertified.potatoptimize.mixin.entity.navigation;\n\nimport net.minecraft.entity.LivingEntity;\nimport net.minecraft.entity.ai.pathing.EntityNavigation;\nimport net.minecraft.entity.mob.MobEntity;\nimport org.spongepowered.asm.mixin.Final;\nimport org.spongepowered.asm.mixin.Mixin;\nimport org.spongepowered.asm.mixin.Shadow;\nimport org.spongepowered.asm.mixin.injection.At;\nimport org.spongepowered.asm.mixin.injection.Inject;\nimport org.spongepowered.asm.mixin.injection.callback.CallbackInfo;\n\n/**\n * Backported from modern Potatoptimize semantics: mobs riding living entities keep vanilla navigation ticking.\n * Navigation is skipped only while riding a non-living vehicle, where vanilla movement is not completed.\n */\n@Mixin(EntityNavigation.class)\npublic class CancelNavigationMixin {\n    @Shadow @Final protected MobEntity entity;\n\n    @Inject(method = "tick", at = @At("HEAD"), cancellable = true)\n    private void potatoptimize$cancelUnusedVehicleNavigation(CallbackInfo ci) {\n        if (entity.hasVehicle() && !(entity.getVehicle() instanceof LivingEntity)) {\n            ci.cancel();\n        }\n    }\n}\n''', encoding='utf-8')
+          PY
+
+          cat > README.md <<'EOF'
+          # Potatoptimize Forge 1.20.1 - Parity Safe Port
+
+          A native Forge 1.20.1 port of Tater-Certified's Potatoptimize 1.20.1 optimization set.
+
+          ## Design contract
+          - Minecraft 1.20.1, Forge 47.4.23+, Java 17.
+          - Vanilla-parity / low-risk optimizations are the only default-on set.
+          - Behavior-changing, RNG-changing, chunk-loading-changing, profiler-removing, unsafe, or experimental threading optimizations are default **OFF**.
+          - User overrides remain available through `config/potatoptimize.properties`.
+          - An opt-in example lives at `assets/potatoptimize/potatoptimize-aggressive.properties.example` inside the JAR/source.
+          - Built-in conflict avoidance covers ModernFix, ServerCore, Krypton variants, C2ME, FasterRandom, Chronos Carpet Addons, and Lithium/Canary/Radium-style explosion optimization overlaps where relevant.
+
+          ## Upstream
+          Source lineage is pinned to Potatoptimize `1.20.1` commit `35d97cf913ae39d45740a51d23cdd161d06e4a43`, with selected modern parity fixes backported where applicable.
+
+          ## License
+          The upstream 1.20.1 source is GPL-3.0-only. This port preserves that license and derivative-source availability.
+          EOF
+
+          cat > PORT-NOTES.md <<'EOF'
+          # Forge 1.20.1 Port Notes
+
+          ## Default policy
+          The old 1.20.1 branch enabled many optimizations that could alter vanilla semantics. This port inverts that philosophy: uncertain or behavior-changing patches are opt-in.
+
+          Default-off includes chunk-loading avoidance, RNG replacement/sequence changes, explosion replacement, entity/client threading, unsafe random, profiler removal, fall behavior changes, teleport changes, statistics throttling, and other higher-risk patches.
+
+          ## Modern fixes pulled back
+          - Navigation cancellation follows modern Potatoptimize semantics: riding a living entity no longer suppresses navigation ticking; only non-living vehicles take the fast path.
+          - Forge-native mod detection replaces FabricLoader detection.
+          - Additional Forge overlap guards are included for Krypton Reforged and Canary/Radium-style explosion optimization families.
+
+          ## Compatibility
+          Potatoptimize mixins remain individually configurable. If a modpack exposes an interaction, disable only the implicated optimization rather than removing the entire mod.
+          EOF
+
+          chmod +x gradlew
+
+      - name: Static port audit
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: |
+          set -euxo pipefail
+          ! grep -R -nE 'net\.fabricmc\.api|FabricLoader|fabric\.api' src/main/java
+          test -f src/main/resources/META-INF/mods.toml
+          test ! -f src/main/resources/fabric.mod.json
+          grep -q 'mixin.random.unsafe = false' src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+          grep -q 'mixin.threading.entity_ticking = false' src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+          grep -q 'mixin.world.explosion = false' src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+
+      - name: Build Forge production JAR
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: ./gradlew --no-daemon clean build --stacktrace
+
+      - name: Inspect packaged JAR
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: |
+          set -euxo pipefail
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
+          test -n "$JAR"
+          unzip -l "$JAR" | tee build/jar-contents.txt
+          unzip -p "$JAR" META-INF/mods.toml | grep -q 'modId="potatoptimize"'
+          unzip -p "$JAR" potatoptimize.mixins.json | grep -q 'MixinConfig'
+          sha256sum "$JAR" | tee build/SHA256SUMS.txt
+
+      - name: Commit verified source checkpoint
+        run: |
+          set -euxo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add minecraft/potatoptimize-forge-1.20.1
+          if ! git diff --cached --quiet; then
+            git commit -m 'minecraft: add verified Potatoptimize Forge 1.20.1 parity-safe port'
+            git push
+          fi
+
+      - name: Upload release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: potatoptimize-forge-1.20.1-parity-safe-rc
+          path: |
+            minecraft/potatoptimize-forge-1.20.1/build/libs/*.jar
+            minecraft/potatoptimize-forge-1.20.1/build/SHA256SUMS.txt
+            minecraft/potatoptimize-forge-1.20.1/README.md
+            minecraft/potatoptimize-forge-1.20.1/PORT-NOTES.md
+          if-no-files-found: error
