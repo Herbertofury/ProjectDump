@@ -1,0 +1,176 @@
+name: Publish Potatoptimize Forge 1.20.1 Final R1
+
+on:
+  push:
+    paths:
+      - '.github/workflows/potatoptimize-forge-publish-r1-final.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: potatoptimize-forge-1.20.1-final-r1
+  cancel-in-progress: false
+
+jobs:
+  publish-final-r1:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SOURCE_SHA: c74675a97fd415f5fedbd168ba5553c0b55ad6c7
+      RUNTIME_RUN: '34153631803'
+      COMPAT_RUN: '34153631787'
+      AGGRESSIVE_RUN: '34153631764'
+      RELEASE_TAG: potatoptimize-forge-1.20.1-parity-safe-r1
+      RELEASE_JAR: Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar
+      RELEASE_SOURCES: Potatoptimize-Forge-1.20.1-ParitySafe-r1-sources.jar
+    steps:
+      - name: Verify exact certification set
+        run: |
+          set -euxo pipefail
+          for RUN in "$RUNTIME_RUN" "$COMPAT_RUN" "$AGGRESSIVE_RUN"; do
+            JSON=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN}")
+            test "$(jq -r .status <<<"$JSON")" = completed
+            test "$(jq -r .conclusion <<<"$JSON")" = success
+            test "$(jq -r .head_sha <<<"$JSON")" = "$SOURCE_SHA"
+          done
+
+      - name: Download and verify certified artifacts
+        run: |
+          set -euxo pipefail
+          mkdir -p evidence/runtime evidence/compat evidence/aggressive release
+          gh run download "$RUNTIME_RUN" -n potatoptimize-forge-1.20.1-runtime-evidence-and-jar -D evidence/runtime
+          gh run download "$COMPAT_RUN" -n potatoptimize-forge-1.20.1-compat-stack-evidence -D evidence/compat
+          gh run download "$AGGRESSIVE_RUN" -n potatoptimize-forge-1.20.1-aggressive-profile-evidence -D evidence/aggressive
+
+          JAR=$(find evidence/runtime -type f -name 'potatoptimize-forge-1.20.1-1.0.0.jar' | head -n 1)
+          SOURCES=$(find evidence/runtime -type f -name 'potatoptimize-forge-1.20.1-1.0.0-sources.jar' | head -n 1)
+          AGGRESSIVE_JAR=$(find evidence/aggressive -type f -name 'potatoptimize-forge-1.20.1-1.0.0.jar' | head -n 1)
+          test -n "$JAR"
+          test -n "$SOURCES"
+          test -n "$AGGRESSIVE_JAR"
+
+          ACTUAL=$(sha256sum "$JAR" | awk '{print $1}')
+          test "$ACTUAL" = '5292a29d99eb4f51ef130043b5189b316d8f9274c459a47c8c03a2e0408832c6'
+          echo "JAR_SHA256=$ACTUAL" >> "$GITHUB_ENV"
+
+          rm -rf /tmp/runtime-tree /tmp/aggressive-tree /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
+          mkdir -p /tmp/runtime-tree /tmp/aggressive-tree /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
+          unzip -q "$JAR" -d /tmp/runtime-tree
+          unzip -q "$AGGRESSIVE_JAR" -d /tmp/aggressive-tree
+
+          # Loom/Forge can reorder access-transformer lines and re-pack nested MixinExtras with different ZIP metadata.
+          # Compare every other extracted byte directly, then compare these generated pieces semantically.
+          diff -qr --exclude='mixinextras-forge-0.3.5.jar' --exclude='accesstransformer.cfg' /tmp/runtime-tree /tmp/aggressive-tree
+          sort /tmp/runtime-tree/META-INF/accesstransformer.cfg > /tmp/runtime-at.sorted
+          sort /tmp/aggressive-tree/META-INF/accesstransformer.cfg > /tmp/aggressive-at.sorted
+          diff -u /tmp/runtime-at.sorted /tmp/aggressive-at.sorted
+          unzip -q /tmp/runtime-tree/META-INF/jars/mixinextras-forge-0.3.5.jar -d /tmp/runtime-mixinextras
+          unzip -q /tmp/aggressive-tree/META-INF/jars/mixinextras-forge-0.3.5.jar -d /tmp/aggressive-mixinextras
+          diff -qr /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
+          printf 'Runtime and aggressive builds have identical extracted mod/resource content. Access-transformer rules are identical after stable sorting, and nested MixinExtras extracted content is identical.\n' > release/BUILD_CONTENT_EQUIVALENCE.txt
+
+          test -f /tmp/runtime-tree/META-INF/mods.toml
+          test -f /tmp/runtime-tree/potatoptimize.mixins.json
+          test -f /tmp/runtime-tree/pack.mcmeta
+          test -f /tmp/runtime-tree/LICENSE_potatoptimize-forge-1.20.1
+          DEFAULTS=/tmp/runtime-tree/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+          test -f "$DEFAULTS"
+          test "$(grep -Ec '^mixin\.[^=]+ = true$' "$DEFAULTS")" -eq 3
+          grep -qx 'mixin.block_entity.sign_ticking = true' "$DEFAULTS"
+          grep -qx 'mixin.logic.data_bits = true' "$DEFAULTS"
+          grep -qx 'mixin.unstream.nearest_item = true' "$DEFAULTS"
+          ! grep -Eq '^mixin\.(threading|random|world|remove|startup)\.[^=]+ = true$' "$DEFAULTS"
+
+          SUMMARY=$(find evidence/aggressive -type f -name SWEEP-SUMMARY.txt | head -n 1)
+          test -n "$SUMMARY"
+          grep -q '^=== FAMILY FAILURES ===$' "$SUMMARY"
+          grep -q '^=== INDIVIDUAL RULE FAILURES ===$' "$SUMMARY"
+          grep -q '^=== COMBINATION FAILURES ===$' "$SUMMARY"
+          awk '
+            /^=== FAMILY FAILURES ===$/ { section=1; next }
+            /^=== INDIVIDUAL RULE FAILURES ===$/ { section=2; next }
+            /^=== COMBINATION FAILURES ===$/ { section=3; next }
+            NF && section { bad=1 }
+            END { exit bad }
+          ' "$SUMMARY"
+
+          cp "$JAR" "release/$RELEASE_JAR"
+          cp "$SOURCES" "release/$RELEASE_SOURCES"
+          sha256sum "release/$RELEASE_JAR" "release/$RELEASE_SOURCES" | sed 's#release/##' > release/SHA256SUMS.txt
+          printf '%s\n' "$SOURCE_SHA" > release/SOURCE_COMMIT.txt
+          printf '%s\n' "$RUNTIME_RUN" > release/RUNTIME_QA_RUN.txt
+          printf '%s\n' "$COMPAT_RUN" > release/COMPAT_QA_RUN.txt
+          printf '%s\n' "$AGGRESSIVE_RUN" > release/AGGRESSIVE_QA_RUN.txt
+
+          (cd evidence/runtime && zip -qr ../../release/runtime-certification-evidence.zip .)
+          (cd evidence/compat && zip -qr ../../release/performance-stack-certification-evidence.zip .)
+          (cd evidence/aggressive && zip -qr ../../release/aggressive-profile-linkage-evidence.zip .)
+
+      - name: Write release notes
+        run: |
+          cat > release/RELEASE_NOTES.md <<EOF
+          # Potatoptimize Forge 1.20.1 - Parity-Safe Port r1
+
+          Native Forge 1.20.1 production port targeting Forge 47.4.23 and Java 17.
+
+          ## Vanilla-parity default profile
+          Behavior-changing, RNG-sequence-changing, loading, threading, save, profiler-removal, unsafe-random, and other semantically risky optimizations are **OFF by default**.
+
+          Enabled by default:
+          - sign ticking optimization
+          - packed-int/data-bit arithmetic optimization
+          - nearest item/player sensor stream-removal optimization
+
+          Everything else is explicit opt-in where available.
+
+          ## Forge port and hardening
+          - Native Forge packaging/remapping and early-loader compatibility handling.
+          - Repaired packed-int constructor initialization for Forge Mixin 0.8.5 without dropping its arithmetic optimization.
+          - Repaired ChunkSectionPos height-range logic that previously ignored requested Y bounds.
+          - Repaired optional fast-rounding, RandomSource interface-mixin, and SimplePairList linkage/remapping edges.
+          - Removed Fabric-only launch assumptions and added Forge pack metadata.
+          - Fixed persisted defaults being misreported as user overrides.
+          - Compatibility handling covers ModernFix, ServerCore, Krypton Reno (kreno), FasterRandom, C2ME, Lithium/Canary/Radium, Valkyrien Skies, EnhancedVisuals, and related known overlap cases.
+          - Hardened optional entity ticking for Forge: concurrent entity storage remains, while gameplay/world entity actions stay on Minecraft's authoritative tick thread to prevent chunk-system circular waits.
+          - Hardened aggressive QA with isolated ports and process-group cleanup so a failed profile cannot contaminate later tests.
+
+          ## Certification
+          Source commit: $SOURCE_SHA
+
+          Release JAR SHA-256: $JAR_SHA256
+
+          Passed:
+          1. Clean Forge 47.4.23 dedicated-server production build/remap, gameplay/world exercise, save, clean shutdown, and second boot of the same world/config.
+          2. Forge 47.4.23 performance-stack runtime with ModernFix + ServerCore + FerriteCore + Krypton Reno/FNP, including compatibility guards and Mixin/runtime assertions.
+          3. Isolated aggressive server/common option-family sweep plus all-on challenge with zero family, individual-rule, or combination failures.
+
+          Client-only experimental opt-ins remain OFF by default and are not claimed as dedicated-server certified.
+
+          GPL-3.0 upstream licensing is preserved.
+          EOF
+
+      - name: Publish exact certified bytes
+        run: |
+          set -euxo pipefail
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            TAG_SHA=$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object.sha')
+            test "$TAG_SHA" = "$SOURCE_SHA"
+            gh release edit "$RELEASE_TAG" --title 'Potatoptimize Forge 1.20.1 - Parity-Safe r1' --notes-file release/RELEASE_NOTES.md
+            gh release upload "$RELEASE_TAG" release/* --clobber
+          else
+            gh release create "$RELEASE_TAG" release/* \
+              --target "$SOURCE_SHA" \
+              --title 'Potatoptimize Forge 1.20.1 - Parity-Safe r1' \
+              --notes-file release/RELEASE_NOTES.md
+          fi
+
+      - name: Upload immutable publication bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: potatoptimize-forge-1.20.1-parity-safe-r1-publication-final
+          path: release/*
+          if-no-files-found: error
