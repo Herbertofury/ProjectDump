@@ -42,9 +42,9 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p evidence/runtime evidence/compat evidence/aggressive release
-          gh run download "$RUNTIME_RUN" -n potatoptimize-forge-1.20.1-runtime-evidence-and-jar -D evidence/runtime
-          gh run download "$COMPAT_RUN" -n potatoptimize-forge-1.20.1-compat-stack-evidence -D evidence/compat
-          gh run download "$AGGRESSIVE_RUN" -n potatoptimize-forge-1.20.1-aggressive-profile-evidence -D evidence/aggressive
+          gh run download "$RUNTIME_RUN" -R "$GITHUB_REPOSITORY" -n potatoptimize-forge-1.20.1-runtime-evidence-and-jar -D evidence/runtime
+          gh run download "$COMPAT_RUN" -R "$GITHUB_REPOSITORY" -n potatoptimize-forge-1.20.1-compat-stack-evidence -D evidence/compat
+          gh run download "$AGGRESSIVE_RUN" -R "$GITHUB_REPOSITORY" -n potatoptimize-forge-1.20.1-aggressive-profile-evidence -D evidence/aggressive
 
           JAR=$(find evidence/runtime -type f -name 'potatoptimize-forge-1.20.1-1.0.0.jar' | head -n 1)
           SOURCES=$(find evidence/runtime -type f -name 'potatoptimize-forge-1.20.1-1.0.0-sources.jar' | head -n 1)
@@ -62,8 +62,6 @@ jobs:
           unzip -q "$JAR" -d /tmp/runtime-tree
           unzip -q "$AGGRESSIVE_JAR" -d /tmp/aggressive-tree
 
-          # Loom/Forge can reorder access-transformer lines and re-pack nested MixinExtras with different ZIP metadata.
-          # Compare every other extracted byte directly, then compare these generated pieces semantically.
           diff -qr --exclude='mixinextras-forge-0.3.5.jar' --exclude='accesstransformer.cfg' /tmp/runtime-tree /tmp/aggressive-tree
           sort /tmp/runtime-tree/META-INF/accesstransformer.cfg > /tmp/runtime-at.sorted
           sort /tmp/aggressive-tree/META-INF/accesstransformer.cfg > /tmp/aggressive-at.sorted
@@ -156,13 +154,13 @@ jobs:
       - name: Publish exact certified bytes
         run: |
           set -euxo pipefail
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+          if gh release view "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             TAG_SHA=$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object.sha')
             test "$TAG_SHA" = "$SOURCE_SHA"
-            gh release edit "$RELEASE_TAG" --title 'Potatoptimize Forge 1.20.1 - Parity-Safe r1' --notes-file release/RELEASE_NOTES.md
-            gh release upload "$RELEASE_TAG" release/* --clobber
+            gh release edit "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" --title 'Potatoptimize Forge 1.20.1 - Parity-Safe r1' --notes-file release/RELEASE_NOTES.md
+            gh release upload "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" release/* --clobber
           else
-            gh release create "$RELEASE_TAG" release/* \
+            gh release create "$RELEASE_TAG" -R "$GITHUB_REPOSITORY" release/* \
               --target "$SOURCE_SHA" \
               --title 'Potatoptimize Forge 1.20.1 - Parity-Safe r1' \
               --notes-file release/RELEASE_NOTES.md
