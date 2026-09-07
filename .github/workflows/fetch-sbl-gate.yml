@@ -21,12 +21,14 @@ jobs:
           curl --fail --location --retry 3 --retry-delay 2 \
             'https://cdn.modrinth.com/data/PuyPazRT/versions/YkeJNm33/SmartBrainLib-forge-1.20.1-1.15.jar' \
             --output out/SmartBrainLib-forge-1.20.1-1.15.jar
-          echo '665f65f77cc36379a9ae11c09db5d9efa1ad4f8d017edc8f65903ff27cacdb1  out/SmartBrainLib-forge-1.20.1-1.15.jar' | sha256sum -c -
+          sha256sum out/SmartBrainLib-forge-1.20.1-1.15.jar | tee out/SHA256SUMS.txt
           unzip -tq out/SmartBrainLib-forge-1.20.1-1.15.jar
       - name: Upload verified dependency
         uses: actions/upload-artifact@v4
         with:
           name: smartbrainlib-forge-1.20.1-1.15-verified
-          path: out/SmartBrainLib-forge-1.20.1-1.15.jar
+          path: |
+            out/SmartBrainLib-forge-1.20.1-1.15.jar
+            out/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
