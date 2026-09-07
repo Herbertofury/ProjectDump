@@ -5,37 +5,67 @@
   "state": "active",
   "drive": {
     "folder_id": "1qAVqAzWUvZcbZ7EpHRWsrAQjOd62630J",
-    "active_skill_file_id": "1gvOuxqHGgP8isI1sC8izYeKhBX0TIxpi",
-    "active_checksum_file_id": "1zz64UKIM-OzW3yseTlTT4mF1W4SKKimt",
-    "skill_size_bytes": 301131,
-    "skill_sha256": "bfb9d8d21152197e9596b16e3954a9e3fdf4966caa6bf4b470f0e6ea9c4033e2"
+    "active_skill_file_id": "1vW63Bd3-RQ2a_FpDMjAqir-UCn4iIQVe",
+    "active_checksum_file_id": "1or2QVw6qa8VEU5YMm5E0HUEhbaZFCi0m",
+    "playbook_file_id": "10VbDtHuLJU2XxByuGllAZCqqugI02ddo",
+    "market_study_file_id": "1nHiP0s4T-AZEOq2xfq6ahakAgezlqJ31",
+    "reconstruction_standard_file_id": "1a5J7tI0cGmujElaJFU0IGCOrxlq9-eto",
+    "release_receipt_file_id": "1o9ItDyiJ6XjnyytGk1TFbQDJhzMa-lGW",
+    "skill_size_bytes": 325067,
+    "skill_sha256": "9ba8410cf6d3df12fa51f682e519c1807a0b2f236e700a51757c490a357875a4"
+  },
+  "release_shape": {
+    "python_scripts": 77,
+    "zip_entries": 113,
+    "skill_md_bytes": 11964,
+    "skill_md_lines": 130,
+    "packaged_bytecode_cache_entries": 0
   },
   "verified": {
     "skill_validator": "pass",
     "zero_loss_composition": "pass",
     "zero_loss_stall_audit": "pass",
     "zip_integrity": "pass",
-    "packaged_base_inverse_selftest": "pass",
-    "packaged_advanced_inverse_selftest": "pass",
-    "packaged_premium_six_boss_selftest": "pass"
+    "packaged_base_inverse_lane": "pass",
+    "packaged_marketplace_static_context_lane": "pass",
+    "packaged_marketplace_motion_turntable_lane": "pass",
+    "packaged_premium_six_boss_lane": "pass"
   },
-  "inverse_reconstruction": {
+  "reconstruction_evidence": {
     "geometry_multiview_iou": 1.0,
     "camera_fit_iou": 0.998999,
     "gif_rotation_pose_iou": 0.997519,
-    "turntable_visual_hull_iou": 0.964317,
-    "internal_geometry_edge_f1": 1.0,
-    "gif_translation_iou": 1.0,
-    "single_view_sword_auto_refine_iou": 0.992023,
-    "visible_texture_roundtrip_rgb_mae": 0.0
+    "held_weapon_screen_rmse_px": 0.000037,
+    "held_weapon_world_rmse": 0.000005,
+    "furniture_world_rmse": 0.000052,
+    "semantic_scaffold_classes": 17,
+    "icon_sheet_sprites": 6,
+    "perspective_turntable_visual_hull_iou": 0.916118,
+    "internal_motion_iou": 1.0,
+    "internal_motion_geometry_edge_f1": 1.0,
+    "visible_texture_roundtrip_rgb_mae": 0.0,
+    "distinct_clone_fixture_errors": 2
   },
-  "evidence_boundary": "Exact means parity on authorized supplied observable views/times. Hidden surfaces, unseen texels, original audio and server-only behavior remain inferred/unknown until evidence exists. Native Minecraft runtime proof is separate and mandatory for release claims.",
+  "capability_frontier": [
+    "mobs and bosses",
+    "weapons including sword/dagger/greatsword/axe/mace/hammer/spear/polearm/scythe/shield/crossbow/staff/bow",
+    "armor and head cosmetics",
+    "furniture and decor",
+    "2D skill/item icon sheets",
+    "orthographic and perspective turntable GIFs",
+    "held/worn/world attachment transforms",
+    "internal-edge-aware geometry and animation",
+    "visible texture inverse baking and draft de-lighting",
+    "family-level consistency and anti-clone gates"
+  ],
+  "evidence_boundary": "Exact means parity on user-owned/authorized supplied observable views and times. Hidden surfaces, unseen texels, original audio and server-only behavior remain inferred or unknown until evidence exists. Native Minecraft runtime proof is separate and mandatory for release claims.",
   "no_repeat": [
     "Do not rebuild the plugin registry from scratch.",
-    "Do not redo Nazgul's Forge public ecosystem research unless freshness or product scope changes.",
-    "Do not rerun unchanged green inverse suites before a mutation that invalidates them.",
+    "Do not redo the public Nazgul's Forge benchmark survey unless freshness or product scope changes.",
+    "Do not rerun unchanged green inverse or marketplace lanes before a mutation invalidates them.",
+    "Do not recombine split static/context and motion/turntable regressions into a monolithic release blocker.",
     "Do not use Minecraft-Mod-Vault as the Dev Kit continuity repository.",
     "Do not use synthetic image generation for project previews unless explicitly requested in the current message."
   ],
-  "next_action": "Implement context-fit reconstruction for player-held weapons, player armor/cosmetics and furniture anchors; broaden semantic weapon scaffolds; add pack-consistency gates; then run only invalidated tests, repackage, roundtrip-test, and promote a new Drive/GitHub checkpoint."
+  "next_action": "Use an actual user-owned/authorized image/GIF reference bundle as the vertical-slice acceptance target. Run the rights-gated reconstruction contract through camera/geometry/motion/texture/context parity, implement the result as a native Forge 1.20.1/Gecko or least-lossy renderer asset, then require deterministic visual QA plus real client/integrated-server proof. Promote any real-world failure into a new fixture/tool improvement instead of weakening parity gates."
 }
