@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "project": "Minecraft Dev Kit",
+  "checkpoint_date": "2026-09-06",
+  "state": "active",
+  "drive": {
+    "folder_id": "1qAVqAzWUvZcbZ7EpHRWsrAQjOd62630J",
+    "active_skill_file_id": "1gvOuxqHGgP8isI1sC8izYeKhBX0TIxpi",
+    "active_checksum_file_id": "1zz64UKIM-OzW3yseTlTT4mF1W4SKKimt",
+    "skill_size_bytes": 301131,
+    "skill_sha256": "bfb9d8d21152197e9596b16e3954a9e3fdf4966caa6bf4b470f0e6ea9c4033e2"
+  },
+  "verified": {
+    "skill_validator": "pass",
+    "zero_loss_composition": "pass",
+    "zero_loss_stall_audit": "pass",
+    "zip_integrity": "pass",
+    "packaged_base_inverse_selftest": "pass",
+    "packaged_advanced_inverse_selftest": "pass",
+    "packaged_premium_six_boss_selftest": "pass"
+  },
+  "inverse_reconstruction": {
+    "geometry_multiview_iou": 1.0,
+    "camera_fit_iou": 0.998999,
+    "gif_rotation_pose_iou": 0.997519,
+    "turntable_visual_hull_iou": 0.964317,
+    "internal_geometry_edge_f1": 1.0,
+    "gif_translation_iou": 1.0,
+    "single_view_sword_auto_refine_iou": 0.992023,
+    "visible_texture_roundtrip_rgb_mae": 0.0
+  },
+  "evidence_boundary": "Exact means parity on authorized supplied observable views/times. Hidden surfaces, unseen texels, original audio and server-only behavior remain inferred/unknown until evidence exists. Native Minecraft runtime proof is separate and mandatory for release claims.",
+  "no_repeat": [
+    "Do not rebuild the plugin registry from scratch.",
+    "Do not redo Nazgul's Forge public ecosystem research unless freshness or product scope changes.",
+    "Do not rerun unchanged green inverse suites before a mutation that invalidates them.",
+    "Do not use Minecraft-Mod-Vault as the Dev Kit continuity repository.",
+    "Do not use synthetic image generation for project previews unless explicitly requested in the current message."
+  ],
+  "next_action": "Implement context-fit reconstruction for player-held weapons, player armor/cosmetics and furniture anchors; broaden semantic weapon scaffolds; add pack-consistency gates; then run only invalidated tests, repackage, roundtrip-test, and promote a new Drive/GitHub checkpoint."
+}
