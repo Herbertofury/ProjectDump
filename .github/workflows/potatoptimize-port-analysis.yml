@@ -1,0 +1,36 @@
+name: Potatoptimize Forge 1.20.1 Port Analysis
+
+on:
+  push:
+    paths:
+      - '.github/workflows/potatoptimize-port-analysis.yml'
+      - 'minecraft/potatoptimize-forge-1.20.1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ProjectDump
+        uses: actions/checkout@v4
+
+      - name: Fetch authoritative Potatoptimize 1.20.1 source
+        run: |
+          git clone --depth 1 --branch 1.20.1 https://github.com/Tater-Certified/Potatoptimize.git upstream
+          echo '=== UPSTREAM HEAD ==='
+          git -C upstream rev-parse HEAD
+          echo '=== JAVA FILE COUNT ==='
+          find upstream/src/main/java -name '*.java' | wc -l
+          echo '=== FABRIC-SPECIFIC REFERENCES ==='
+          grep -R -nE 'net\.fabricmc|FabricLoader|fabric\.api' upstream/src upstream/build.gradle upstream/settings.gradle upstream/gradle.properties || true
+          echo '=== MIXINEXTRAS / MIXINSQUARED REFERENCES ==='
+          grep -R -nEi 'mixinextras|mixinsquared|llamalad7|bawnorton' upstream/src upstream/build.gradle || true
+          echo '=== ACCESS WIDENER ==='
+          cat upstream/src/main/resources/potatoptimize.accesswidener || true
+          echo '=== RESOURCE TREE ==='
+          find upstream/src/main/resources -maxdepth 4 -type f -print | sort
+          echo '=== CONFIG DEFAULTS ==='
+          cat upstream/src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
