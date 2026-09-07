@@ -47,12 +47,19 @@ jobs:
           PY
           bash /tmp/generate-potatoptimize.sh
 
-      - name: Upgrade wrapper to Gradle 8.8
+      - name: Forge platform, Gradle 8.8, conservative defaults
         working-directory: minecraft/potatoptimize-forge-1.20.1
         run: |
           set -euxo pipefail
           sed -i 's/gradle-8\.7-bin\.zip/gradle-8.8-bin.zip/' gradle/wrapper/gradle-wrapper.properties
+          printf '\nloom.platform=forge\n' >> gradle.properties
+          DEFAULTS=src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+          sed -i 's/^mixin.logic.main_thread = true$/mixin.logic.main_thread = false/' "$DEFAULTS"
+          sed -i 's/^mixin.logic.worker_thread = true$/mixin.logic.worker_thread = false/' "$DEFAULTS"
           grep -q 'gradle-8.8-bin.zip' gradle/wrapper/gradle-wrapper.properties
+          grep -q '^loom.platform=forge$' gradle.properties
+          grep -q '^mixin.logic.main_thread = false$' "$DEFAULTS"
+          grep -q '^mixin.logic.worker_thread = false$' "$DEFAULTS"
 
       - name: Build Forge production JAR
         working-directory: minecraft/potatoptimize-forge-1.20.1
@@ -68,6 +75,8 @@ jobs:
           unzip -p "$JAR" META-INF/mods.toml | grep -q 'modId="potatoptimize"'
           unzip -p "$JAR" potatoptimize.mixins.json | grep -q 'MixinConfig'
           unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.world.explosion = false'
+          unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.logic.main_thread = false'
+          unzip -p "$JAR" assets/potatoptimize/potatoptimize-mixin-config-default.properties | grep -q 'mixin.logic.worker_thread = false'
           sha256sum "$JAR" | tee build/SHA256SUMS.txt
 
       - name: Commit verified source checkpoint
