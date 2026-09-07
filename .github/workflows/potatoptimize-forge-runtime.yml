@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'minecraft/potatoptimize-forge-1.20.1/**'
+      - '.github/workflows/potatoptimize-forge-runtime.yml'
   workflow_dispatch:
 
 permissions:
@@ -16,7 +17,7 @@ concurrency:
 jobs:
   production-forge-server:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -34,7 +35,7 @@ jobs:
           JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
           test -n "$JAR"
           echo "MOD_JAR=$PWD/$JAR" >> "$GITHUB_ENV"
-          sha256sum "$JAR"
+          sha256sum "$JAR" | tee build/SHA256SUMS.txt
 
       - name: Install clean Forge 47.4.23 server
         run: |
@@ -56,30 +57,23 @@ jobs:
           set -euxo pipefail
           mkfifo server-input
           exec 3<>server-input
-          ./run.sh nogui <server-input >server-console.log 2>&1 &
+          ./run.sh nogui <server-input >server-console-first.log 2>&1 &
           SERVER_PID=$!
-          echo "$SERVER_PID" > server.pid
 
           READY=0
           for i in $(seq 1 180); do
-            if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then
-              READY=1
-              break
-            fi
-            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-              break
-            fi
+            if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then READY=1; break; fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
             sleep 1
           done
-
           if test "$READY" -ne 1; then
-            echo 'Server never reached Done.'
-            tail -n 250 server-console.log || true
+            tail -n 250 server-console-first.log || true
             test -f logs/latest.log && tail -n 250 logs/latest.log || true
             kill "$SERVER_PID" 2>/dev/null || true
             exit 1
           fi
 
+          cp logs/latest.log first-boot.log
           printf 'gamerule doMobSpawning false\n' >&3
           printf 'setblock 0 100 0 minecraft:oak_sign[rotation=0]\n' >&3
           printf 'summon minecraft:zombie 2 100 2\n' >&3
@@ -91,27 +85,57 @@ jobs:
           printf 'stop\n' >&3
 
           for i in $(seq 1 60); do
-            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
-              break
-            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
             sleep 1
           done
-          if kill -0 "$SERVER_PID" 2>/dev/null; then
-            echo 'Server failed to stop cleanly.'
-            kill "$SERVER_PID" || true
+          if kill -0 "$SERVER_PID" 2>/dev/null; then kill "$SERVER_PID" || true; exit 1; fi
+          wait "$SERVER_PID"
+
+      - name: Restart same world and config
+        working-directory: /tmp/potatoptimize-forge-server
+        run: |
+          set -euxo pipefail
+          rm -f server-input
+          mkfifo server-input
+          exec 3<>server-input
+          ./run.sh nogui <server-input >server-console-second.log 2>&1 &
+          SERVER_PID=$!
+
+          READY=0
+          for i in $(seq 1 180); do
+            if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then READY=1; break; fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if test "$READY" -ne 1; then
+            tail -n 250 server-console-second.log || true
+            test -f logs/latest.log && tail -n 250 logs/latest.log || true
+            kill "$SERVER_PID" 2>/dev/null || true
             exit 1
           fi
+
+          printf 'list\n' >&3
+          printf 'save-all flush\n' >&3
+          sleep 3
+          printf 'stop\n' >&3
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if kill -0 "$SERVER_PID" 2>/dev/null; then kill "$SERVER_PID" || true; exit 1; fi
           wait "$SERVER_PID"
+          cp logs/latest.log second-boot.log
 
       - name: Assert runtime health and parity-safe defaults
         working-directory: /tmp/potatoptimize-forge-server
         run: |
           set -euxo pipefail
-          test -f logs/latest.log
-          grep -q 'Done (' logs/latest.log
-          grep -q 'Potatoptimize' logs/latest.log
-          ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError.*potatoptimize|ClassNotFoundException.*potatoptimize' logs/latest.log
-          ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' logs/latest.log
+          for LOG in first-boot.log second-boot.log; do
+            grep -q 'Done (' "$LOG"
+            grep -q 'Potatoptimize' "$LOG"
+            ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError.*potatoptimize|ClassNotFoundException.*potatoptimize' "$LOG"
+            ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' "$LOG"
+          done
           test -f config/potatoptimize.properties
           grep -q '^mixin.world.explosion = false$' config/potatoptimize.properties
           grep -q '^mixin.threading.entity_ticking = false$' config/potatoptimize.properties
@@ -121,19 +145,22 @@ jobs:
           grep -q '^mixin.memory.reduce_alloc = false$' config/potatoptimize.properties
           grep -q '^mixin.logic.fast_bits_blockpos = false$' config/potatoptimize.properties
           grep -q '^mixin.unstream.player_movement = false$' config/potatoptimize.properties
-          grep -q '^mixin.block_entity.sign_ticking = true$' config/potatoptimize.properties
           grep -q '^mixin.entity.navigation = false$' config/potatoptimize.properties
+          grep -q '^mixin.block_entity.sign_ticking = true$' config/potatoptimize.properties
           grep -q '^mixin.logic.data_bits = true$' config/potatoptimize.properties
           grep -q '^mixin.unstream.nearest_item = true$' config/potatoptimize.properties
-          tail -n 200 logs/latest.log
 
-      - name: Upload runtime evidence
+      - name: Upload runtime evidence and release candidate
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: potatoptimize-forge-1.20.1-runtime-evidence
+          name: potatoptimize-forge-1.20.1-runtime-evidence-and-jar
           path: |
-            /tmp/potatoptimize-forge-server/logs/latest.log
-            /tmp/potatoptimize-forge-server/server-console.log
+            minecraft/potatoptimize-forge-1.20.1/build/libs/*.jar
+            minecraft/potatoptimize-forge-1.20.1/build/SHA256SUMS.txt
+            /tmp/potatoptimize-forge-server/first-boot.log
+            /tmp/potatoptimize-forge-server/second-boot.log
+            /tmp/potatoptimize-forge-server/server-console-first.log
+            /tmp/potatoptimize-forge-server/server-console-second.log
             /tmp/potatoptimize-forge-server/config/potatoptimize.properties
           if-no-files-found: warn
