@@ -205,6 +205,17 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/runtime_client_qa.py \
             upstream qa-server/world evidence/runtime/client
 
+      - name: Upload client failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: async-1.20.1-ultimate-client-failure
+          path: |
+            evidence/runtime/client/
+            upstream/forge/run/logs/
+            upstream/forge/run/crash-reports/
+          if-no-files-found: warn
+
       - name: Package final release and evidence
         shell: bash
         run: |
