@@ -1,0 +1,135 @@
+name: Potatoptimize Forge 1.20.1 Aggressive Profile QA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: potatoptimize-aggressive-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  aggressive-production-linkage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout certified source lineage
+        uses: actions/checkout@v4
+        with:
+          ref: 3408fbd2449f6de2365c83b81a74bb9d5f1e68dc
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build remapped production JAR
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: |
+          set -euxo pipefail
+          test "$(git rev-parse HEAD)" = "3408fbd2449f6de2365c83b81a74bb9d5f1e68dc"
+          chmod +x gradlew
+          ./gradlew --no-daemon clean build
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
+          test -n "$JAR"
+          echo "MOD_JAR=$PWD/$JAR" >> "$GITHUB_ENV"
+          sha256sum "$JAR" | tee build/AGGRESSIVE-SHA256SUMS.txt
+
+      - name: Install clean Forge 47.4.23 server
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/potatoptimize-aggressive-server
+          cd /tmp/potatoptimize-aggressive-server
+          curl --fail --location --retry 3 --output forge-installer.jar \
+            https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar
+          java -jar forge-installer.jar --installServer
+          test -f run.sh
+          chmod +x run.sh
+          printf 'eula=true\n' > eula.txt
+          mkdir -p mods config
+          cp "$MOD_JAR" mods/
+
+      - name: Force every optional common/server rule on
+        run: |
+          set -euxo pipefail
+          SRC=minecraft/potatoptimize-forge-1.20.1/src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+          DST=/tmp/potatoptimize-aggressive-server/config/potatoptimize.properties
+          test -f "$SRC"
+          sed -E 's/^(mixin\.[^=]+ = )false$/\1true/' "$SRC" > "$DST"
+          test "$(grep -c '^mixin\..* = true$' "$DST")" -gt 3
+          ! grep -q '^mixin\..* = false$' "$DST"
+          cp "$DST" /tmp/aggressive-requested.properties
+
+      - name: Boot aggressive production profile and exercise server
+        working-directory: /tmp/potatoptimize-aggressive-server
+        run: |
+          set -euxo pipefail
+          mkfifo server-input
+          exec 3<>server-input
+          ./run.sh nogui <server-input >server-console-aggressive.log 2>&1 &
+          SERVER_PID=$!
+
+          READY=0
+          for i in $(seq 1 180); do
+            if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then READY=1; break; fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if test "$READY" -ne 1; then
+            tail -n 300 server-console-aggressive.log || true
+            test -f logs/latest.log && tail -n 300 logs/latest.log || true
+            kill "$SERVER_PID" 2>/dev/null || true
+            exit 1
+          fi
+
+          cp logs/latest.log aggressive-boot.log
+          printf 'gamerule doMobSpawning false\n' >&3
+          printf 'setblock 0 100 0 minecraft:oak_sign[rotation=0]\n' >&3
+          printf 'setblock 1 100 0 minecraft:chest\n' >&3
+          printf 'summon minecraft:zombie 2 100 2\n' >&3
+          printf 'summon minecraft:villager 4 100 4\n' >&3
+          printf 'summon minecraft:item 3 100 2 {Item:{id:"minecraft:rotten_flesh",Count:1b}}\n' >&3
+          printf 'forceload add -1 -1 1 1\n' >&3
+          printf 'time set midnight\n' >&3
+          printf 'weather rain\n' >&3
+          printf 'save-all flush\n' >&3
+          printf 'list\n' >&3
+          sleep 8
+          printf 'save-all flush\n' >&3
+          printf 'stop\n' >&3
+
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
+            sleep 1
+          done
+          if kill -0 "$SERVER_PID" 2>/dev/null; then kill "$SERVER_PID" || true; exit 1; fi
+          wait "$SERVER_PID"
+          cp logs/latest.log aggressive-final.log
+
+      - name: Assert aggressive production linkage health
+        working-directory: /tmp/potatoptimize-aggressive-server
+        run: |
+          set -euxo pipefail
+          grep -q 'Done (' aggressive-boot.log
+          grep -q 'Potatoptimize' aggressive-boot.log
+          ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError.*potatoptimize|ClassNotFoundException.*potatoptimize|InvalidInjectionException' aggressive-final.log
+          ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' aggressive-final.log
+          ! grep -q '^mixin\..* = false$' config/potatoptimize.properties
+          cmp -s /tmp/aggressive-requested.properties config/potatoptimize.properties
+
+      - name: Upload aggressive-profile evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: potatoptimize-forge-1.20.1-aggressive-profile-evidence
+          path: |
+            minecraft/potatoptimize-forge-1.20.1/build/libs/*.jar
+            minecraft/potatoptimize-forge-1.20.1/build/AGGRESSIVE-SHA256SUMS.txt
+            /tmp/potatoptimize-aggressive-server/aggressive-boot.log
+            /tmp/potatoptimize-aggressive-server/aggressive-final.log
+            /tmp/potatoptimize-aggressive-server/server-console-aggressive.log
+            /tmp/potatoptimize-aggressive-server/config/potatoptimize.properties
+            /tmp/aggressive-requested.properties
+          if-no-files-found: warn
