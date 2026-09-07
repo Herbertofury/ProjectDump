@@ -58,14 +58,32 @@ jobs:
           test -n "$AGGRESSIVE_JAR"
 
           ACTUAL=$(sha256sum "$JAR" | awk '{print $1}')
-          AGGRESSIVE_ACTUAL=$(sha256sum "$AGGRESSIVE_JAR" | awk '{print $1}')
           test "$ACTUAL" = "$EXPECTED_JAR_SHA256"
-          test "$AGGRESSIVE_ACTUAL" = "$EXPECTED_JAR_SHA256"
 
-          test -f evidence/aggressive/SWEEP-SUMMARY.txt || find evidence/aggressive -type f -name SWEEP-SUMMARY.txt -print -quit | grep -q .
+          # Loom re-packs the nested MixinExtras jar with non-reproducible ZIP metadata,
+          # so independent builds need normalized content equality rather than raw outer-JAR equality.
+          rm -rf /tmp/runtime-tree /tmp/aggressive-tree /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
+          mkdir -p /tmp/runtime-tree /tmp/aggressive-tree /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
+          unzip -q "$JAR" -d /tmp/runtime-tree
+          unzip -q "$AGGRESSIVE_JAR" -d /tmp/aggressive-tree
+          diff -qr --exclude='mixinextras-forge-0.3.5.jar' /tmp/runtime-tree /tmp/aggressive-tree
+          unzip -q /tmp/runtime-tree/META-INF/jars/mixinextras-forge-0.3.5.jar -d /tmp/runtime-mixinextras
+          unzip -q /tmp/aggressive-tree/META-INF/jars/mixinextras-forge-0.3.5.jar -d /tmp/aggressive-mixinextras
+          diff -qr /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
+          printf 'Runtime and aggressive builds have identical extracted mod/resource content; nested MixinExtras content is also identical.\n' > release/AGGRESSIVE_CONTENT_EQUIVALENCE.txt
+
           SUMMARY=$(find evidence/aggressive -type f -name SWEEP-SUMMARY.txt | head -n 1)
           test -n "$SUMMARY"
-          ! grep -A999 '^=== FAMILY FAILURES ===' "$SUMMARY" | grep -E '^(block_entity|entity|fastmath|item|logic|memory|networking|random|remove|startup|threading|unstream|world|mixin\.|all-on)$'
+          grep -q '^=== FAMILY FAILURES ===$' "$SUMMARY"
+          grep -q '^=== INDIVIDUAL RULE FAILURES ===$' "$SUMMARY"
+          grep -q '^=== COMBINATION FAILURES ===$' "$SUMMARY"
+          awk '
+            /^=== FAMILY FAILURES ===$/ { section=1; next }
+            /^=== INDIVIDUAL RULE FAILURES ===$/ { section=2; next }
+            /^=== COMBINATION FAILURES ===$/ { section=3; next }
+            NF && section { bad=1 }
+            END { exit bad }
+          ' "$SUMMARY"
 
           cp "$JAR" "release/$RELEASE_JAR"
           printf '%s  %s\n' "$EXPECTED_JAR_SHA256" "$RELEASE_JAR" > release/SHA256SUMS.txt
@@ -114,7 +132,7 @@ jobs:
           Exact release JAR passed:
           1. Clean Forge 47.4.23 dedicated server build/remap, boot, gameplay/world exercise, save, clean shutdown, and second boot of the same world/config.
           2. Forge 47.4.23 performance-stack boot with ModernFix + ServerCore + FerriteCore + Krypton Reno/FNP, including compatibility guard and Mixin/runtime assertions.
-          3. Isolated aggressive family linkage sweep: each option family is booted separately on a fresh world, failed families are automatically split into individual rules, followed by an all-on combination challenge. This certifies production linkage/runtime health for server/common paths; it does **not** claim vanilla semantic parity for aggressive opt-ins or dedicated-server proof of client-only experimental behavior.
+          3. Isolated aggressive family linkage sweep: each option family is booted separately on a fresh world, failed families are automatically split into individual rules, followed by an all-on combination challenge. Independent sweep-build class/resource content is normalized and verified against the release build. This certifies production linkage/runtime health for server/common paths; it does **not** claim vanilla semantic parity for aggressive opt-ins or dedicated-server proof of client-only experimental behavior.
 
           SHA-256 of `Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar`:
           `cbe4de976b13ecd1e9ffc8dd12db6186ef0788ad4d37388a4fdd5fd36e4e4ce3`
