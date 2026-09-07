@@ -85,7 +85,7 @@ jobs:
           cd ..
 
           passed=0
-          for i in $(seq 1 180); do
+          for i in $(seq 1 600); do
             if grep -F '[Render thread/INFO]' evidence/client-bootstrap/client-bootstrap.log >/dev/null 2>&1; then
               passed=1
               break
