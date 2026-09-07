@@ -56,19 +56,27 @@ jobs:
           test -s deps/lwjgl-vulkan-3.3.1.jar
           test -s deps/lwjgl-3.3.1-natives-linux.jar
 
-      - name: Add compute-to-host availability barrier to child backend
+      - name: Fix descriptor write count and compute-to-host availability
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p = Path('source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java')
           t = p.read_text(encoding='utf-8')
+
+          old = '''                writes.get(i)\n                        .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)\n                        .dstSet(descriptorSet)\n                        .dstBinding(i)\n                        .descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)\n                        .pBufferInfo(VkDescriptorBufferInfo.create(infos.get(i).address(), 1));\n'''
+          new = '''                writes.get(i)\n                        .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)\n                        .dstSet(descriptorSet)\n                        .dstBinding(i)\n                        .descriptorCount(1)\n                        .descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)\n                        .pBufferInfo(VkDescriptorBufferInfo.create(infos.get(i).address(), 1));\n'''
+          if t.count(old) != 1:
+              raise SystemExit(f'descriptor source drift: expected 1 marker, found {t.count(old)}')
+          t = t.replace(old, new, 1)
+
           old = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
           new = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n\n            VkMemoryBarrier.Buffer hostReadBarrier = VkMemoryBarrier.calloc(1, stack);\n            hostReadBarrier.get(0)\n                    .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER)\n                    .srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT)\n                    .dstAccessMask(VK_ACCESS_HOST_READ_BIT);\n            vkCmdPipelineBarrier(\n                    commandBuffer,\n                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,\n                    VK_PIPELINE_STAGE_HOST_BIT,\n                    0,\n                    hostReadBarrier,\n                    null,\n                    null);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
           if t.count(old) != 1:
               raise SystemExit(f'backend dispatch source drift: expected 1 marker, found {t.count(old)}')
           p.write_text(t.replace(old, new, 1), encoding='utf-8')
           PY
+          grep -F '.descriptorCount(1)' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
 
       - name: Compile isolated backend and standalone probe
         shell: bash
@@ -81,6 +89,7 @@ jobs:
           javap -classpath classes -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend \
             > evidence/LwjglVulkanBackend.javap.txt
           grep -F 'vkCmdPipelineBarrier' evidence/LwjglVulkanBackend.javap.txt
+          grep -F 'descriptorCount' evidence/LwjglVulkanBackend.javap.txt
 
       - name: Compile sentinel, push-constant, and AABB shaders
         shell: bash
