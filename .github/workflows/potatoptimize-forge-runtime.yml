@@ -1,0 +1,128 @@
+name: Potatoptimize Forge 1.20.1 Production Runtime QA
+
+on:
+  push:
+    paths:
+      - 'minecraft/potatoptimize-forge-1.20.1/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-forge-server:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Build remapped production JAR
+        working-directory: minecraft/potatoptimize-forge-1.20.1
+        run: |
+          set -euxo pipefail
+          chmod +x gradlew
+          ./gradlew --no-daemon clean build
+          JAR=$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' | head -n 1)
+          test -n "$JAR"
+          echo "MOD_JAR=$PWD/$JAR" >> "$GITHUB_ENV"
+          sha256sum "$JAR"
+
+      - name: Install clean Forge 47.4.23 server
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/potatoptimize-forge-server
+          cd /tmp/potatoptimize-forge-server
+          curl --fail --location --retry 3 --output forge-installer.jar \
+            https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar
+          java -jar forge-installer.jar --installServer
+          test -f run.sh
+          chmod +x run.sh
+          printf 'eula=true\n' > eula.txt
+          mkdir -p mods
+          cp "$MOD_JAR" mods/
+
+      - name: Boot packaged JAR and exercise server
+        working-directory: /tmp/potatoptimize-forge-server
+        run: |
+          set -euxo pipefail
+          mkfifo server-input
+          exec 3<>server-input
+          ./run.sh nogui <server-input >server-console.log 2>&1 &
+          SERVER_PID=$!
+          echo "$SERVER_PID" > server.pid
+
+          READY=0
+          for i in $(seq 1 180); do
+            if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then
+              READY=1
+              break
+            fi
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+
+          if test "$READY" -ne 1; then
+            echo 'Server never reached Done.'
+            tail -n 250 server-console.log || true
+            test -f logs/latest.log && tail -n 250 logs/latest.log || true
+            kill "$SERVER_PID" 2>/dev/null || true
+            exit 1
+          fi
+
+          printf 'gamerule doMobSpawning false\n' >&3
+          printf 'setblock 0 100 0 minecraft:oak_sign[rotation=0]\n' >&3
+          printf 'summon minecraft:zombie 2 100 2\n' >&3
+          printf 'summon minecraft:item 3 100 2 {Item:{id:"minecraft:rotten_flesh",Count:1b}}\n' >&3
+          printf 'forceload add 0 0\n' >&3
+          printf 'save-all flush\n' >&3
+          printf 'list\n' >&3
+          sleep 5
+          printf 'stop\n' >&3
+
+          for i in $(seq 1 60); do
+            if ! kill -0 "$SERVER_PID" 2>/dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          if kill -0 "$SERVER_PID" 2>/dev/null; then
+            echo 'Server failed to stop cleanly.'
+            kill "$SERVER_PID" || true
+            exit 1
+          fi
+          wait "$SERVER_PID"
+
+      - name: Assert runtime health and parity-safe defaults
+        working-directory: /tmp/potatoptimize-forge-server
+        run: |
+          set -euxo pipefail
+          test -f logs/latest.log
+          grep -q 'Done (' logs/latest.log
+          grep -q 'Potatoptimize' logs/latest.log
+          ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError.*potatoptimize|ClassNotFoundException.*potatoptimize' logs/latest.log
+          ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' logs/latest.log
+          test -f config/potatoptimize.properties
+          grep -q '^mixin.world.explosion = false$' config/potatoptimize.properties
+          grep -q '^mixin.threading.entity_ticking = false$' config/potatoptimize.properties
+          grep -q '^mixin.random.unsafe = false$' config/potatoptimize.properties
+          grep -q '^mixin.logic.main_thread = false$' config/potatoptimize.properties
+          grep -q '^mixin.logic.worker_thread = false$' config/potatoptimize.properties
+          tail -n 200 logs/latest.log
+
+      - name: Upload runtime evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: potatoptimize-forge-1.20.1-runtime-evidence
+          path: |
+            /tmp/potatoptimize-forge-server/logs/latest.log
+            /tmp/potatoptimize-forge-server/server-console.log
+            /tmp/potatoptimize-forge-server/config/potatoptimize.properties
+          if-no-files-found: warn
