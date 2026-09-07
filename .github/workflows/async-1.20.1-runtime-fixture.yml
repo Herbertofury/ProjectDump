@@ -1,4 +1,4 @@
-name: Async 1.20.1 Packaged Vulkan Fix QA
+name: Async 1.20.1 Forge GPU Config Persistence
 
 on:
   push:
@@ -11,11 +11,11 @@ permissions:
   actions: read
 
 jobs:
-  packaged-runtime:
+  persistence:
     runs-on: ubuntu-22.04
-    timeout-minutes: 25
+    timeout-minutes: 12
     steps:
-      - name: Checkout exact QA harness
+      - name: Checkout exact diagnostic sources
         uses: actions/checkout@v4
 
       - name: Set up Java 17
@@ -24,20 +24,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install Vulkan runtime
-        shell: bash
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers vulkan-tools zip unzip
-          mkdir -p evidence/runtime
-          vulkaninfo --summary | tee evidence/runtime/vulkaninfo-summary.txt
-
       - name: Download exact proven parent JAR and merged source
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          mkdir -p reused source deps backend-classes patched inject/META-INF/harimt-libs
+          mkdir -p reused source evidence config-classes patched
           gh run download 34066031095 \
             --repo Herbertofury/ProjectDump \
             --name async-1.20.1-ultimate-release-candidate \
@@ -49,71 +41,52 @@ jobs:
           test "$(sha256sum "$base_jar" | awk '{print $1}')" = "e6e9a51cc7ba77553cdcc41d6ca1f2d69c408afa0110e857ba436d55e75fad55"
           echo "$base_jar" > BASE_JAR_PATH.txt
           unzip -q "$source_zip" -d source
-          unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-3.3.1.jar > deps/lwjgl-3.3.1.jar
-          unzip -p "$base_jar" META-INF/harimt-libs/lwjgl-vulkan-3.3.1.jar > deps/lwjgl-vulkan-3.3.1.jar
-          test -s deps/lwjgl-3.3.1.jar
-          test -s deps/lwjgl-vulkan-3.3.1.jar
-          unzip -p "$base_jar" assets/async/shaders/collision_broadphase.comp.spv > production-shader-before.spv
-          sha256sum "$base_jar" production-shader-before.spv | tee evidence/runtime/base-parent-and-production-shader.sha256
+          sha256sum "$base_jar" | tee evidence/base-parent-jar.sha256
 
-      - name: Apply only the proven child-backend fixes
+      - name: Patch only the missing Forge GPU config bridge
         shell: bash
         run: |
           python3 - <<'PY'
           from pathlib import Path
 
-          p = Path('source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java')
+          p = Path('source/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java')
           t = p.read_text(encoding='utf-8')
 
-          old = '''                writes.get(i)\n                        .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)\n                        .dstSet(descriptorSet)\n                        .dstBinding(i)\n                        .descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)\n                        .pBufferInfo(VkDescriptorBufferInfo.create(infos.get(i).address(), 1));\n'''
-          new = '''                writes.get(i)\n                        .sType(VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET)\n                        .dstSet(descriptorSet)\n                        .dstBinding(i)\n                        .descriptorCount(1)\n                        .descriptorType(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER)\n                        .pBufferInfo(VkDescriptorBufferInfo.create(infos.get(i).address(), 1));\n'''
-          if t.count(old) != 1:
-              raise SystemExit(f'descriptor source drift: expected 1 marker, found {t.count(old)}')
-          t = t.replace(old, new, 1)
-
-          old = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
-          new = '''            vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);\n\n            VkMemoryBarrier.Buffer hostReadBarrier = VkMemoryBarrier.calloc(1, stack);\n            hostReadBarrier.get(0)\n                    .sType(VK_STRUCTURE_TYPE_MEMORY_BARRIER)\n                    .srcAccessMask(VK_ACCESS_SHADER_WRITE_BIT)\n                    .dstAccessMask(VK_ACCESS_HOST_READ_BIT);\n            vkCmdPipelineBarrier(\n                    commandBuffer,\n                    VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,\n                    VK_PIPELINE_STAGE_HOST_BIT,\n                    0,\n                    hostReadBarrier,\n                    null,\n                    null);\n            check(vkEndCommandBuffer(commandBuffer), "vkEndCommandBuffer");\n'''
-          if t.count(old) != 1:
-              raise SystemExit(f'dispatch source drift: expected 1 marker, found {t.count(old)}')
-          p.write_text(t.replace(old, new, 1), encoding='utf-8')
+          replacements = [
+              (
+                  '        private static final ForgeConfigSpec.ConfigValue<Boolean> enableCircuitBreakerLocal;\n',
+                  '        private static final ForgeConfigSpec.ConfigValue<Boolean> enableCircuitBreakerLocal;\n'
+                  '        private static final ForgeConfigSpec.ConfigValue<Boolean> enableGpuCollisionLocal;\n'
+              ),
+              (
+                  '''                enableCircuitBreakerLocal = BUILDER.comment("""\n                                Enable circuit breaker for entity tick crash isolation.\n                                When an entity type crashes repeatedly during async tick, it is automatically\n                                moved to synchronous ticking until it stabilizes. Prevents cascade failures.""")\n                                .define("enableCircuitBreaker", enableCircuitBreaker.getValue());\n\n''',
+                  '''                enableCircuitBreakerLocal = BUILDER.comment("""\n                                Enable circuit breaker for entity tick crash isolation.\n                                When an entity type crashes repeatedly during async tick, it is automatically\n                                moved to synchronous ticking until it stabilizes. Prevents cascade failures.""")\n                                .define("enableCircuitBreaker", enableCircuitBreaker.getValue());\n\n                enableGpuCollisionLocal = BUILDER.comment(\n                                "Enable Vulkan broad-phase acceleration for deferred entity push queries. " +\n                                "When disabled or unavailable, vanilla collision lookup remains authoritative.")\n                                .define("enableGpuCollision", enableGpuCollision.getValue());\n\n'''
+              ),
+              (
+                  '                enableCircuitBreaker.setValue(enableCircuitBreakerLocal.get());\n',
+                  '                enableCircuitBreaker.setValue(enableCircuitBreakerLocal.get());\n'
+                  '                enableGpuCollision.setValue(enableGpuCollisionLocal.get());\n'
+              ),
+              (
+                  '                enableCircuitBreakerLocal.set(enableCircuitBreaker.getValue());\n',
+                  '                enableCircuitBreakerLocal.set(enableCircuitBreaker.getValue());\n'
+                  '                enableGpuCollisionLocal.set(enableGpuCollision.getValue());\n'
+              ),
+          ]
+          for old, new in replacements:
+              if t.count(old) != 1:
+                  raise SystemExit(f'AsyncConfigForge source drift for marker: {old[:100]!r}')
+              t = t.replace(old, new, 1)
+          p.write_text(t, encoding='utf-8')
           PY
-          grep -F '.descriptorCount(1)' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
-          grep -F 'VK_PIPELINE_STAGE_HOST_BIT' source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          grep -F 'enableGpuCollisionLocal' source/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java
+          grep -F '.define("enableGpuCollision", enableGpuCollision.getValue())' source/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java
 
-      - name: Rebuild only the isolated child backend and inject it
+      - name: Install real Forge 47.4.23 server
         shell: bash
         run: |
-          base_jar="$(cat BASE_JAR_PATH.txt)"
-          javac --release 17 \
-            -cp "$base_jar:deps/lwjgl-3.3.1.jar:deps/lwjgl-vulkan-3.3.1.jar" \
-            -d backend-classes \
-            source/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
-          javap -classpath backend-classes -c -p com.axalotl.async.vulkanruntime.LwjglVulkanBackend \
-            > evidence/runtime/LwjglVulkanBackend.fixed.javap.txt
-          grep -F 'descriptorCount' evidence/runtime/LwjglVulkanBackend.fixed.javap.txt
-          grep -F 'vkCmdPipelineBarrier' evidence/runtime/LwjglVulkanBackend.fixed.javap.txt
-
-          cat > backend-manifest.mf <<'EOF'
-          Manifest-Version: 1.0
-          Implementation-Title: HariMultiThread Ultimate Vulkan Backend
-          Implementation-Version: 3.3.1
-          EOF
-          jar cfm patched/harimt-vulkan-backend-3.3.1.jar backend-manifest.mf -C backend-classes .
-          cp patched/harimt-vulkan-backend-3.3.1.jar inject/META-INF/harimt-libs/
-
-          patched_jar=patched/HariMultiThread-Ultimate-descriptor-fix-diagnostic.jar
-          cp "$base_jar" "$patched_jar"
-          jar uf "$patched_jar" -C inject META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar
-          echo "$patched_jar" > PATCHED_JAR_PATH.txt
-
-          unzip -p "$patched_jar" assets/async/shaders/collision_broadphase.comp.spv > production-shader-after.spv
-          cmp -s production-shader-before.spv production-shader-after.spv
-          sha256sum patched/harimt-vulkan-backend-3.3.1.jar "$patched_jar" production-shader-after.spv \
-            | tee evidence/runtime/patched-backend-parent-and-production-shader.sha256
-
-      - name: Install Forge 47.4.23 server
-        shell: bash
-        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers
           mkdir -p qa-server/mods
           curl -fL --retry 3 \
             'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar' \
@@ -121,42 +94,164 @@ jobs:
           (
             cd qa-server
             java -jar ../forge-1.20.1-47.4.23-installer.jar --installServer \
-              > ../evidence/runtime/forge-server-install.log 2>&1
+              > ../evidence/forge-server-install.log 2>&1
           )
           chmod +x qa-server/run.sh
-          cp "$(cat PATCHED_JAR_PATH.txt)" qa-server/mods/HariMultiThread-Ultimate.jar
           printf 'eula=true\n' > qa-server/eula.txt
           cat > qa-server/server.properties <<'EOF'
           online-mode=false
           level-name=world
           level-seed=8675309
           spawn-protection=0
-          view-distance=4
-          simulation-distance=4
-          motd=HariMultiThread Descriptor Fix Packaged QA
+          view-distance=3
+          simulation-distance=3
+          motd=HariMultiThread GPU Config Persistence QA
           EOF
 
-      - name: Run full packaged GPU verifier, fallback, save and restart gate
+      - name: Compile and inject only AsyncConfigForge
         shell: bash
         run: |
-          python3 -m py_compile minecraft/async-1.20.1-ultimate/runtime_server_qa.py
-          python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
-            qa-server evidence/runtime
+          base_jar="$(cat BASE_JAR_PATH.txt)"
+          forge_cp="$(find qa-server/libraries -type f -name '*.jar' -print | paste -sd: -)"
+          javac --release 17 \
+            -cp "$base_jar:$forge_cp" \
+            -d config-classes \
+            source/forge/src/main/java/com/axalotl/async/forge/config/AsyncConfigForge.java
+          test -s config-classes/com/axalotl/async/forge/config/AsyncConfigForge.class
+          javap -classpath config-classes -c -p com.axalotl.async.forge.config.AsyncConfigForge \
+            > evidence/AsyncConfigForge.fixed.javap.txt
+          grep -F 'enableGpuCollisionLocal' evidence/AsyncConfigForge.fixed.javap.txt
+          grep -F 'enableGpuCollision' evidence/AsyncConfigForge.fixed.javap.txt
 
-      - name: Summarize decisive runtime evidence
-        if: always()
+          patched_jar=patched/HariMultiThread-Ultimate-gpu-config-persistence.jar
+          cp "$base_jar" "$patched_jar"
+          jar uf "$patched_jar" -C config-classes com/axalotl/async/forge/config/AsyncConfigForge.class
+          echo "$patched_jar" > PATCHED_JAR_PATH.txt
+          cp "$patched_jar" qa-server/mods/HariMultiThread-Ultimate.jar
+          sha256sum "$patched_jar" | tee evidence/patched-parent-jar.sha256
+
+      - name: Prove GPU toggle survives a clean JVM restart
         shell: bash
         run: |
-          grep -Eh 'Compile-checked Vulkan collision backend initialized|Vulkan broad-phase learned pair capacity|Vulkan push broad-phase sustained|Live GPU Verification PASS|Exact pairs:|GPU candidates:|Conservative extras:|GPU VERIFICATION FAILED|Vanilla push replay fallback is active|HMT_QA_ENTITIES_PRESENT|HMT_QA_RESTART_ENTITIES_PRESENT|packaged Forge dense-pair' \
-            evidence/runtime/packaged-server-*.log 2>/dev/null || true
+          python3 - <<'PY'
+          import os
+          import queue
+          import subprocess
+          import threading
+          import time
+          from pathlib import Path
 
-      - name: Upload packaged proof evidence
+          root = Path('qa-server')
+          evidence = Path('evidence')
+          env = os.environ.copy()
+          env['JDK_JAVA_OPTIONS'] = (
+              env.get('JDK_JAVA_OPTIONS', '') + ' -Dharimt.vulkan.allowCpuDevice=true'
+          ).strip()
+
+          fatal = ('MixinApplyError', 'InvalidMixinException', 'InjectionError',
+                   'Exception in server tick loop', 'OutOfMemoryError',
+                   'A fatal error has been detected by the Java Runtime Environment')
+
+          def run_phase(name, actions):
+              lines = []
+              q = queue.Queue()
+              p = subprocess.Popen(
+                  ['bash', 'run.sh', 'nogui'], cwd=root,
+                  stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                  stderr=subprocess.STDOUT, text=True, bufsize=1, env=env)
+              assert p.stdin and p.stdout
+
+              def reader():
+                  for line in p.stdout:
+                      print(line, end='', flush=True)
+                      lines.append(line)
+                      q.put(line)
+
+              t = threading.Thread(target=reader, daemon=True)
+              t.start()
+
+              def send(cmd):
+                  print('[CONFIG-QA] >', cmd, flush=True)
+                  p.stdin.write(cmd + '\n')
+                  p.stdin.flush()
+
+              def wait_for(marker, timeout):
+                  deadline = time.monotonic() + timeout
+                  while time.monotonic() < deadline:
+                      for line in list(lines):
+                          if any(x in line for x in fatal):
+                              raise RuntimeError(f'fatal runtime marker while waiting for {marker!r}: {line.strip()}')
+                          if marker in line:
+                              return
+                      if p.poll() is not None:
+                          raise RuntimeError(f'server exited while waiting for {marker!r}')
+                      try:
+                          q.get(timeout=0.25)
+                      except queue.Empty:
+                          pass
+                  raise TimeoutError(f'timed out waiting for {marker!r}')
+
+              try:
+                  wait_for('Done (', 180)
+                  actions(send, wait_for)
+                  send('stop')
+                  rc = p.wait(timeout=60)
+                  t.join(timeout=5)
+                  if rc != 0:
+                      raise RuntimeError(f'{name} server exit={rc}')
+                  if 'Stopping server' not in ''.join(lines):
+                      raise RuntimeError(f'{name} missing clean shutdown marker')
+              finally:
+                  if p.poll() is None:
+                      p.terminate()
+                      try:
+                          p.wait(timeout=15)
+                      except subprocess.TimeoutExpired:
+                          p.kill(); p.wait(timeout=10)
+                  t.join(timeout=5)
+                  (evidence / f'{name}.log').write_text(''.join(lines), encoding='utf-8')
+
+          def disable(send, wait_for):
+              send('async gpu')
+              wait_for('GPU Collision: Enabled', 30)
+              send('async gpu toggle')
+              wait_for('GPU Collision: Disabled', 30)
+
+          run_phase('gpu-config-disable', disable)
+
+          config_files = list((root / 'config').glob('*.toml'))
+          matches = []
+          for p in config_files:
+              text = p.read_text(encoding='utf-8', errors='replace')
+              if 'enableGpuCollision' in text:
+                  matches.append((p, text))
+          if len(matches) != 1:
+              raise RuntimeError(f'expected one Forge config containing enableGpuCollision, found {len(matches)}')
+          config_path, config_text = matches[0]
+          if 'enableGpuCollision = false' not in config_text:
+              raise RuntimeError(f'persisted Forge config did not contain enableGpuCollision = false: {config_path}')
+          (evidence / 'gpu-config-path.txt').write_text(str(config_path) + '\n', encoding='utf-8')
+          (evidence / 'gpu-config-after-disable.toml').write_text(config_text, encoding='utf-8')
+          print('[CONFIG-QA] persisted false in', config_path, flush=True)
+
+          def verify_restart(send, wait_for):
+              send('async gpu')
+              wait_for('GPU Collision: Disabled', 30)
+
+          run_phase('gpu-config-restart', verify_restart)
+          print('[CONFIG-QA] FORGE_GPU_CONFIG_PERSISTENCE_PASS', flush=True)
+          PY
+          grep -F 'FORGE_GPU_CONFIG_PERSISTENCE_PASS' evidence/gpu-config-restart.log >/dev/null 2>&1 || \
+            test -f evidence/gpu-config-after-disable.toml
+          grep -F 'enableGpuCollision = false' evidence/gpu-config-after-disable.toml
+          grep -F 'GPU Collision: Disabled' evidence/gpu-config-restart.log
+
+      - name: Upload persistence evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: async-packaged-vulkan-descriptor-fix-evidence
+          name: async-forge-gpu-config-persistence-evidence
           path: |
-            evidence/runtime/
-            patched/harimt-vulkan-backend-3.3.1.jar
-            patched/HariMultiThread-Ultimate-descriptor-fix-diagnostic.jar
+            evidence/
+            patched/HariMultiThread-Ultimate-gpu-config-persistence.jar
           if-no-files-found: warn
