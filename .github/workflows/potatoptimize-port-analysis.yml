@@ -1,10 +1,6 @@
 name: Potatoptimize Forge 1.20.1 Port Analysis
 
 on:
-  push:
-    paths:
-      - '.github/workflows/potatoptimize-port-analysis.yml'
-      - 'minecraft/potatoptimize-forge-1.20.1/**'
   workflow_dispatch:
 
 permissions:
