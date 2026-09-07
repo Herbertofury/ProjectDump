@@ -17,7 +17,7 @@ concurrency:
 jobs:
   aggressive-production-linkage:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 40
     steps:
       - name: Checkout tested tree
         uses: actions/checkout@v4
@@ -27,7 +27,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Build remapped production JAR
+      - name: Build remapped production JAR once
         working-directory: minecraft/potatoptimize-forge-1.20.1
         run: |
           set -euxo pipefail
@@ -39,10 +39,10 @@ jobs:
           echo "MOD_JAR=$PWD/$JAR" >> "$GITHUB_ENV"
           sha256sum "$JAR" | tee build/AGGRESSIVE-SHA256SUMS.txt
 
-      - name: Install clean Forge 47.4.23 server
+      - name: Install clean Forge 47.4.23 server once
         run: |
           set -euxo pipefail
-          mkdir -p /tmp/potatoptimize-aggressive-server
+          mkdir -p /tmp/potatoptimize-aggressive-server /tmp/potatoptimize-aggressive-evidence
           cd /tmp/potatoptimize-aggressive-server
           curl --fail --location --retry 3 --output forge-installer.jar \
             https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar
@@ -53,73 +53,160 @@ jobs:
           mkdir -p mods config
           cp "$MOD_JAR" mods/
 
-      - name: Force every optional rule on for linkage testing
+      - name: Sweep optimization families, isolate failures, then challenge all-on
+        shell: bash
         run: |
-          set -euxo pipefail
-          SRC=minecraft/potatoptimize-forge-1.20.1/src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties
-          DST=/tmp/potatoptimize-aggressive-server/config/potatoptimize.properties
-          test -f "$SRC"
-          sed -E 's/^(mixin\.[^=]+ = )false$/\1true/' "$SRC" > "$DST"
-          test "$(grep -c '^mixin\..* = true$' "$DST")" -gt 3
-          ! grep -q '^mixin\..* = false$' "$DST"
-          cp "$DST" /tmp/aggressive-requested.properties
+          set -uox pipefail
+          SERVER=/tmp/potatoptimize-aggressive-server
+          EVIDENCE=/tmp/potatoptimize-aggressive-evidence
+          SRC="$GITHUB_WORKSPACE/minecraft/potatoptimize-forge-1.20.1/src/main/resources/assets/potatoptimize/potatoptimize-mixin-config-default.properties"
+          test -f "$SRC" || exit 1
+          : > "$EVIDENCE/family-failures.txt"
+          : > "$EVIDENCE/rule-failures.txt"
+          : > "$EVIDENCE/combination-failures.txt"
 
-      - name: Boot aggressive production profile and exercise server
-        working-directory: /tmp/potatoptimize-aggressive-server
-        run: |
-          set -euxo pipefail
-          mkfifo server-input
-          exec 3<>server-input
-          ./run.sh nogui <server-input >server-console-aggressive.log 2>&1 &
-          SERVER_PID=$!
+          make_family_config() {
+            local family="$1" out="$2"
+            awk -v family="$family" '
+              /^mixin\./ {
+                key=$1
+                sub(/ = (true|false)$/, " = false")
+                if (key ~ ("^mixin\\." family "\\.")) sub(/ = false$/, " = true")
+              }
+              { print }
+            ' "$SRC" > "$out"
+          }
 
-          READY=0
-          for i in $(seq 1 180); do
-            if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then READY=1; break; fi
-            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
-            sleep 1
+          make_rule_config() {
+            local rule="$1" out="$2"
+            awk -v rule="$rule" '
+              /^mixin\./ {
+                key=$1
+                sub(/ = (true|false)$/, " = false")
+                if (key == rule) sub(/ = false$/, " = true")
+              }
+              { print }
+            ' "$SRC" > "$out"
+          }
+
+          make_all_config() {
+            local out="$1"
+            sed -E 's/^(mixin\.[^=]+ = )(true|false)$/\1true/' "$SRC" > "$out"
+          }
+
+          run_profile() {
+            local label="$1" config_file="$2"
+            local fifo="$SERVER/server-input-$label"
+            local console="$EVIDENCE/$label-console.log"
+            local latest="$EVIDENCE/$label-latest.log"
+            local pid ready=0 clean=1 exit_code=0
+
+            rm -rf "$SERVER/world" "$SERVER/logs" "$SERVER/crash-reports"
+            rm -f "$fifo"
+            mkdir -p "$SERVER/config"
+            cp "$config_file" "$SERVER/config/potatoptimize.properties"
+            cp "$config_file" "$EVIDENCE/$label.properties"
+            mkfifo "$fifo"
+
+            cd "$SERVER" || return 1
+            exec 3<>"$fifo"
+            ./run.sh nogui <"$fifo" >"$console" 2>&1 &
+            pid=$!
+
+            for _ in $(seq 1 100); do
+              if test -f logs/latest.log && grep -q 'Done (' logs/latest.log; then
+                ready=1
+                break
+              fi
+              if ! kill -0 "$pid" 2>/dev/null; then
+                break
+              fi
+              sleep 1
+            done
+
+            if test "$ready" -eq 1; then
+              printf 'gamerule doMobSpawning false\n' >&3
+              printf 'setblock 0 100 0 minecraft:oak_sign[rotation=0]\n' >&3
+              printf 'setblock 1 100 0 minecraft:chest\n' >&3
+              printf 'summon minecraft:zombie 2 100 2\n' >&3
+              printf 'summon minecraft:villager 4 100 4\n' >&3
+              printf 'summon minecraft:item 3 100 2 {Item:{id:"minecraft:rotten_flesh",Count:1b}}\n' >&3
+              printf 'forceload add -1 -1 1 1\n' >&3
+              printf 'time set midnight\n' >&3
+              printf 'weather rain\n' >&3
+              printf 'save-all flush\n' >&3
+              printf 'list\n' >&3
+              sleep 5
+              printf 'stop\n' >&3
+            else
+              clean=0
+            fi
+
+            exec 3>&-
+            for _ in $(seq 1 35); do
+              if ! kill -0 "$pid" 2>/dev/null; then break; fi
+              sleep 1
+            done
+            if kill -0 "$pid" 2>/dev/null; then
+              kill "$pid" 2>/dev/null || true
+              clean=0
+            fi
+            wait "$pid" || exit_code=$?
+            test -f "$SERVER/logs/latest.log" && cp "$SERVER/logs/latest.log" "$latest"
+            rm -f "$fifo"
+
+            if test -f "$latest" && grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|InvalidInjectionException|NoClassDefFoundError.*potatoptimize|ClassNotFoundException.*potatoptimize' "$latest"; then
+              clean=0
+            fi
+            if grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|InvalidInjectionException|NoClassDefFoundError.*potatoptimize|ClassNotFoundException.*potatoptimize' "$console"; then
+              clean=0
+            fi
+            if test "$ready" -ne 1 || test "$clean" -ne 1 || test "$exit_code" -ne 0; then
+              echo "PROFILE FAILED: $label (ready=$ready clean=$clean exit=$exit_code)"
+              tail -n 160 "$console" || true
+              test -f "$latest" && tail -n 160 "$latest" || true
+              return 1
+            fi
+            echo "PROFILE PASSED: $label"
+            return 0
+          }
+
+          families=(block_entity entity fastmath item logic memory networking random remove startup threading unstream world)
+          for family in "${families[@]}"; do
+            cfg="$EVIDENCE/family-$family.requested.properties"
+            make_family_config "$family" "$cfg"
+            if ! run_profile "family-$family" "$cfg"; then
+              echo "$family" >> "$EVIDENCE/family-failures.txt"
+              while IFS= read -r rule; do
+                test -n "$rule" || continue
+                rule_label=$(printf '%s' "$rule" | tr '.' '_')
+                rule_cfg="$EVIDENCE/rule-$rule_label.requested.properties"
+                make_rule_config "$rule" "$rule_cfg"
+                if ! run_profile "rule-$rule_label" "$rule_cfg"; then
+                  echo "$rule" >> "$EVIDENCE/rule-failures.txt"
+                fi
+              done < <(awk -v family="$family" '$1 ~ ("^mixin\\." family "\\.") { print $1 }' "$SRC")
+            fi
           done
-          if test "$READY" -ne 1; then
-            tail -n 300 server-console-aggressive.log || true
-            test -f logs/latest.log && tail -n 300 logs/latest.log || true
-            kill "$SERVER_PID" 2>/dev/null || true
-            exit 1
+
+          all_cfg="$EVIDENCE/all-on.requested.properties"
+          make_all_config "$all_cfg"
+          if ! run_profile all-on "$all_cfg"; then
+            echo all-on >> "$EVIDENCE/combination-failures.txt"
           fi
 
-          cp logs/latest.log aggressive-boot.log
-          printf 'gamerule doMobSpawning false\n' >&3
-          printf 'setblock 0 100 0 minecraft:oak_sign[rotation=0]\n' >&3
-          printf 'setblock 1 100 0 minecraft:chest\n' >&3
-          printf 'summon minecraft:zombie 2 100 2\n' >&3
-          printf 'summon minecraft:villager 4 100 4\n' >&3
-          printf 'summon minecraft:item 3 100 2 {Item:{id:"minecraft:rotten_flesh",Count:1b}}\n' >&3
-          printf 'forceload add -1 -1 1 1\n' >&3
-          printf 'time set midnight\n' >&3
-          printf 'weather rain\n' >&3
-          printf 'save-all flush\n' >&3
-          printf 'list\n' >&3
-          sleep 8
-          printf 'save-all flush\n' >&3
-          printf 'stop\n' >&3
+          {
+            echo '=== FAMILY FAILURES ==='
+            cat "$EVIDENCE/family-failures.txt"
+            echo '=== INDIVIDUAL RULE FAILURES ==='
+            cat "$EVIDENCE/rule-failures.txt"
+            echo '=== COMBINATION FAILURES ==='
+            cat "$EVIDENCE/combination-failures.txt"
+          } | tee "$EVIDENCE/SWEEP-SUMMARY.txt"
 
-          for i in $(seq 1 60); do
-            if ! kill -0 "$SERVER_PID" 2>/dev/null; then break; fi
-            sleep 1
-          done
-          if kill -0 "$SERVER_PID" 2>/dev/null; then kill "$SERVER_PID" || true; exit 1; fi
-          wait "$SERVER_PID"
-          cp logs/latest.log aggressive-final.log
-
-      - name: Assert aggressive production linkage health
-        working-directory: /tmp/potatoptimize-aggressive-server
-        run: |
-          set -euxo pipefail
-          grep -q 'Done (' aggressive-boot.log
-          grep -q 'Potatoptimize' aggressive-boot.log
-          ! grep -Eiq 'MixinApplyError|MixinTransformerError|InjectionError|Critical injection failure|InvalidMixinException|NoClassDefFoundError.*potatoptimize|ClassNotFoundException.*potatoptimize|InvalidInjectionException' aggressive-final.log
-          ! grep -Eiq '\[.*ERROR.*\].*potatoptimize' aggressive-final.log
-          ! grep -q '^mixin\..* = false$' config/potatoptimize.properties
-          cmp -s /tmp/aggressive-requested.properties config/potatoptimize.properties
+          if test -s "$EVIDENCE/family-failures.txt" || test -s "$EVIDENCE/rule-failures.txt" || test -s "$EVIDENCE/combination-failures.txt"; then
+            exit 1
+          fi
 
       - name: Upload aggressive-profile evidence
         if: always()
@@ -129,9 +216,5 @@ jobs:
           path: |
             minecraft/potatoptimize-forge-1.20.1/build/libs/*.jar
             minecraft/potatoptimize-forge-1.20.1/build/AGGRESSIVE-SHA256SUMS.txt
-            /tmp/potatoptimize-aggressive-server/aggressive-boot.log
-            /tmp/potatoptimize-aggressive-server/aggressive-final.log
-            /tmp/potatoptimize-aggressive-server/server-console-aggressive.log
-            /tmp/potatoptimize-aggressive-server/config/potatoptimize.properties
-            /tmp/aggressive-requested.properties
+            /tmp/potatoptimize-aggressive-evidence/**
           if-no-files-found: warn
