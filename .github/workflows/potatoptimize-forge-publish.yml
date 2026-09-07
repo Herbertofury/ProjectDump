@@ -1,143 +1,15 @@
 name: Publish Potatoptimize Forge 1.20.1 Certified Release
 
 on:
-  workflow_run:
-    workflows:
-      - Potatoptimize Forge 1.20.1 Aggressive Profile QA
-    types:
-      - completed
+  workflow_dispatch:
 
 permissions:
   contents: write
   actions: read
 
-concurrency:
-  group: potatoptimize-forge-1.20.1-r1-publish
-  cancel-in-progress: false
-
 jobs:
-  publish-certified-release:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  publication-held-for-final-recertification:
+    if: ${{ false }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      GH_TOKEN: ${{ github.token }}
-      SOURCE_SHA: 3408fbd2449f6de2365c83b81a74bb9d5f1e68dc
-      EXPECTED_JAR_SHA256: e614ff19a5efa6e3e035376acf394ab6131db7e0380ba3a8466d2fcb606aaaf3
-      RUNTIME_RUN: '34144488068'
-      COMPAT_RUN: '34144487998'
-      RELEASE_TAG: potatoptimize-forge-1.20.1-parity-safe-r1
-      RELEASE_JAR: Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar
     steps:
-      - name: Verify all certification lineages
-        run: |
-          set -euxo pipefail
-          test "${{ github.event.workflow_run.name }}" = 'Potatoptimize Forge 1.20.1 Aggressive Profile QA'
-          test "${{ github.event.workflow_run.conclusion }}" = 'success'
-
-          RUNTIME_JSON=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUNTIME_RUN}")
-          test "$(jq -r .conclusion <<<"$RUNTIME_JSON")" = success
-          test "$(jq -r .head_sha <<<"$RUNTIME_JSON")" = "$SOURCE_SHA"
-
-          COMPAT_JSON=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${COMPAT_RUN}")
-          test "$(jq -r .conclusion <<<"$COMPAT_JSON")" = success
-          test "$(jq -r .head_sha <<<"$COMPAT_JSON")" = "$SOURCE_SHA"
-
-      - name: Download exact certified artifacts
-        run: |
-          set -euxo pipefail
-          mkdir -p evidence/runtime evidence/compat evidence/aggressive release
-          gh run download "$RUNTIME_RUN" -n potatoptimize-forge-1.20.1-runtime-evidence-and-jar -D evidence/runtime
-          gh run download "$COMPAT_RUN" -n potatoptimize-forge-1.20.1-compat-stack-evidence -D evidence/compat
-          gh run download "${{ github.event.workflow_run.id }}" -n potatoptimize-forge-1.20.1-aggressive-profile-evidence -D evidence/aggressive
-
-          JAR=$(find evidence/runtime -type f -name 'potatoptimize-forge-1.20.1-1.0.0.jar' | head -n 1)
-          test -n "$JAR"
-          ACTUAL=$(sha256sum "$JAR" | awk '{print $1}')
-          test "$ACTUAL" = "$EXPECTED_JAR_SHA256"
-          cp "$JAR" "release/$RELEASE_JAR"
-          printf '%s  %s\n' "$EXPECTED_JAR_SHA256" "$RELEASE_JAR" > release/SHA256SUMS.txt
-          printf '%s\n' "$SOURCE_SHA" > release/SOURCE_COMMIT.txt
-
-          AGGRESSIVE_JAR=$(find evidence/aggressive -type f -name 'potatoptimize-forge-1.20.1-1.0.0.jar' | head -n 1)
-          test -n "$AGGRESSIVE_JAR"
-          test "$(sha256sum "$AGGRESSIVE_JAR" | awk '{print $1}')" = "$EXPECTED_JAR_SHA256"
-
-          (cd evidence/runtime && zip -qr ../../release/runtime-certification-evidence.zip .)
-          (cd evidence/compat && zip -qr ../../release/performance-stack-certification-evidence.zip .)
-          (cd evidence/aggressive && zip -qr ../../release/aggressive-profile-linkage-evidence.zip .)
-
-      - name: Write release notes
-        run: |
-          cat > release/RELEASE_NOTES.md <<'EOF'
-          # Potatoptimize Forge 1.20.1 — Parity-Safe Port r1
-
-          A native Forge 1.20.1 production port of Potatoptimize, targeting Forge 47.4.23 and Java 17.
-
-          ## Default policy
-          The shipped profile is deliberately conservative. Optimizations that intentionally change vanilla mechanics, RNG sequences, loading semantics, threading, save behavior, or other observable behavior are **OFF by default**.
-
-          Enabled by default:
-          - sign ticking optimization
-          - packed-int/data-bit arithmetic optimization
-          - nearest-item/player sensor stream-removal optimization
-
-          Everything else remains available only as an explicit opt-in where applicable.
-
-          ## Port/hardening fixes
-          - Native Forge packaging and early-loader compatibility handling.
-          - Repaired the packed-int constructor hook for Forge's production Mixin runtime while retaining equivalent arithmetic.
-          - Repaired the old ChunkSectionPos height-range bug in the optional fast block-position path.
-          - Repaired the old fast-rounding target.
-          - Removed Fabric-only environment assumptions and corrected production remapping edges.
-          - Added Forge resource-pack metadata for clean startup.
-          - Added compatibility handling/diagnostics for ModernFix, ServerCore, FerriteCore stacks, Krypton Reno (`kreno`), FasterRandom, C2ME, Lithium/Canary/Radium, Valkyrien Skies, EnhancedVisuals, and related overlap cases.
-
-          ## Certification
-          Release source commit: `3408fbd2449f6de2365c83b81a74bb9d5f1e68dc`
-
-          The exact release JAR passed:
-          1. Clean Forge 47.4.23 dedicated-server boot, gameplay/world exercise, save, clean shutdown, and second boot of the same world/config.
-          2. Forge 47.4.23 stack boot with ModernFix + ServerCore + FerriteCore + Krypton Reno/FNP, including runtime and Mixin assertions.
-          3. Aggressive-profile production-linkage challenge: all optional rules forced on in an isolated test configuration to expose broken production mappings/injections. This test checks linkage/runtime health; it does **not** claim vanilla semantic parity for opt-in aggressive rules.
-
-          SHA-256 of `Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar`:
-          `e614ff19a5efa6e3e035376acf394ab6131db7e0380ba3a8466d2fcb606aaaf3`
-
-          GPL-3.0 licensing from upstream is preserved.
-          EOF
-
-      - name: Create or refresh GitHub release from certified bytes
-        run: |
-          set -euxo pipefail
-          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
-            TAG_SHA=$(gh api "/repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --jq '.object.sha')
-            test "$TAG_SHA" = "$SOURCE_SHA"
-            gh release edit "$RELEASE_TAG" --title 'Potatoptimize Forge 1.20.1 - Parity-Safe r1' --notes-file release/RELEASE_NOTES.md
-            gh release upload "$RELEASE_TAG" \
-              "release/$RELEASE_JAR" \
-              release/SHA256SUMS.txt \
-              release/SOURCE_COMMIT.txt \
-              release/runtime-certification-evidence.zip \
-              release/performance-stack-certification-evidence.zip \
-              release/aggressive-profile-linkage-evidence.zip \
-              --clobber
-          else
-            gh release create "$RELEASE_TAG" \
-              "release/$RELEASE_JAR" \
-              release/SHA256SUMS.txt \
-              release/SOURCE_COMMIT.txt \
-              release/runtime-certification-evidence.zip \
-              release/performance-stack-certification-evidence.zip \
-              release/aggressive-profile-linkage-evidence.zip \
-              --target "$SOURCE_SHA" \
-              --title 'Potatoptimize Forge 1.20.1 - Parity-Safe r1' \
-              --notes-file release/RELEASE_NOTES.md
-          fi
-
-      - name: Upload immutable publication bundle
-        uses: actions/upload-artifact@v4
-        with:
-          name: potatoptimize-forge-1.20.1-parity-safe-r1-publication
-          path: release/*
-          if-no-files-found: error
+      - run: echo 'Publication is intentionally held until the final source head completes clean, compatibility-stack, and aggressive-profile certification.'
