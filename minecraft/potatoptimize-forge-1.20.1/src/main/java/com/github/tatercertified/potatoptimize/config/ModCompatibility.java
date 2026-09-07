@@ -20,8 +20,14 @@ public final class ModCompatibility {
 
     public static void prepareMixins() {
         DISABLED_MIXINS.clear();
-        addModCompatibility("krypton", "Krypton", new String[]{"mixin.logic.var_int"});
-        addModCompatibility("kryptonreforged", "Krypton Reforged", new String[]{"mixin.logic.var_int"});
+
+        // The legacy 1.20.1 branch no longer contains the old var-int optimization,
+        // so Krypton has no Potatoptimize rule to disable here. Detect it only for
+        // diagnostics instead of advertising a guard against a nonexistent mixin.
+        logModPresence("krypton_fnp", "Krypton Reno/FNP");
+        logModPresence("krypton", "Krypton");
+        logModPresence("kryptonreforged", "Krypton Reforged");
+
         addModCompatibility("modernfix", "ModernFix", new String[]{"mixin.logic.worker_thread", "mixin.startup.dfu"});
         addModCompatibility("servercore", "ServerCore", new String[]{"mixin.item.map_chunk_loading", "mixin.unstream.pathfinding"});
         addModCompatibility("chronos-carpet-addons", "Chronos Carpet Addons", new String[]{"mixin.entity.collisions"});
@@ -34,8 +40,18 @@ public final class ModCompatibility {
         addModCompatibility("enhancedvisuals", "EnhancedVisuals", new String[]{"mixin.world.explosion"});
     }
 
+    private static boolean isLoaded(String modId) {
+        return FMLLoader.getLoadingModList() != null && FMLLoader.getLoadingModList().getModFileById(modId) != null;
+    }
+
+    private static void logModPresence(String modId, String visualName) {
+        if (isLoaded(modId)) {
+            LOGGER.info("{} detected; no overlapping Potatoptimize 1.20.1 rule requires disabling", visualName);
+        }
+    }
+
     private static void addModCompatibility(String modId, String visualName, String[] mixins) {
-        if (FMLLoader.getLoadingModList() != null && FMLLoader.getLoadingModList().getModFileById(modId) != null) {
+        if (isLoaded(modId)) {
             LOGGER.info("{} detected; disabling overlapping Potatoptimize rules: {}", visualName, Arrays.toString(mixins));
             DISABLED_MIXINS.addAll(Arrays.asList(mixins));
         }
