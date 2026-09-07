@@ -18,31 +18,35 @@ concurrency:
 
 jobs:
   publish-certified-release:
-    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.id == 34147720996 && github.event.workflow_run.conclusion == 'success') || github.event_name == 'workflow_dispatch' }}
+    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.id == 34153631764 && github.event.workflow_run.conclusion == 'success') || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     env:
       GH_TOKEN: ${{ github.token }}
-      SOURCE_SHA: 45768239855e00e50437c6f9d7d0b814caa731eb
-      EXPECTED_JAR_SHA256: cbe4de976b13ecd1e9ffc8dd12db6186ef0788ad4d37388a4fdd5fd36e4e4ce3
-      RUNTIME_RUN: '34147591233'
-      COMPAT_RUN: '34147591147'
-      AGGRESSIVE_RUN: '34147720996'
+      SOURCE_SHA: c74675a97fd415f5fedbd168ba5553c0b55ad6c7
+      RUNTIME_RUN: '34153631803'
+      COMPAT_RUN: '34153631787'
+      AGGRESSIVE_RUN: '34153631764'
       RELEASE_TAG: potatoptimize-forge-1.20.1-parity-safe-r1
       RELEASE_JAR: Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar
+      RELEASE_SOURCES: Potatoptimize-Forge-1.20.1-ParitySafe-r1-sources.jar
     steps:
       - name: Verify exact certification set
         run: |
           set -euxo pipefail
           for RUN in "$RUNTIME_RUN" "$COMPAT_RUN" "$AGGRESSIVE_RUN"; do
-            JSON=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN}")
+            STATUS=''
+            JSON=''
+            for _ in $(seq 1 30); do
+              JSON=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUN}")
+              STATUS=$(jq -r .status <<<"$JSON")
+              test "$STATUS" = completed && break
+              sleep 10
+            done
+            test "$STATUS" = completed
             test "$(jq -r .conclusion <<<"$JSON")" = success
+            test "$(jq -r .head_sha <<<"$JSON")" = "$SOURCE_SHA"
           done
-
-          RUNTIME_JSON=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${RUNTIME_RUN}")
-          COMPAT_JSON=$(gh api "/repos/${GITHUB_REPOSITORY}/actions/runs/${COMPAT_RUN}")
-          test "$(jq -r .head_sha <<<"$RUNTIME_JSON")" = "$SOURCE_SHA"
-          test "$(jq -r .head_sha <<<"$COMPAT_JSON")" = "$SOURCE_SHA"
 
       - name: Download exact certified artifacts
         run: |
@@ -53,15 +57,17 @@ jobs:
           gh run download "$AGGRESSIVE_RUN" -n potatoptimize-forge-1.20.1-aggressive-profile-evidence -D evidence/aggressive
 
           JAR=$(find evidence/runtime -type f -name 'potatoptimize-forge-1.20.1-1.0.0.jar' | head -n 1)
+          SOURCES=$(find evidence/runtime -type f -name 'potatoptimize-forge-1.20.1-1.0.0-sources.jar' | head -n 1)
           AGGRESSIVE_JAR=$(find evidence/aggressive -type f -name 'potatoptimize-forge-1.20.1-1.0.0.jar' | head -n 1)
           test -n "$JAR"
+          test -n "$SOURCES"
           test -n "$AGGRESSIVE_JAR"
 
           ACTUAL=$(sha256sum "$JAR" | awk '{print $1}')
-          test "$ACTUAL" = "$EXPECTED_JAR_SHA256"
+          echo "JAR_SHA256=$ACTUAL" >> "$GITHUB_ENV"
 
-          # Loom re-packs the nested MixinExtras jar with non-reproducible ZIP metadata,
-          # so independent builds need normalized content equality rather than raw outer-JAR equality.
+          # Independent Loom builds can differ only in ZIP metadata of the nested MixinExtras jar.
+          # Compare normalized extracted content instead of pretending timestamp bytes are semantic differences.
           rm -rf /tmp/runtime-tree /tmp/aggressive-tree /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
           mkdir -p /tmp/runtime-tree /tmp/aggressive-tree /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
           unzip -q "$JAR" -d /tmp/runtime-tree
@@ -71,6 +77,18 @@ jobs:
           unzip -q /tmp/aggressive-tree/META-INF/jars/mixinextras-forge-0.3.5.jar -d /tmp/aggressive-mixinextras
           diff -qr /tmp/runtime-mixinextras /tmp/aggressive-mixinextras
           printf 'Runtime and aggressive builds have identical extracted mod/resource content; nested MixinExtras content is also identical.\n' > release/AGGRESSIVE_CONTENT_EQUIVALENCE.txt
+
+          # Verify required production metadata and the parity-safe default profile inside the exact release bytes.
+          test -f /tmp/runtime-tree/META-INF/mods.toml
+          test -f /tmp/runtime-tree/potatoptimize.mixins.json
+          test -f /tmp/runtime-tree/pack.mcmeta
+          DEFAULTS=/tmp/runtime-tree/assets/potatoptimize/potatoptimize-mixin-config-default.properties
+          test -f "$DEFAULTS"
+          test "$(grep -Ec '^mixin\.[^=]+ = true$' "$DEFAULTS")" -eq 3
+          grep -qx 'mixin.block_entity.sign_ticking = true' "$DEFAULTS"
+          grep -qx 'mixin.logic.data_bits = true' "$DEFAULTS"
+          grep -qx 'mixin.unstream.nearest_item = true' "$DEFAULTS"
+          ! grep -Eq '^mixin\.(threading|random|world|remove|startup)\.[^=]+ = true$' "$DEFAULTS"
 
           SUMMARY=$(find evidence/aggressive -type f -name SWEEP-SUMMARY.txt | head -n 1)
           test -n "$SUMMARY"
@@ -86,7 +104,9 @@ jobs:
           ' "$SUMMARY"
 
           cp "$JAR" "release/$RELEASE_JAR"
-          printf '%s  %s\n' "$EXPECTED_JAR_SHA256" "$RELEASE_JAR" > release/SHA256SUMS.txt
+          cp "$SOURCES" "release/$RELEASE_SOURCES"
+          printf '%s  %s\n' "$ACTUAL" "$RELEASE_JAR" > release/SHA256SUMS.txt
+          sha256sum "release/$RELEASE_SOURCES" >> release/SHA256SUMS.txt
           printf '%s\n' "$SOURCE_SHA" > release/SOURCE_COMMIT.txt
           printf '%s\n' "$RUNTIME_RUN" > release/RUNTIME_QA_RUN.txt
           printf '%s\n' "$COMPAT_RUN" > release/COMPAT_QA_RUN.txt
@@ -98,13 +118,13 @@ jobs:
 
       - name: Write release notes
         run: |
-          cat > release/RELEASE_NOTES.md <<'EOF'
+          cat > release/RELEASE_NOTES.md <<EOF
           # Potatoptimize Forge 1.20.1 — Parity-Safe Port r1
 
           Native Forge 1.20.1 production port targeting Forge 47.4.23 and Java 17.
 
           ## Vanilla-parity default profile
-          Behavior-changing, RNG-sequence-changing, loading, threading, save, profiler-removal, unsafe-random, and other semantically risky optimizations are **OFF by default**.
+          Behavior-changing, RNG-sequence-changing, loading, threading, save, profiler-removal, unsafe-random, and other semantically risky optimizations are OFF by default.
 
           Enabled by default:
           - sign ticking optimization
@@ -117,25 +137,25 @@ jobs:
           - Native Forge packaging/remapping and early-loader compatibility handling.
           - Repaired packed-int constructor initialization for Forge Mixin 0.8.5 without dropping its arithmetic optimization.
           - Repaired optional ChunkSectionPos height-range logic that previously ignored requested Y bounds.
-          - Repaired the optional fast-rounding target/remapping edge.
-          - Repaired optional Random.create reuse as a Forge-safe interface static overwrite.
-          - Repaired optional SimplePairList infinite-axis compaction with a Forge-safe constructor RETURN hook.
+          - Repaired optional fast-rounding target/remapping and optional shape-compaction linkage.
           - Removed Fabric-only launch assumptions and corrected Forge production remapping edges.
           - Added Forge pack metadata for clean startup.
-          - Fixed persisted default config values being misreported as user overrides; normal first and second boots now report 0 overrides.
-          - Compatibility detection/guards cover ModernFix, ServerCore, Krypton Reno (`kreno`), FasterRandom, C2ME, Lithium/Canary/Radium, Valkyrien Skies, EnhancedVisuals, and related known overlap cases.
+          - Fixed persisted default config values being misreported as user overrides.
+          - Compatibility detection/guards cover ModernFix, ServerCore, Krypton Reno (kreno), FasterRandom, C2ME, Lithium/Canary/Radium, Valkyrien Skies, EnhancedVisuals, and related known overlap cases.
+          - Hardened the optional entity-ticking path for Forge: concurrent entity storage is retained, but gameplay entity actions stay on Minecraft's authoritative tick thread so chunk/world access cannot circular-wait against the server thread.
+          - Hardened aggressive QA with isolated ports and process-group cleanup so one failed profile cannot poison subsequent tests.
 
           ## Certification
-          Exact release source commit:
-          `45768239855e00e50437c6f9d7d0b814caa731eb`
+          Exact release source commit: $SOURCE_SHA
 
           Exact release JAR passed:
-          1. Clean Forge 47.4.23 dedicated server build/remap, boot, gameplay/world exercise, save, clean shutdown, and second boot of the same world/config.
+          1. Clean Forge 47.4.23 dedicated server build/remap, gameplay/world exercise, save, clean shutdown, and second boot of the same world/config.
           2. Forge 47.4.23 performance-stack boot with ModernFix + ServerCore + FerriteCore + Krypton Reno/FNP, including compatibility guard and Mixin/runtime assertions.
-          3. Isolated aggressive family linkage sweep: each option family is booted separately on a fresh world, failed families are automatically split into individual rules, followed by an all-on combination challenge. Independent sweep-build class/resource content is normalized and verified against the release build. This certifies production linkage/runtime health for server/common paths; it does **not** claim vanilla semantic parity for aggressive opt-ins or dedicated-server proof of client-only experimental behavior.
+          3. Isolated aggressive family linkage sweep: each option family is booted separately on a fresh world, failed families are automatically split into individual rules, followed by an all-on combination challenge. Independent sweep-build class/resource content is normalized and verified against the release build.
 
-          SHA-256 of `Potatoptimize-Forge-1.20.1-ParitySafe-r1.jar`:
-          `cbe4de976b13ecd1e9ffc8dd12db6186ef0788ad4d37388a4fdd5fd36e4e4ce3`
+          Aggressive opt-in certification proves production linkage/runtime health for server/common paths; it does not claim vanilla semantic parity for opt-in behavior-changing rules or dedicated-server proof of client-only experimental behavior.
+
+          SHA-256 of $RELEASE_JAR: $JAR_SHA256
 
           GPL-3.0 licensing from upstream is preserved.
           EOF
