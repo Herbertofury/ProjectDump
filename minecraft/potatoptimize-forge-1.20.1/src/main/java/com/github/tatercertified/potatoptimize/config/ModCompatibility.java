@@ -24,7 +24,8 @@ public final class ModCompatibility {
         // The legacy 1.20.1 branch no longer contains the old var-int optimization,
         // so Krypton has no Potatoptimize rule to disable here. Detect it only for
         // diagnostics instead of advertising a guard against a nonexistent mixin.
-        logModPresence("krypton_fnp", "Krypton Reno/FNP");
+        // Krypton Reno/FNP's Forge modId is "kreno"; "krypton_fnp" is its project/update slug.
+        logModPresence("kreno", "Krypton Reno/FNP");
         logModPresence("krypton", "Krypton");
         logModPresence("kryptonreforged", "Krypton Reforged");
 
