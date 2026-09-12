@@ -74,6 +74,19 @@ jobs:
           apply_layers upstream-baseline
           apply_layers upstream-candidate
 
+      - name: Apply identical machine-readable benchmark telemetry
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in upstream-baseline upstream-candidate; do
+            python3 minecraft/async-1.20.1-ultimate/apply_perf_instrumentation.py "$root"
+            git -C "$root" diff --check
+            grep -F 'HMT_PERF_STATS' "$root/common/src/main/java/com/axalotl/async/common/commands/StatsCommand.java"
+            grep -F 'HMT_PERF_GPU lastDispatchMs' "$root/common/src/main/java/com/axalotl/async/common/commands/GpuCommand.java"
+            grep -F 'HMT_PERF_GPU_VERIFY PASS' "$root/common/src/main/java/com/axalotl/async/common/commands/GpuCommand.java"
+            grep -F 'HMT_PERF_GPU_VERIFY FAIL' "$root/common/src/main/java/com/axalotl/async/common/commands/GpuCommand.java"
+          done
+
       - name: Apply candidate-only spatial Vulkan optimization
         shell: bash
         run: |
