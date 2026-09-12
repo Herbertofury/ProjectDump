@@ -1,8 +1,8 @@
-name: Async 1.20.1 Ultimate Performance Lab
+name: Async 1.20.1 Ultimate Performance Lab V2
 
 on:
   push:
-    branches: [async-1.20.1-ultimate-perf-lab-20260912]
+    branches: [async-1.20.1-ultimate-perf-v2-dev-20260912]
   workflow_dispatch:
 
 permissions:
@@ -74,14 +74,15 @@ jobs:
           apply_layers upstream-baseline
           apply_layers upstream-candidate
 
-      - name: Apply candidate-only spatial Vulkan optimization
+      - name: Apply candidate-only section-local Vulkan optimization
         shell: bash
         run: |
           python3 minecraft/async-1.20.1-ultimate/apply_perf_spatial_gpu.py upstream-candidate
           git -C upstream-candidate diff --check
+          grep -F 'Map<SectionKey, List<LivingEntity>> sourceGroups' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
           grep -F 'world.getEntities(' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
-          grep -F 'queryBounds' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
-          ! grep -F 'for (Entity current : world.getAllEntities())' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+          grep -F '(Entity) null' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+          ! grep -F 'world.getAllEntities()' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
 
       - name: Compile shaders for baseline and candidate
         shell: bash
@@ -112,7 +113,7 @@ jobs:
           test -s "$base"
           test -s "$cand"
           cp "$base" perf-jars/HariMultiThread-Ultimate-baseline.jar
-          cp "$cand" perf-jars/HariMultiThread-Ultimate-spatial-candidate.jar
+          cp "$cand" perf-jars/HariMultiThread-Ultimate-section-local-candidate.jar
           sha256sum perf-jars/*.jar | tee evidence/benchmark-jar-sha256.txt
 
       - name: Install one clean Forge 47.4.23 server template
@@ -145,11 +146,11 @@ jobs:
           view-distance=4
           simulation-distance=4
           sync-chunk-writes=true
-          motd=HariMultiThread Ultimate Performance Lab
+          motd=HariMultiThread Ultimate Performance Lab V2
           EOF
           done
           cp perf-jars/HariMultiThread-Ultimate-baseline.jar qa-baseline/mods/HariMultiThread-Ultimate.jar
-          cp perf-jars/HariMultiThread-Ultimate-spatial-candidate.jar qa-candidate/mods/HariMultiThread-Ultimate.jar
+          cp perf-jars/HariMultiThread-Ultimate-section-local-candidate.jar qa-candidate/mods/HariMultiThread-Ultimate.jar
 
       - name: Benchmark verified baseline in real Forge server
         shell: bash
@@ -157,11 +158,11 @@ jobs:
           python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark.py \
             qa-baseline evidence/perf/baseline --label verified-baseline
 
-      - name: Benchmark spatial candidate in real Forge server
+      - name: Benchmark section-local candidate in real Forge server
         shell: bash
         run: |
           python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark.py \
-            qa-candidate evidence/perf/candidate --label spatial-candidate
+            qa-candidate evidence/perf/candidate --label section-local-candidate
 
       - name: Enforce measured gain and no-regression thresholds
         shell: bash
@@ -184,9 +185,9 @@ jobs:
           spawn-protection=0
           view-distance=4
           simulation-distance=4
-          motd=HariMultiThread Ultimate Candidate Correctness
+          motd=HariMultiThread Ultimate V2 Candidate Correctness
           EOF
-          cp perf-jars/HariMultiThread-Ultimate-spatial-candidate.jar \
+          cp perf-jars/HariMultiThread-Ultimate-section-local-candidate.jar \
             qa-candidate-correctness/mods/HariMultiThread-Ultimate.jar
           python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
             qa-candidate-correctness evidence/runtime/candidate
@@ -195,7 +196,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: async-1.20.1-ultimate-perf-lab-evidence
+          name: async-1.20.1-ultimate-perf-v2-evidence
           path: |
             evidence/
             perf-jars/
