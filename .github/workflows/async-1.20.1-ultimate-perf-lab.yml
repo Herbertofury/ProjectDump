@@ -1,0 +1,202 @@
+name: Async 1.20.1 Ultimate Performance Lab
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-perf-lab-20260912]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  real-forge-ab:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+    steps:
+      - name: Checkout performance harness
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned HariMultiThread upstream baseline
+        uses: actions/checkout@v4
+        with:
+          repository: JustHari01/HariMultiThread
+          ref: f381611c2d71a85192e2028f9e30c03823a6482b
+          path: upstream-baseline
+          fetch-depth: 1
+
+      - name: Clone identical candidate source tree
+        shell: bash
+        run: cp -a upstream-baseline upstream-candidate
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Install native benchmark toolchain
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            glslang-tools mesa-vulkan-drivers vulkan-tools zip
+
+      - name: Clean copied upstream build state
+        shell: bash
+        run: |
+          for root in upstream-baseline upstream-candidate; do
+            rm -rf "$root"/**/bin "$root"/**/build "$root"/**/.gradle "$root"/buildSrc/.gradle "$root"/buildSrc/build || true
+            chmod +x "$root/gradlew"
+            test "$(git -C "$root" rev-parse HEAD)" = "f381611c2d71a85192e2028f9e30c03823a6482b"
+          done
+
+      - name: Apply identical verified release layers
+        shell: bash
+        run: |
+          set -euo pipefail
+          apply_layers() {
+            root="$1"
+            python3 minecraft/async-1.20.1-ultimate/apply_overlay.py \
+              "$root" minecraft/async-1.20.1-ultimate/overlay
+            python3 minecraft/async-1.20.1-ultimate/apply_hardening.py "$root"
+            python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py "$root"
+            python3 minecraft/async-1.20.1-ultimate/apply_platform.py "$root"
+            python3 minecraft/async-1.20.1-ultimate/apply_interop.py "$root"
+            python3 minecraft/async-1.20.1-ultimate/apply_lwjgl_runtime.py "$root"
+            python3 minecraft/async-1.20.1-ultimate/apply_backend_architecture.py \
+              "$root" minecraft/async-1.20.1-ultimate/backend-overlay
+            python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py "$root"
+            python3 minecraft/async-1.20.1-ultimate/apply_world_batch.py "$root"
+            python3 minecraft/async-1.20.1-ultimate/apply_mixin_packaging.py "$root"
+            git -C "$root" diff --check
+          }
+          apply_layers upstream-baseline
+          apply_layers upstream-candidate
+
+      - name: Apply candidate-only spatial Vulkan optimization
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/apply_perf_spatial_gpu.py upstream-candidate
+          git -C upstream-candidate diff --check
+          grep -F 'world.getEntities(' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+          grep -F 'queryBounds' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+          ! grep -F 'for (Entity current : world.getAllEntities())' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+
+      - name: Compile shaders for baseline and candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in upstream-baseline upstream-candidate; do
+            shader="$root/common/src/main/resources/assets/async/shaders/collision_broadphase.comp"
+            spv="${shader}.spv"
+            glslangValidator -V "$shader" -o "$spv"
+            test -s "$spv"
+            test "$(xxd -p -l 4 "$spv")" = "03022307"
+          done
+          mkdir -p evidence/environment
+          vulkaninfo --summary | tee evidence/environment/vulkaninfo-summary.txt
+          java -version 2> evidence/environment/java-version.txt
+          lscpu > evidence/environment/lscpu.txt
+
+      - name: Build packaged baseline and candidate Forge JARs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in upstream-baseline upstream-candidate; do
+            (cd "$root" && ./gradlew --no-daemon clean :forge:harimtVulkanBackendJar :forge:build --stacktrace)
+          done
+          mkdir -p perf-jars
+          base="$(find upstream-baseline/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort | head -n1)"
+          cand="$(find upstream-candidate/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort | head -n1)"
+          test -s "$base"
+          test -s "$cand"
+          cp "$base" perf-jars/HariMultiThread-Ultimate-baseline.jar
+          cp "$cand" perf-jars/HariMultiThread-Ultimate-spatial-candidate.jar
+          sha256sum perf-jars/*.jar | tee evidence/benchmark-jar-sha256.txt
+
+      - name: Install one clean Forge 47.4.23 server template
+        shell: bash
+        run: |
+          curl -fL --retry 3 \
+            'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar' \
+            -o forge-1.20.1-47.4.23-installer.jar
+          mkdir forge-template
+          (
+            cd forge-template
+            java -jar ../forge-1.20.1-47.4.23-installer.jar --installServer
+          )
+          test -f forge-template/run.sh
+          chmod +x forge-template/run.sh
+
+      - name: Prepare identical baseline and candidate servers
+        shell: bash
+        run: |
+          set -euo pipefail
+          for variant in baseline candidate; do
+            cp -a forge-template "qa-${variant}"
+            mkdir -p "qa-${variant}/mods"
+            printf 'eula=true\n' > "qa-${variant}/eula.txt"
+            cat > "qa-${variant}/server.properties" <<'EOF'
+          online-mode=false
+          level-name=world
+          level-seed=8675309
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          sync-chunk-writes=true
+          motd=HariMultiThread Ultimate Performance Lab
+          EOF
+          done
+          cp perf-jars/HariMultiThread-Ultimate-baseline.jar qa-baseline/mods/HariMultiThread-Ultimate.jar
+          cp perf-jars/HariMultiThread-Ultimate-spatial-candidate.jar qa-candidate/mods/HariMultiThread-Ultimate.jar
+
+      - name: Benchmark verified baseline in real Forge server
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark.py \
+            qa-baseline evidence/perf/baseline --label verified-baseline
+
+      - name: Benchmark spatial candidate in real Forge server
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark.py \
+            qa-candidate evidence/perf/candidate --label spatial-candidate
+
+      - name: Enforce measured gain and no-regression thresholds
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/compare_perf_results.py \
+            evidence/perf/baseline/benchmark.json \
+            evidence/perf/candidate/benchmark.json \
+            evidence/perf/AB-COMPARISON.json | tee evidence/perf/AB-COMPARISON.txt
+
+      - name: Candidate packaged Forge correctness gate
+        shell: bash
+        run: |
+          cp -a forge-template qa-candidate-correctness
+          mkdir -p qa-candidate-correctness/mods evidence/runtime/candidate
+          printf 'eula=true\n' > qa-candidate-correctness/eula.txt
+          cat > qa-candidate-correctness/server.properties <<'EOF'
+          online-mode=false
+          level-name=world
+          level-seed=8675309
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          motd=HariMultiThread Ultimate Candidate Correctness
+          EOF
+          cp perf-jars/HariMultiThread-Ultimate-spatial-candidate.jar \
+            qa-candidate-correctness/mods/HariMultiThread-Ultimate.jar
+          python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py \
+            qa-candidate-correctness evidence/runtime/candidate
+
+      - name: Upload real-runtime A/B evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: async-1.20.1-ultimate-perf-lab-evidence
+          path: |
+            evidence/
+            perf-jars/
+          if-no-files-found: warn
