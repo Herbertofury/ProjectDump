@@ -15,6 +15,7 @@ jobs:
     steps:
       - name: Checkout performance harness
         uses: actions/checkout@v4
+
       - name: Checkout pinned HariMultiThread upstream baseline
         uses: actions/checkout@v4
         with:
@@ -22,20 +23,24 @@ jobs:
           ref: f381611c2d71a85192e2028f9e30c03823a6482b
           path: upstream-baseline
           fetch-depth: 1
+
       - name: Clone identical candidate source tree
         shell: bash
         run: cp -a upstream-baseline upstream-candidate
+
       - name: Set up Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
           cache: gradle
+
       - name: Install native benchmark toolchain
         shell: bash
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y --no-install-recommends glslang-tools mesa-vulkan-drivers vulkan-tools zip
+
       - name: Clean copied upstream build state
         shell: bash
         run: |
@@ -44,6 +49,7 @@ jobs:
             chmod +x "$root/gradlew"
             test "$(git -C "$root" rev-parse HEAD)" = "f381611c2d71a85192e2028f9e30c03823a6482b"
           done
+
       - name: Apply identical verified 2.1.1 release layers
         shell: bash
         run: |
@@ -65,6 +71,7 @@ jobs:
           }
           apply_layers upstream-baseline
           apply_layers upstream-candidate
+
       - name: Apply identical machine-readable benchmark telemetry
         shell: bash
         run: |
@@ -73,6 +80,17 @@ jobs:
             python3 minecraft/async-1.20.1-ultimate/apply_perf_instrumentation.py "$root"
             git -C "$root" diff --check
           done
+
+      - name: Remove unused Bawnorton repository from both benchmark trees
+        shell: bash
+        run: |
+          set -euo pipefail
+          for root in upstream-baseline upstream-candidate; do
+            python3 minecraft/async-1.20.1-ultimate/apply_ci_repository_hygiene.py "$root"
+            ! grep -R -F 'maven.bawnorton.com' "$root/common/build.gradle" "$root/forge/build.gradle" "$root/fabric/build.gradle" "$root/buildSrc/src/main/groovy/multiloader-common.gradle"
+            git -C "$root" diff --check
+          done
+
       - name: Apply candidate-only allocation-free adjacency
         shell: bash
         run: |
@@ -81,6 +99,7 @@ jobs:
           grep -F 'computeGpuCandidates(collisionPopulation, deferred)' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
           grep -F 'averageDegree' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuCollisionDispatcher.java
           ! grep -F 'CollisionPair pair : pairs' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+
       - name: Compile shaders for baseline and candidate
         shell: bash
         run: |
@@ -96,6 +115,7 @@ jobs:
           vulkaninfo --summary | tee evidence/environment/vulkaninfo-summary.txt
           java -version 2> evidence/environment/java-version.txt
           lscpu > evidence/environment/lscpu.txt
+
       - name: Build packaged baseline and candidate Forge JARs
         shell: bash
         run: |
@@ -109,6 +129,7 @@ jobs:
           cp "$base" perf-jars/HariMultiThread-Ultimate-2.1.1-baseline.jar
           cp "$cand" perf-jars/HariMultiThread-Ultimate-direct-adjacency-candidate.jar
           sha256sum perf-jars/*.jar | tee evidence/benchmark-jar-sha256.txt
+
       - name: Install one clean Forge 47.4.23 server template
         shell: bash
         run: |
@@ -117,6 +138,7 @@ jobs:
           (cd forge-template && java -jar ../forge-installer.jar --installServer)
           test -f forge-template/run.sh
           chmod +x forge-template/run.sh
+
       - name: Prepare identical baseline and candidate servers
         shell: bash
         run: |
@@ -138,18 +160,22 @@ jobs:
           done
           cp perf-jars/HariMultiThread-Ultimate-2.1.1-baseline.jar qa-baseline/mods/HariMultiThread-Ultimate.jar
           cp perf-jars/HariMultiThread-Ultimate-direct-adjacency-candidate.jar qa-candidate/mods/HariMultiThread-Ultimate.jar
+
       - name: Benchmark verified 2.1.1 baseline in real Forge server
         shell: bash
         run: python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark.py qa-baseline evidence/perf/baseline --label 2.1.1-baseline
+
       - name: Benchmark direct-adjacency candidate in real Forge server
         shell: bash
         run: python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark.py qa-candidate evidence/perf/candidate --label direct-adjacency-candidate
+
       - name: Enforce measured dense gain and no-regression thresholds
         shell: bash
         run: |
           python3 minecraft/async-1.20.1-ultimate/compare_perf_results_adjacency.py \
             evidence/perf/baseline/benchmark.json evidence/perf/candidate/benchmark.json \
             evidence/perf/AB-COMPARISON.json | tee evidence/perf/AB-COMPARISON.txt
+
       - name: Candidate packaged Forge correctness gate
         shell: bash
         run: |
@@ -167,6 +193,7 @@ jobs:
           EOF
           cp perf-jars/HariMultiThread-Ultimate-direct-adjacency-candidate.jar qa-candidate-correctness/mods/HariMultiThread-Ultimate.jar
           python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py qa-candidate-correctness evidence/runtime/candidate
+
       - name: Upload real-runtime A/B evidence
         if: always()
         uses: actions/upload-artifact@v4
