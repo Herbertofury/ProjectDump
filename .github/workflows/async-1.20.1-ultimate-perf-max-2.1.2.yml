@@ -23,7 +23,7 @@ jobs:
           bundle=minecraft/async-1.20.1-ultimate/max-prep-bundle.tar.gz.b64
           base64 -d "$bundle" > /tmp/hmt-max-prep.tar.gz
           echo "f3fcb3554aeed2efea89c87994509ceea6f31ea0d4703d000554be7995a2b00a  /tmp/hmt-max-prep.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/hmt-max-prep.tar.gz -C minecraft/async-1.20.1-ultimate
+          tar -xzf /tmp/hmt-max-prep.tar.gz -C minecraft/async-1.20.1-ultimate --exclude=max_benchmark_patch.py
           python3 -m py_compile \
             minecraft/async-1.20.1-ultimate/apply_perf_source_lanes.py \
             minecraft/async-1.20.1-ultimate/apply_perf_reuse_pair_arrays.py \
