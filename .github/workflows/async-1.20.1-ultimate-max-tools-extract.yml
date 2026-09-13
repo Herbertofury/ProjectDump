@@ -1,0 +1,30 @@
+name: Async 1.20.1 Ultimate Max Tools Extract
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-perf-tools-extract-20260913]
+
+permissions:
+  contents: read
+
+jobs:
+  extract:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify and extract exact max tooling
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundle=minecraft/async-1.20.1-ultimate/max-prep-bundle.tar.gz.b64
+          base64 -d "$bundle" > /tmp/hmt-max-prep.tar.gz
+          echo "f3fcb3554aeed2efea89c87994509ceea6f31ea0d4703d000554be7995a2b00a  /tmp/hmt-max-prep.tar.gz" | sha256sum -c -
+          mkdir -p extracted
+          tar -xzf /tmp/hmt-max-prep.tar.gz -C extracted
+          find extracted -maxdepth 1 -type f -print -exec sha256sum {} \;
+      - name: Upload exact tooling
+        uses: actions/upload-artifact@v4
+        with:
+          name: hari-max-prep-tools-exact
+          path: extracted/
+          if-no-files-found: error
