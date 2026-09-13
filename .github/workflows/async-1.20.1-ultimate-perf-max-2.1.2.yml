@@ -21,7 +21,6 @@ jobs:
         run: |
           set -euo pipefail
           bundle=minecraft/async-1.20.1-ultimate/max-prep-bundle.tar.gz.b64
-          echo "48d05a6df501d79c611ae8a9a84b8d8087dc9cc29af57f3af7c65a713b0b0b15  $bundle" | sha256sum -c -
           base64 -d "$bundle" > /tmp/hmt-max-prep.tar.gz
           echo "f3fcb3554aeed2efea89c87994509ceea6f31ea0d4703d000554be7995a2b00a  /tmp/hmt-max-prep.tar.gz" | sha256sum -c -
           tar -xzf /tmp/hmt-max-prep.tar.gz -C minecraft/async-1.20.1-ultimate
