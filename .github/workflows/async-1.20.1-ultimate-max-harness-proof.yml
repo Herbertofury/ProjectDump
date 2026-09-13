@@ -1,0 +1,51 @@
+name: Async 1.20.1 Ultimate Max Harness Proof
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-perf-tools-extract-20260913]
+
+permissions:
+  contents: read
+
+jobs:
+  prove-harness:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate and compile exact five-lane benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=minecraft/async-1.20.1-ultimate/runtime_perf_benchmark.py
+          out=/tmp/runtime_perf_benchmark_max.py
+          cp "$src" "$out"
+          python3 minecraft/async-1.20.1-ultimate/max_benchmark_patch_fixed.py "$out"
+          python3 -m py_compile minecraft/async-1.20.1-ultimate/max_benchmark_patch_fixed.py "$out"
+          grep -F 'dense-256-plus-512-local-nonsources' "$out"
+          grep -F 'affinity-1024-64-chunks' "$out"
+          python3 - "$out" <<'PY'
+          from pathlib import Path
+          import sys
+          s = Path(sys.argv[1]).read_text(encoding='utf-8')
+          assert s.count('h.send("async gpu toggle")') == 2
+          assert s.count('h.send("kill @e[tag=harimt_local_noise]")') == 3
+          exact = '''        h.send("kill @e[tag=harimt_perf]")\n        h.send("kill @e[tag=harimt_noise]")\n        h.send("kill @e[tag=harimt_local_noise]")\n        time.sleep(2.0)\n        summon_dense(h)\n        time.sleep(2.0)\n        start = h.send("async gpu test")'''
+          assert exact in s
+          lines = s.splitlines()
+          for i, line in enumerate(lines):
+              if 'kill @e[tag=harimt_local_noise]' in line:
+                  prev = lines[i - 1]
+                  assert len(line) - len(line.lstrip()) == len(prev) - len(prev.lstrip())
+          print('exact repository benchmark structural proof: PASS')
+          PY
+      - name: Prove patcher fails closed on reapplication
+        shell: bash
+        run: |
+          set -euo pipefail
+          set +e
+          python3 minecraft/async-1.20.1-ultimate/max_benchmark_patch_fixed.py /tmp/runtime_perf_benchmark_max.py > /tmp/reapply.log 2>&1
+          rc=$?
+          set -e
+          cat /tmp/reapply.log
+          test "$rc" -ne 0
+          echo "reapplication fail-closed: PASS (rc=$rc)"
