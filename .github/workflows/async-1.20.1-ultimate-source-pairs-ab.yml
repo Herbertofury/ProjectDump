@@ -1,14 +1,14 @@
-name: Async 1.20.1 Ultimate Performance Lab - Source Pairs
+name: Async 1.20.1 Ultimate Performance Lab - Source Pairs Fastpath
 
 on:
   push:
-    branches: [async-1.20.1-ultimate-perf-lab-20260913-source-pairs]
+    branches: [async-1.20.1-ultimate-source-pairs-fastpath-prep]
 
 permissions:
   contents: read
 
 jobs:
-  real-forge-source-pairs-ab:
+  real-forge-source-pairs-fastpath-ab:
     runs-on: ubuntu-24.04
     timeout-minutes: 150
     steps:
@@ -81,16 +81,28 @@ jobs:
             git -C "$root" diff --check
           done
 
-      - name: Apply candidate-only source-pairs transform
+      - name: Apply candidate-only source-pairs fastpath transform
         shell: bash
         run: |
           set -euo pipefail
           python3 minecraft/async-1.20.1-ultimate/apply_perf_source_pairs_only.py upstream-candidate
           git -C upstream-candidate diff --check
-          grep -F 'sourceCount > 0 && sourceCount < count' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuCollisionDispatcher.java
-          grep -F 'computeGpuOnlyForSources(collisionPopulation, deferred)' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+          grep -F 'computeGpuOnlyForSources(collisionPopulation, candidates)' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
+          grep -F 'return computeGpuOnly(entities);' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuCollisionDispatcher.java
+          grep -F 'computeGpuOnlyRestricted(ordered, sourceCount)' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuCollisionDispatcher.java
+          grep -F 'dispatchSourcePairs(count, sourceCount, maxPairs)' upstream-candidate/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          grep -F 'vkCmdDispatch(commandBuffer, (count + 63) / 64, 1, 1);' upstream-candidate/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          grep -F 'vkCmdDispatch(commandBuffer, (sourceCount + 63) / 64, 1, 1);' upstream-candidate/vulkan-backend/src/main/java/com/axalotl/async/vulkanruntime/LwjglVulkanBackend.java
+          cmp upstream-baseline/common/src/main/resources/assets/async/shaders/collision_broadphase.comp upstream-candidate/common/src/main/resources/assets/async/shaders/collision_broadphase.comp
           grep -F 'CollisionPair pair : pairs' upstream-candidate/common/src/main/java/com/axalotl/async/common/gpu/GpuPushBatch.java
           ! grep -R -E 'CandidateBatch|computeGpuCandidates\(|ensureHostPairCapacity\(|AtomicIntegerArray nextIndex|class BatchState' upstream-candidate/common/src/main/java upstream-candidate/vulkan-backend/src/main/java
+          before="$(git -C upstream-candidate diff | sha256sum | cut -d' ' -f1)"
+          if python3 minecraft/async-1.20.1-ultimate/apply_perf_source_pairs_only.py upstream-candidate; then
+            echo 'source-pairs transform unexpectedly reapplied' >&2
+            exit 1
+          fi
+          after="$(git -C upstream-candidate diff | sha256sum | cut -d' ' -f1)"
+          test "$before" = "$after"
 
       - name: Prepare proven five-lane benchmark harness
         shell: bash
@@ -116,12 +128,13 @@ jobs:
             test -s "$spv"
             test "$(xxd -p -l 4 "$spv")" = "03022307"
           done
+          cmp upstream-baseline/common/src/main/resources/assets/async/shaders/collision_broadphase.comp.spv upstream-candidate/common/src/main/resources/assets/async/shaders/collision_broadphase.comp.spv
           mkdir -p evidence/environment
           vulkaninfo --summary | tee evidence/environment/vulkaninfo-summary.txt
           java -version 2> evidence/environment/java-version.txt
           lscpu > evidence/environment/lscpu.txt
 
-      - name: Build packaged baseline and source-pairs Forge JARs
+      - name: Build packaged baseline and source-pairs fastpath Forge JARs
         shell: bash
         run: |
           set -euo pipefail
@@ -132,7 +145,7 @@ jobs:
           base="$(find upstream-baseline/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort | head -n1)"
           cand="$(find upstream-candidate/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort | head -n1)"
           cp "$base" perf-jars/HariMultiThread-Ultimate-2.1.1-baseline.jar
-          cp "$cand" perf-jars/HariMultiThread-Ultimate-source-pairs-candidate.jar
+          cp "$cand" perf-jars/HariMultiThread-Ultimate-source-pairs-fastpath-candidate.jar
           sha256sum perf-jars/*.jar | tee evidence/benchmark-jar-sha256.txt
 
       - name: Install one clean Forge 47.4.23 server template
@@ -152,7 +165,7 @@ jobs:
             cp -a forge-template "qa-${variant}"
             mkdir -p "qa-${variant}/mods"
             printf 'eula=true\n' > "qa-${variant}/eula.txt"
-            cat > "qa-${variant}/server.properties" <<'EOF'
+            cat > "qa-${variant}/server.properties" <<'EOPROPS'
           online-mode=false
           level-name=world
           level-seed=8675309
@@ -160,17 +173,17 @@ jobs:
           view-distance=4
           simulation-distance=4
           sync-chunk-writes=true
-          motd=HariMultiThread Ultimate Source-Pairs Performance Lab
-          EOF
+          motd=HariMultiThread Ultimate Source-Pairs Fastpath Performance Lab
+          EOPROPS
           done
           cp perf-jars/HariMultiThread-Ultimate-2.1.1-baseline.jar qa-baseline/mods/HariMultiThread-Ultimate.jar
-          cp perf-jars/HariMultiThread-Ultimate-source-pairs-candidate.jar qa-candidate/mods/HariMultiThread-Ultimate.jar
+          cp perf-jars/HariMultiThread-Ultimate-source-pairs-fastpath-candidate.jar qa-candidate/mods/HariMultiThread-Ultimate.jar
 
       - name: Benchmark verified 2.1.1 baseline in real Forge server
         run: python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark_source_pairs.py qa-baseline evidence/perf/baseline --label 2.1.1-baseline
 
-      - name: Benchmark source-pairs candidate in real Forge server
-        run: python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark_source_pairs.py qa-candidate evidence/perf/candidate --label source-pairs-candidate
+      - name: Benchmark source-pairs fastpath candidate in real Forge server
+        run: python3 minecraft/async-1.20.1-ultimate/runtime_perf_benchmark_source_pairs.py qa-candidate evidence/perf/candidate --label source-pairs-fastpath-candidate
 
       - name: Enforce source-pairs measured-gain and no-regression contract
         shell: bash
@@ -185,23 +198,23 @@ jobs:
           cp -a forge-template qa-candidate-correctness
           mkdir -p qa-candidate-correctness/mods evidence/runtime/candidate
           printf 'eula=true\n' > qa-candidate-correctness/eula.txt
-          cat > qa-candidate-correctness/server.properties <<'EOF'
+          cat > qa-candidate-correctness/server.properties <<'EOPROPS'
           online-mode=false
           level-name=world
           level-seed=8675309
           spawn-protection=0
           view-distance=4
           simulation-distance=4
-          motd=HariMultiThread Ultimate Source-Pairs Correctness
-          EOF
-          cp perf-jars/HariMultiThread-Ultimate-source-pairs-candidate.jar qa-candidate-correctness/mods/HariMultiThread-Ultimate.jar
+          motd=HariMultiThread Ultimate Source-Pairs Fastpath Correctness
+          EOPROPS
+          cp perf-jars/HariMultiThread-Ultimate-source-pairs-fastpath-candidate.jar qa-candidate-correctness/mods/HariMultiThread-Ultimate.jar
           python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py qa-candidate-correctness evidence/runtime/candidate
 
-      - name: Upload source-pairs A/B evidence
+      - name: Upload source-pairs fastpath A/B evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: async-1.20.1-ultimate-source-pairs-evidence
+          name: async-1.20.1-ultimate-source-pairs-fastpath-evidence
           path: |
             evidence/
             perf-jars/
