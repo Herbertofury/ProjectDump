@@ -1,0 +1,64 @@
+name: Hari 1.20.1 MC26.3 Compatibility Audit
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-mc263-compat-audit-20260917]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Checkout harness
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned Hari source
+        uses: actions/checkout@v4
+        with:
+          repository: JustHari01/HariMultiThread
+          ref: f381611c2d71a85192e2028f9e30c03823a6482b
+          path: upstream
+          fetch-depth: 1
+
+      - name: Reconstruct production source
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 minecraft/async-1.20.1-ultimate/apply_overlay.py upstream minecraft/async-1.20.1-ultimate/overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_platform.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lwjgl_runtime.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_backend_architecture.py upstream minecraft/async-1.20.1-ultimate/backend-overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_world_batch.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_spatial_gpu.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_backports.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_worldgen_cache.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_provider_precedence.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_diagnostics.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_release_identity.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mixin_packaging.py upstream
+          git -C upstream diff --check
+
+      - name: Enforce Noxviola provider ownership and no renderer overlap
+        shell: bash
+        run: |
+          python3 minecraft/async-1.20.1-ultimate/performance_stack_compatibility_audit.py \
+            upstream evidence/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+          grep -F 'Overall: **PASS**' evidence/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+          grep -F 'Embeddium / Rubidium / Sodium | PASS (provider precedence)' evidence/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+          grep -F 'Oculus / Iris | PASS (provider precedence)' evidence/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+          grep -F 'C2ME Forge / HariChunk + DimThread SAFE-INTEROP | PASS' evidence/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+
+      - name: Upload compatibility proof
+        uses: actions/upload-artifact@v4
+        with:
+          name: HariMultiThread-2.2.0-MC263-compatibility-audit
+          path: evidence/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+          if-no-files-found: error
