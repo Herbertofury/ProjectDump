@@ -1,0 +1,220 @@
+name: Hari 1.20.1 Ultimate 2.2.0 MC26.3 Client Publish Recovery
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-mc263-client-publish-recovery-20260917]
+  workflow_dispatch:
+
+concurrency:
+  group: hari-mc263-2.2.0-client-publish-recovery
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  client-test-publish:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 75
+    steps:
+      - name: Checkout project harness
+        uses: actions/checkout@v4
+
+      - name: Checkout pinned Hari source
+        uses: actions/checkout@v4
+        with:
+          repository: JustHari01/HariMultiThread
+          ref: f381611c2d71a85192e2028f9e30c03823a6482b
+          path: upstream
+          fetch-depth: 1
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Pin Gradle 8.11.1
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+          cache-disabled: true
+
+      - name: Install native client and Vulkan QA tools
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            glslang-tools mesa-vulkan-drivers vulkan-tools \
+            xvfb openbox xdotool x11-utils imagemagick libgl1-mesa-dri zip rsync
+
+      - name: Reconstruct identical production source and build JAR
+        shell: bash
+        env:
+          GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.vfs.watch=false
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/runtime/server evidence/runtime/client evidence/compatibility
+          test "$(git -C upstream rev-parse HEAD)" = 'f381611c2d71a85192e2028f9e30c03823a6482b'
+          git -C upstream rev-parse HEAD > UPSTREAM_SHA.txt
+          python3 minecraft/async-1.20.1-ultimate/apply_overlay.py upstream minecraft/async-1.20.1-ultimate/overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_hardening.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lifecycle.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_platform.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_lwjgl_runtime.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_backend_architecture.py upstream minecraft/async-1.20.1-ultimate/backend-overlay
+          python3 minecraft/async-1.20.1-ultimate/apply_spawn_interop.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_world_batch.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_spatial_gpu.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_backports.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_worldgen_cache.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_region_read.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_provider_precedence.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_diagnostics.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_region_diagnostics.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mc263_release_identity.py upstream
+          python3 minecraft/async-1.20.1-ultimate/apply_mixin_packaging.py upstream
+          git -C upstream diff --check
+          grep -F 'version=2.2.0-noxviola.1' upstream/gradle.properties
+          grep -F 'enableMc263DensityCacheFill", false' upstream/common/src/main/java/com/axalotl/async/common/config/AsyncConfig.java
+          grep -F 'enableMc263NonCreatingRegionReads", true' upstream/common/src/main/java/com/axalotl/async/common/config/AsyncConfig.java
+          python3 minecraft/async-1.20.1-ultimate/performance_stack_compatibility_audit.py \
+            upstream evidence/compatibility/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+          grep -F 'Overall: **PASS**' evidence/compatibility/HariMultiThread-Ultimate-MC263-Performance-Stack-Compatibility.md
+          shader=upstream/common/src/main/resources/assets/async/shaders/collision_broadphase.comp
+          glslangValidator -V "$shader" -o "${shader}.spv"
+          test "$(xxd -p -l 4 "${shader}.spv")" = '03022307'
+          gradle --no-daemon --no-parallel --stacktrace -p upstream :forge:harimtVulkanBackendJar :forge:build
+          mapfile -t jars < <(find upstream/forge/build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*sources*' ! -name '*dev*' ! -name 'harimt-vulkan-backend*' | sort)
+          test "${#jars[@]}" -ge 1
+          jarfile="${jars[0]}"
+          basename "$jarfile" | grep -F '2.2.0-noxviola.1'
+          echo "$jarfile" > RELEASE_JAR_PATH.txt
+          jar tf "$jarfile" | grep -Fx 'harimt.refmap.json'
+          jar tf "$jarfile" | grep -Fx 'assets/async/shaders/collision_broadphase.comp.spv'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/world/RegionFileStorageMixin.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/mixin/world/StructureCheckMixin.class'
+          jar tf "$jarfile" | grep -Fx 'com/axalotl/async/common/commands/Mc263Command.class'
+          jar tf "$jarfile" | grep -Fx 'META-INF/harimt-libs/harimt-vulkan-backend-3.3.1.jar'
+
+      - name: Generate validated integrated-world fixture
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL --retry 3 'https://maven.minecraftforge.net/net/minecraftforge/forge/1.20.1-47.4.23/forge-1.20.1-47.4.23-installer.jar' -o forge-installer.jar
+          mkdir qa-server
+          (cd qa-server && java -jar ../forge-installer.jar --installServer > ../evidence/runtime/server/forge-server-install.log 2>&1)
+          chmod +x qa-server/run.sh
+          mkdir -p qa-server/mods
+          cp "$(cat RELEASE_JAR_PATH.txt)" qa-server/mods/HariMultiThread-Ultimate.jar
+          printf 'eula=true\n' > qa-server/eula.txt
+          cat > qa-server/server.properties <<'EOF'
+          online-mode=false
+          level-name=world
+          level-seed=8675309
+          spawn-protection=0
+          view-distance=4
+          simulation-distance=4
+          motd=HariMultiThread Ultimate 2.2.0 Client Recovery QA
+          EOF
+          python3 minecraft/async-1.20.1-ultimate/runtime_server_qa.py qa-server evidence/runtime/server
+
+      - name: Real Forge client and integrated-server rendered-world gate
+        shell: bash
+        env:
+          HARIMT_GRADLE_EXECUTABLE: gradle
+        run: |
+          set -euo pipefail
+          command -v gradle
+          gradle --version | head -n 8
+          # Belt-and-suspenders for archive/checkouts that lose the wrapper mode;
+          # the harness is forced to pinned Gradle above and never needs this bit.
+          chmod +x upstream/gradlew || true
+          python3 minecraft/async-1.20.1-ultimate/runtime_client_qa.py upstream qa-server/world evidence/runtime/client
+
+      - name: Package final 2.2.0 release with recovery lineage
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf release merged-source
+          mkdir -p release merged-source
+          cp UPSTREAM_SHA.txt evidence/
+          cp RELEASE_JAR_PATH.txt evidence/
+          cp minecraft/async-1.20.1-ultimate/PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md evidence/
+          cp minecraft/async-1.20.1-ultimate/PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md release/
+          cp minecraft/async-1.20.1-ultimate/MC-26.3-BACKPORT-MATRIX.md evidence/
+          cp minecraft/async-1.20.1-ultimate/MC263-CHUNKGEN-AB-COMPARISON.json evidence/
+          cat > evidence/MC263-RELEASE-RECOVERY-LINEAGE.md <<'EOF'
+          # HariMultiThread Ultimate 2.2.0 release recovery lineage
+
+          Production/server acceptance is inherited from GitHub Actions run `35276481420`, head `7ad79acb0c136e8c6f3ba2126d26feeb725693eb`.
+
+          That run passed deterministic reconstruction, compatibility audit, SPIR-V, Forge build/JAR packaging, packaged Vulkan/fallback/save/restart, and the packaged Minecraft 26.3 behavior/worldgen/non-creating-region-read gate. The MC26.3 gate observed `HMT_MC263_IDLE_PASS` with `maxNoActionTime=111`, repeated stronghold locate at `[1376, 848]`, and passed the fresh pillager-outpost region-file assertion.
+
+          Its only failure was before Forge client launch: the QA harness attempted to execute a non-executable `./gradlew` and received `PermissionError: [Errno 13]`. No production source or JAR code was implicated. This recovery lane reconstructs the identical production source, pins Gradle 8.11.1 explicitly, regenerates the established integrated-world fixture, and supplies the missing real rendered client/integrated-server proof before publishing.
+          EOF
+          (cd upstream && git diff --binary) > evidence/UPSTREAM-TO-ULTIMATE.patch
+          (cd upstream && git status --porcelain=v1) > evidence/upstream-status.txt
+          cp "$(cat RELEASE_JAR_PATH.txt)" release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar
+          rsync -a --exclude='.git/' --exclude='.gradle/' --exclude='**/build/' --exclude='**/bin/' upstream/ merged-source/
+          (cd merged-source && zip -qr ../release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip .)
+          (cd evidence && zip -qr ../release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip .)
+          sha256sum \
+            release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar \
+            release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip \
+            release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip \
+            release/PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md \
+            > release/SHA256SUMS.txt
+          grep -F '| Chunk-generation performance / density-cache redesign | Implemented experimental subset | **OFF** |' evidence/MC-26.3-BACKPORT-MATRIX.md
+          test -s evidence/runtime/client/forge-client-integrated-server.png
+          cat release/SHA256SUMS.txt
+
+      - name: Upload final release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: HariMultiThread-Ultimate-1.20.1-2.2.0-FINAL-RELEASE-bundle
+          path: release/
+          if-no-files-found: error
+
+      - name: Create or repair GitHub release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='harimt-ultimate-1.20.1-2.2.0-noxviola.1'
+          title='HariMultiThread Ultimate 2.2.0-noxviola.1 — Forge 1.20.1 + Minecraft 26.3 Backports'
+          assets=(
+            release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar
+            release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip
+            release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip
+            release/PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md
+            release/SHA256SUMS.txt
+          )
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" --clobber "${assets[@]}"
+            gh release edit "$tag" --title "$title" --notes-file minecraft/async-1.20.1-ultimate/overlay/RELEASE-NOTES-2.2.0-noxviola.1.md
+          else
+            gh release create "$tag" --target "$GITHUB_SHA" --title "$title" \
+              --notes-file minecraft/async-1.20.1-ultimate/overlay/RELEASE-NOTES-2.2.0-noxviola.1.md \
+              "${assets[@]}"
+          fi
+
+      - name: Verify published release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='harimt-ultimate-1.20.1-2.2.0-noxviola.1'
+          rm -rf verify-release
+          mkdir verify-release
+          gh release download "$tag" \
+            --pattern 'SHA256SUMS.txt' \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip' \
+            --dir verify-release
+          unzip -p verify-release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip MC-26.3-BACKPORT-MATRIX.md | \
+            grep -F '| Chunk-generation performance / density-cache redesign | Implemented experimental subset | **OFF** |'
+          unzip -l verify-release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip | \
+            grep -F 'runtime/client/forge-client-integrated-server.png'
