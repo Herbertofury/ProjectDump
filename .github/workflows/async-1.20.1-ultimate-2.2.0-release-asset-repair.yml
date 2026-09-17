@@ -1,0 +1,108 @@
+name: Hari 1.20.1 Ultimate 2.2.0 Release Asset Repair
+
+on:
+  push:
+    branches: [async-1.20.1-ultimate-mc263-release-asset-repair-20260917]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-release-assets:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download published release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='harimt-ultimate-1.20.1-2.2.0-noxviola.1'
+          rm -rf release
+          mkdir release
+          gh release download "$tag" \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar' \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip' \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip' \
+            --pattern 'PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md' \
+            --dir release
+          test -s release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar
+          test -s release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip
+          test -s release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip
+          test -s release/PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md
+
+      - name: Normalize and verify SHA-256 manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release
+          sha256sum \
+            HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar \
+            HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip \
+            HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip \
+            PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md \
+            > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          ! grep -F 'release/' SHA256SUMS.txt
+          unzip -l HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip | \
+            grep -F 'runtime/client/forge-client-integrated-server.png'
+          unzip -p HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip MC-26.3-BACKPORT-MATRIX.md | \
+            grep -F '| Chunk-generation performance / density-cache redesign | Implemented experimental subset | **OFF** |'
+
+      - name: Build corrected convenience bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd release
+          zip -q HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-FINAL-BUNDLE.zip \
+            HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar \
+            HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip \
+            HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip \
+            PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md \
+            SHA256SUMS.txt
+          test -s HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-FINAL-BUNDLE.zip
+
+      - name: Repair GitHub release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='harimt-ultimate-1.20.1-2.2.0-noxviola.1'
+          gh release upload "$tag" --clobber \
+            release/SHA256SUMS.txt \
+            release/HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-FINAL-BUNDLE.zip
+
+      - name: Verify repaired published release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag='harimt-ultimate-1.20.1-2.2.0-noxviola.1'
+          rm -rf verify
+          mkdir verify
+          gh release download "$tag" \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1.jar' \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-SOURCE.zip' \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-EVIDENCE.zip' \
+            --pattern 'PERFORMANCE-ACCEPTANCE-2.2.0-noxviola.1.md' \
+            --pattern 'SHA256SUMS.txt' \
+            --pattern 'HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-FINAL-BUNDLE.zip' \
+            --dir verify
+          cd verify
+          sha256sum -c SHA256SUMS.txt
+          ! grep -F 'release/' SHA256SUMS.txt
+          unzip -t HariMultiThread-Ultimate-1.20.1-2.2.0-noxviola.1-FINAL-BUNDLE.zip >/dev/null
+
+      - name: Upload corrected release handoff artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HariMultiThread-Ultimate-1.20.1-2.2.0-CORRECTED-RELEASE-HANDOFF
+          path: release/
+          if-no-files-found: error
