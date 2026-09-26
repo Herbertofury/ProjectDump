@@ -1,0 +1,120 @@
+name: D4 Whisper Hunter 0.3.1 Windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [build/d4-whisper-hunter-0.3.1-dangersense]
+    paths: ['projects/d4-whisper-hunter/0.3.1/**','.github/workflows/d4-whisper-hunter-0.3.1-windows.yml']
+permissions: {contents: read}
+jobs:
+  verify:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Reconstruct exact source
+        shell: pwsh
+        run: |
+          $ErrorActionPreference='Stop'
+          $root='projects/d4-whisper-hunter/0.3.1'
+          $parts=Get-ChildItem "$root/source.b64.part*"|Sort-Object Name
+          if($parts.Count -ne 9){throw "Expected 9 parts, got $($parts.Count)"}
+          $b64=(($parts|%{(Get-Content $_.FullName -Raw).Trim()})-join '')
+          if($b64.Length -ne 59040){throw "Bad base64 length $($b64.Length)"}
+          $out="$root/D4WhisperHunter-0.3.1-source.tar.xz"
+          [IO.File]::WriteAllBytes($out,[Convert]::FromBase64String($b64))
+          $sha=(Get-FileHash $out -Algorithm SHA256).Hash.ToLowerInvariant()
+          if($sha -ne 'db0965938de0a23ec3f26632d1d6195acb4d244106d7375b1ce6a4f3e4937860'){throw "Source SHA mismatch $sha"}
+          New-Item -ItemType Directory -Force buildsrc|Out-Null
+          tar -xJf $out -C buildsrc
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          cache: pip
+          cache-dependency-path: buildsrc/D4WhisperHunter/requirements-build.txt
+      - name: Install
+        working-directory: buildsrc/D4WhisperHunter
+        run: python -m pip install -r requirements-build.txt
+      - name: Regress
+        working-directory: buildsrc/D4WhisperHunter
+        run: |
+          python -m compileall -q whisper_hunter d4_whisper_hunter.py tests
+          python -m pytest -q
+      - name: Verify warning audio
+        working-directory: buildsrc/D4WhisperHunter
+        shell: pwsh
+        run: |
+          @'
+from pathlib import Path
+import wave
+from whisper_hunter.audio import DangerSoundEngine
+from whisper_hunter.config import Config
+e=DangerSoundEngine(Config())
+expected={"slash","projectile","explosion","cone","danger"}
+assert set(e._paths)==expected
+for k,p in e._paths.items():
+    p=Path(p); assert p.exists() and p.stat().st_size>1000
+    with wave.open(str(p),"rb") as w:
+        assert (w.getnchannels(),w.getsampwidth(),w.getframerate())==(1,2,22050)
+        assert w.getnframes()>1000
+print("sounds",sorted(e._paths))
+'@ | python -
+      - name: Build EXE
+        working-directory: buildsrc/D4WhisperHunter
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name D4WhisperHunter --collect-all cv2 d4_whisper_hunter.py
+      - name: Fixtures
+        working-directory: buildsrc/D4WhisperHunter
+        run: python tests/make_ci_fixture.py --out _ci
+      - name: Packaged Whisper smoke
+        working-directory: buildsrc/D4WhisperHunter
+        shell: pwsh
+        run: |
+          $env:D4WH_MAP_PATH=(Resolve-Path '_ci/fixture-map.png').Path
+          & '.\dist\D4WhisperHunter.exe' --input '_ci/fixture-query.png' --output '_ci/annotated.png'|Tee-Object _ci/whisper.json
+          if($LASTEXITCODE){throw "Whisper EXE failed"}
+          $r=Get-Content _ci/whisper.json -Raw|ConvertFrom-Json
+          if(-not $r.registered){throw "Registration failed"}
+          $f=@($r.candidates|%{[int]$_.favor}|Sort-Object)
+          if(($f-join ',') -ne '1,3,5'){throw "Bad favors $($f-join ',')"}
+          if(@($r.tracked).Count -ne 3){throw "Bad tracked count"}
+      - name: Packaged explosion smoke
+        working-directory: buildsrc/D4WhisperHunter
+        shell: pwsh
+        run: |
+          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-danger.png' --danger-output '_ci/danger-annotated.png'|Tee-Object _ci/danger.json
+          if($LASTEXITCODE){throw "Danger EXE failed"}
+          $r=Get-Content _ci/danger.json -Raw|ConvertFrom-Json
+          $t=@($r.danger_events)[0]
+          if($t.kind -ne 'explosion' -or [int]$t.level -ne 3 -or -not [bool]$t.urgent){throw "Explosion smoke failed"}
+      - name: Packaged bright-blade smoke
+        working-directory: buildsrc/D4WhisperHunter
+        shell: pwsh
+        run: |
+          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-bright-blade.png' --danger-output '_ci/bright-blade-annotated.png'|Tee-Object _ci/bright-blade.json
+          if($LASTEXITCODE){throw "Blade EXE failed"}
+          $r=Get-Content _ci/bright-blade.json -Raw|ConvertFrom-Json
+          $t=@($r.danger_events)[0]
+          if($t.kind -ne 'slash' -or [int]$t.level -lt 2){throw "Blade smoke failed"}
+          if(@($r.danger_events|?{$_.kind -eq 'explosion'}).Count){throw "False explosion in combat clutter"}
+      - name: Package
+        working-directory: buildsrc/D4WhisperHunter
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release|Out-Null
+          Copy-Item dist/D4WhisperHunter.exe release/
+          Copy-Item README.md,NOTICE.md,LICENSE release/
+          New-Item -ItemType Directory -Force release/THIRD_PARTY_LICENSES|Out-Null
+          Copy-Item THIRD_PARTY_LICENSES/* release/THIRD_PARTY_LICENSES/
+          Copy-Item _ci/whisper.json release/PACKAGED-WHISPER-SMOKE.json
+          Copy-Item _ci/danger.json release/PACKAGED-EXPLOSION-SMOKE.json
+          Copy-Item _ci/bright-blade.json release/PACKAGED-BRIGHT-BLADE-SMOKE.json
+          (Get-FileHash release/D4WhisperHunter.exe -Algorithm SHA256).Hash.ToLowerInvariant()|Set-Content release/D4WhisperHunter.exe.sha256
+          Compress-Archive release/* D4WhisperHunter-0.3.1-Windows-x64.zip -Force
+          (Get-FileHash D4WhisperHunter-0.3.1-Windows-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()|Set-Content D4WhisperHunter-0.3.1-Windows-x64.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: D4WhisperHunter-0.3.1-Windows-x64
+          path: |
+            buildsrc/D4WhisperHunter/D4WhisperHunter-0.3.1-Windows-x64.zip
+            buildsrc/D4WhisperHunter/D4WhisperHunter-0.3.1-Windows-x64.sha256
+          if-no-files-found: error
+          retention-days: 30
