@@ -113,7 +113,7 @@ jobs:
         with:
           name: D4WhisperHunter-0.3.0-DangerSense-Windows-x64
           path: |
-            buildsrc/D4WhisperHunter/D4WhisperHunter-0.3.0-DangerSense-Windows-x64.zip
-            buildsrc/D4WhisperHunter/D4WhisperHunter-0.3.0-DangerSense-Windows-x64.sha256
+            buildsrc/D4WhisperHunter-0.3.0-DangerSense-Windows-x64.zip
+            buildsrc/D4WhisperHunter-0.3.0-DangerSense-Windows-x64.sha256
           if-no-files-found: error
           retention-days: 30
