@@ -2,9 +2,13 @@ name: D4 Whisper Hunter 0.3.1 Windows
 on:
   workflow_dispatch:
   push:
-    branches: [build/d4-whisper-hunter-0.3.1-dangersense]
-    paths: ['projects/d4-whisper-hunter/0.3.1/**','.github/workflows/d4-whisper-hunter-0.3.1-windows.yml']
-permissions: {contents: read}
+    branches:
+      - build/d4-whisper-hunter-0.3.1-dangersense
+    paths:
+      - projects/d4-whisper-hunter/0.3.1/**
+      - .github/workflows/d4-whisper-hunter-0.3.1-windows.yml
+permissions:
+  contents: read
 jobs:
   verify:
     runs-on: windows-latest
@@ -14,18 +18,19 @@ jobs:
       - name: Reconstruct exact source
         shell: pwsh
         run: |
-          $ErrorActionPreference='Stop'
-          $root='projects/d4-whisper-hunter/0.3.1'
-          $parts=Get-ChildItem "$root/source.b64.part*"|Sort-Object Name
-          if($parts.Count -ne 9){throw "Expected 9 parts, got $($parts.Count)"}
-          $b64=(($parts|%{(Get-Content $_.FullName -Raw).Trim()})-join '')
-          if($b64.Length -ne 59040){throw "Bad base64 length $($b64.Length)"}
-          $out="$root/D4WhisperHunter-0.3.1-source.tar.xz"
-          [IO.File]::WriteAllBytes($out,[Convert]::FromBase64String($b64))
-          $sha=(Get-FileHash $out -Algorithm SHA256).Hash.ToLowerInvariant()
-          if($sha -ne 'db0965938de0a23ec3f26632d1d6195acb4d244106d7375b1ce6a4f3e4937860'){throw "Source SHA mismatch $sha"}
-          New-Item -ItemType Directory -Force buildsrc|Out-Null
-          tar -xJf $out -C buildsrc
+          $ErrorActionPreference = 'Stop'
+          $root = 'projects/d4-whisper-hunter/0.3.1'
+          $parts = Get-ChildItem "$root/source.b64.part*" | Sort-Object Name
+          if ($parts.Count -ne 9) { throw "Expected 9 parts, got $($parts.Count)" }
+          $b64 = (($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join '')
+          if ($b64.Length -ne 59040) { throw "Bad base64 length $($b64.Length)" }
+          $archive = "$root/D4WhisperHunter-0.3.1-source.tar.xz"
+          [IO.File]::WriteAllBytes($archive, [Convert]::FromBase64String($b64))
+          $sha = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($sha -ne 'db0965938de0a23ec3f26632d1d6195acb4d244106d7375b1ce6a4f3e4937860') { throw "Source SHA mismatch $sha" }
+          New-Item -ItemType Directory -Force buildsrc | Out-Null
+          tar -xJf $archive -C buildsrc
+          if (!(Test-Path 'buildsrc/D4WhisperHunter/pyproject.toml')) { throw 'Extraction failed' }
       - uses: actions/setup-python@v6
         with:
           python-version: '3.14'
@@ -52,48 +57,49 @@ jobs:
         working-directory: buildsrc/D4WhisperHunter
         shell: pwsh
         run: |
-          $env:D4WH_MAP_PATH=(Resolve-Path '_ci/fixture-map.png').Path
-          & '.\dist\D4WhisperHunter.exe' --input '_ci/fixture-query.png' --output '_ci/annotated.png'|Tee-Object _ci/whisper.json
-          if($LASTEXITCODE){throw "Whisper EXE failed"}
-          $r=Get-Content _ci/whisper.json -Raw|ConvertFrom-Json
-          if(-not $r.registered){throw "Registration failed"}
-          $f=@($r.candidates|%{[int]$_.favor}|Sort-Object)
-          if(($f-join ',') -ne '1,3,5'){throw "Bad favors $($f-join ',')"}
-          if(@($r.tracked).Count -ne 3){throw "Bad tracked count"}
+          $env:D4WH_MAP_PATH = (Resolve-Path '_ci/fixture-map.png').Path
+          & '.\dist\D4WhisperHunter.exe' --input '_ci/fixture-query.png' --output '_ci/annotated.png' | Tee-Object -FilePath '_ci/whisper.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Whisper EXE failed' }
+          $r = Get-Content '_ci/whisper.json' -Raw | ConvertFrom-Json
+          if (-not $r.registered) { throw 'Registration failed' }
+          $f = @($r.candidates | ForEach-Object { [int]$_.favor } | Sort-Object)
+          if (($f -join ',') -ne '1,3,5') { throw "Bad favors $($f -join ',')" }
+          if (@($r.tracked).Count -ne 3) { throw 'Bad tracked count' }
       - name: Packaged explosion smoke
         working-directory: buildsrc/D4WhisperHunter
         shell: pwsh
         run: |
-          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-danger.png' --danger-output '_ci/danger-annotated.png'|Tee-Object _ci/danger.json
-          if($LASTEXITCODE){throw "Danger EXE failed"}
-          $r=Get-Content _ci/danger.json -Raw|ConvertFrom-Json
-          $t=@($r.danger_events)[0]
-          if($t.kind -ne 'explosion' -or [int]$t.level -ne 3 -or -not [bool]$t.urgent){throw "Explosion smoke failed"}
+          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-danger.png' --danger-output '_ci/danger-annotated.png' | Tee-Object -FilePath '_ci/danger.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Danger EXE failed' }
+          $r = Get-Content '_ci/danger.json' -Raw | ConvertFrom-Json
+          $t = @($r.danger_events)[0]
+          if ($t.kind -ne 'explosion' -or [int]$t.level -ne 3 -or -not [bool]$t.urgent) { throw 'Explosion smoke failed' }
       - name: Packaged bright-blade smoke
         working-directory: buildsrc/D4WhisperHunter
         shell: pwsh
         run: |
-          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-bright-blade.png' --danger-output '_ci/bright-blade-annotated.png'|Tee-Object _ci/bright-blade.json
-          if($LASTEXITCODE){throw "Blade EXE failed"}
-          $r=Get-Content _ci/bright-blade.json -Raw|ConvertFrom-Json
-          $t=@($r.danger_events)[0]
-          if($t.kind -ne 'slash' -or [int]$t.level -lt 2){throw "Blade smoke failed"}
-          if(@($r.danger_events|?{$_.kind -eq 'explosion'}).Count){throw "False explosion in combat clutter"}
+          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-bright-blade.png' --danger-output '_ci/bright-blade-annotated.png' | Tee-Object -FilePath '_ci/bright-blade.json'
+          if ($LASTEXITCODE -ne 0) { throw 'Blade EXE failed' }
+          $r = Get-Content '_ci/bright-blade.json' -Raw | ConvertFrom-Json
+          $t = @($r.danger_events)[0]
+          if ($t.kind -ne 'slash' -or [int]$t.level -lt 2) { throw 'Blade smoke failed' }
+          $falseExplosionCount = @($r.danger_events | Where-Object { $_.kind -eq 'explosion' }).Count
+          if ($falseExplosionCount -ne 0) { throw 'False explosion in combat clutter' }
       - name: Package
         working-directory: buildsrc/D4WhisperHunter
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force release|Out-Null
+          New-Item -ItemType Directory -Force release | Out-Null
           Copy-Item dist/D4WhisperHunter.exe release/
           Copy-Item README.md,NOTICE.md,LICENSE release/
-          New-Item -ItemType Directory -Force release/THIRD_PARTY_LICENSES|Out-Null
+          New-Item -ItemType Directory -Force release/THIRD_PARTY_LICENSES | Out-Null
           Copy-Item THIRD_PARTY_LICENSES/* release/THIRD_PARTY_LICENSES/
           Copy-Item _ci/whisper.json release/PACKAGED-WHISPER-SMOKE.json
           Copy-Item _ci/danger.json release/PACKAGED-EXPLOSION-SMOKE.json
           Copy-Item _ci/bright-blade.json release/PACKAGED-BRIGHT-BLADE-SMOKE.json
-          (Get-FileHash release/D4WhisperHunter.exe -Algorithm SHA256).Hash.ToLowerInvariant()|Set-Content release/D4WhisperHunter.exe.sha256
-          Compress-Archive release/* D4WhisperHunter-0.3.1-Windows-x64.zip -Force
-          (Get-FileHash D4WhisperHunter-0.3.1-Windows-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant()|Set-Content D4WhisperHunter-0.3.1-Windows-x64.sha256
+          (Get-FileHash release/D4WhisperHunter.exe -Algorithm SHA256).Hash.ToLowerInvariant() | Set-Content release/D4WhisperHunter.exe.sha256
+          Compress-Archive -Path release/* -DestinationPath D4WhisperHunter-0.3.1-Windows-x64.zip -Force
+          (Get-FileHash D4WhisperHunter-0.3.1-Windows-x64.zip -Algorithm SHA256).Hash.ToLowerInvariant() | Set-Content D4WhisperHunter-0.3.1-Windows-x64.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: D4WhisperHunter-0.3.1-Windows-x64
