@@ -36,7 +36,7 @@ jobs:
           }
           New-Item -ItemType Directory -Force -Path buildsrc | Out-Null
           tar -xJf "$root/D4WhisperHunter-0.3.0-source.tar.xz" -C buildsrc
-          if (!(Test-Path 'buildsrc/D4WhisperHunter/pyproject.toml')) { throw 'Source extraction failed' }
+          if (!(Test-Path 'buildsrc/pyproject.toml')) { throw 'Source extraction failed' }
 
       - name: Set up Python 3.14
         uses: actions/setup-python@v6
@@ -44,25 +44,25 @@ jobs:
           python-version: '3.14'
 
       - name: Install production and build dependencies
-        working-directory: buildsrc/D4WhisperHunter
+        working-directory: buildsrc
         run: python -m pip install -r requirements-build.txt
 
       - name: Compile and run full regression suite
-        working-directory: buildsrc/D4WhisperHunter
+        working-directory: buildsrc
         run: |
           python -m compileall -q whisper_hunter d4_whisper_hunter.py tests
           python -m pytest -q
 
       - name: Build one-file Windows executable
-        working-directory: buildsrc/D4WhisperHunter
+        working-directory: buildsrc
         run: pyinstaller --noconfirm --clean --onefile --windowed --name D4WhisperHunter --collect-all cv2 d4_whisper_hunter.py
 
       - name: Create deterministic Whisper and DangerSense fixtures
-        working-directory: buildsrc/D4WhisperHunter
+        working-directory: buildsrc
         run: python tests/make_ci_fixture.py --out _ci
 
       - name: Smoke-test packaged Whisper Hunter path
-        working-directory: buildsrc/D4WhisperHunter
+        working-directory: buildsrc
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -78,7 +78,7 @@ jobs:
           if (@($result.tracked).Count -ne 3) { throw "Expected 3 tracked Whispers" }
 
       - name: Smoke-test packaged DangerSense path
-        working-directory: buildsrc/D4WhisperHunter
+        working-directory: buildsrc
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
@@ -94,7 +94,7 @@ jobs:
           if (-not [bool]$top.urgent) { throw 'Expected urgent danger event' }
 
       - name: Assemble verified ad-free Windows bundle
-        working-directory: buildsrc/D4WhisperHunter
+        working-directory: buildsrc
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
