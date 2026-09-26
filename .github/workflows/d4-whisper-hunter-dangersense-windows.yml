@@ -53,6 +53,63 @@ jobs:
           python -m compileall -q whisper_hunter d4_whisper_hunter.py tests
           python -m pytest -q
 
+      - name: Verify Windows DangerSense sound cues and dispatch
+        working-directory: buildsrc
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          @'
+          from pathlib import Path
+          import wave
+          import winsound
+
+          from whisper_hunter.audio import DangerSoundEngine
+          from whisper_hunter.config import Config
+          from whisper_hunter.danger import DangerEvent
+
+          cfg = Config(
+              danger_sound_enabled=True,
+              danger_sound_volume=0.62,
+              danger_sound_cooldown_s=1.20,
+              danger_urgent_sound_cooldown_s=0.48,
+          )
+          engine = DangerSoundEngine(cfg)
+          expected = {"slash", "projectile", "explosion", "cone", "danger"}
+          assert expected.issubset(engine._paths), engine._paths
+
+          for key in sorted(expected):
+              path = engine._paths[key]
+              assert path.exists() and path.stat().st_size > 1000, (key, path)
+              with wave.open(str(path), "rb") as wf:
+                  assert wf.getnchannels() == 1
+                  assert wf.getsampwidth() == 2
+                  assert wf.getframerate() == 22050
+                  assert wf.getnframes() > 1000
+
+          calls = []
+          original = winsound.PlaySound
+          winsound.PlaySound = lambda path, flags: calls.append((Path(path).name, int(flags)))
+          try:
+              slash = DangerEvent(
+                  1, "slash", 3, 0.95, (960.0, 540.0), (900, 500, 120, 40),
+                  ((900.0, 500.0), (1020.0, 500.0), (1020.0, 540.0)), 0.0,
+                  eta_seconds=0.25,
+              )
+              assert engine.alert(slash, 0.0)
+              engine.gate.reset()
+              explosion = DangerEvent(
+                  2, "explosion", 3, 0.99, (960.0, 540.0), (830, 410, 260, 260),
+                  ((830.0, 410.0), (1090.0, 410.0), (1090.0, 670.0)), 0.0,
+                  eta_seconds=0.0,
+              )
+              assert engine.alert(explosion, 1.0)
+          finally:
+              winsound.PlaySound = original
+
+          assert [name for name, _ in calls] == ["slash.wav", "explosion.wav"], calls
+          print("DangerSense sound cue generation + Windows dispatch wiring PASS:", calls)
+          '@ | python -
+
       - name: Build one-file Windows executable
         working-directory: buildsrc
         run: pyinstaller --noconfirm --clean --onefile --windowed --name D4WhisperHunter --collect-all cv2 d4_whisper_hunter.py
