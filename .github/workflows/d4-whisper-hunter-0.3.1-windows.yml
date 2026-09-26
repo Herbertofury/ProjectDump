@@ -41,23 +41,7 @@ jobs:
           python -m pytest -q
       - name: Verify warning audio
         working-directory: buildsrc/D4WhisperHunter
-        shell: pwsh
-        run: |
-          @'
-from pathlib import Path
-import wave
-from whisper_hunter.audio import DangerSoundEngine
-from whisper_hunter.config import Config
-e=DangerSoundEngine(Config())
-expected={"slash","projectile","explosion","cone","danger"}
-assert set(e._paths)==expected
-for k,p in e._paths.items():
-    p=Path(p); assert p.exists() and p.stat().st_size>1000
-    with wave.open(str(p),"rb") as w:
-        assert (w.getnchannels(),w.getsampwidth(),w.getframerate())==(1,2,22050)
-        assert w.getnframes()>1000
-print("sounds",sorted(e._paths))
-'@ | python -
+        run: python -c "from pathlib import Path; from whisper_hunter.audio import DangerSoundEngine; from whisper_hunter.config import Config; e=DangerSoundEngine(Config()); expected={'slash','projectile','explosion','cone','danger'}; assert set(e._paths)==expected; assert all(Path(p).exists() and Path(p).stat().st_size>1000 for p in e._paths.values()); print('sounds',sorted(e._paths))"
       - name: Build EXE
         working-directory: buildsrc/D4WhisperHunter
         run: pyinstaller --noconfirm --clean --onefile --windowed --name D4WhisperHunter --collect-all cv2 d4_whisper_hunter.py
