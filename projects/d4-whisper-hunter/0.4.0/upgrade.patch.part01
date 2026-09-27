@@ -1,0 +1,237 @@
+ic map is now only an optional anchor. The persistent visual
+         # atlas extends beyond it into Nahantu/Skovos/future regions by chaining
+         # overlapping in-game map views, so startup never blocks on a network fetch.
+-        self.static_registrar: MapRegistrar | None = None
++        self.static_registrars: list[tuple[str, MapRegistrar]] = []
+         self.anchor_loading = True
+         self.anchor_error = ""
++        self.anchor_source = ""
+         self.anchor_thread = threading.Thread(target=self._prepare_static_anchor, name="whisper-anchor", daemon=True)
+         self.atlas = FeatureAtlas()
+         self.atlas_lock = threading.RLock()
+         self.data_lock = threading.RLock()
+ 
+-        probe_capture = ScreenCapture(1)
++        # Follow the monitor that actually contains the Diablo IV window instead
++        # of assuming monitor 1. This also places the click-through overlay at the
++        # correct virtual-desktop origin for left/top/secondary monitors.
++        probe_capture = ScreenCapture(None)
++        self.capture_monitor_index = probe_capture.monitor_index
+         self.screen_size = probe_capture.size
++        self.screen_origin = probe_capture.origin
+         probe_capture.close()
+         self.tracker = WhisperTracker(self.cfg)
+         self.danger_detector = DangerDetector(self.cfg)
+@@ -197,17 +203,30 @@ class LiveApp:
+         self.hotkeys.register("complete", 0x20, mod)  # Ctrl+Alt+Space
+         self.hotkeys.register("quit", ord("Q"), mod)
+ 
+-        self.window = OverlayWindow(*self.screen_size, self.q, opacity=self.cfg.overlay_opacity)
++        self.window = OverlayWindow(
++            *self.screen_size, self.q, opacity=self.cfg.overlay_opacity,
++            left=self.screen_origin[0], top=self.screen_origin[1]
++        )
+         self.thread = threading.Thread(target=self._worker, name="whisper-cv", daemon=True)
+ 
+     def _prepare_static_anchor(self) -> None:
+         try:
+-            map_path = ensure_map_asset()
+-            canonical = cv2.imread(str(map_path), cv2.IMREAD_COLOR)
++            asset = resolve_map_asset()
++            canonical = cv2.imread(str(asset.path), cv2.IMREAD_COLOR)
+             if canonical is None:
+-                raise RuntimeError(f"Could not open Sanctuary anchor: {map_path}")
+-            registrar = MapRegistrar(canonical)
+-            self.static_registrar = registrar
++                raise RuntimeError(f"Could not open Sanctuary anchor: {asset.path}")
++
++            # The donor overlay's proven path downsizes map_5_small.jpg to 0.5x
++            # before SIFT. Keep that path first, but normalize its homography back
++            # to our canonical full-resolution world coordinates. Our previous
++            # full-size registrar remains as a zero-loss fallback.
++            half = cv2.resize(canonical, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
++            registrars: list[tuple[str, MapRegistrar]] = [
++                ("static-upstream-0.5x", MapRegistrar(half, world_scale=2.0)),
++                ("static-full", MapRegistrar(canonical)),
++            ]
++            self.static_registrars = registrars
++            self.anchor_source = asset.source
+         except Exception as exc:
+             self.anchor_error = f"{type(exc).__name__}: {exc}"
+         finally:
+@@ -310,14 +329,16 @@ class LiveApp:
+ 
+         # Static anchor is used only in the same coordinate lineage. Never mix it
+         # into a free-seeded atlas, which would corrupt every stored track.
+-        if reg is None and self.static_registrar is not None:
++        if reg is None and self.static_registrars:
+             with self.atlas_lock:
+                 can_use_static = self.atlas.world_source != "free"
+             if can_use_static:
+-                static_reg = self.static_registrar.register(image, self.cfg.min_feature_matches)
+-                if static_reg is not None:
++                for static_mode, registrar in self.static_registrars:
++                    static_reg = registrar.register(image, self.cfg.min_feature_matches)
++                    if static_reg is None:
++                        continue
+                     reg = static_reg
+-                    mode = "static"
++                    mode = static_mode
+                     with self.atlas_lock:
+                         self.atlas.add_keyframe(
+                             image,
+@@ -325,6 +346,7 @@ class LiveApp:
+                             source="static",
+                             force=not self.atlas.ready,
+                         )
++                    break
+ 
+         # If there is no usable static anchor, one intentional F9 press while the
+         # D4 world map is visible seeds an expansion-safe coordinate system from
+@@ -344,7 +366,8 @@ class LiveApp:
+             atlas_ready = self.atlas.ready
+             atlas_count = self.atlas.keyframe_count
+         if reg is not None:
+-            return f"{mode or 'map'} lock · {seen} Whispers this view · atlas {atlas_count} · pan to learn more"
++            anchor = f" · anchor {self.anchor_source}" if self.anchor_source and mode.startswith('static') else ""
++            return f"{mode or 'map'} lock{anchor} · {seen} Whispers this view · atlas {atlas_count} · pan to learn more"
+         if atlas_ready:
+             return f"Map searching · atlas {atlas_count} · pan back through a learned overlap · F9 retry"
+         if self.anchor_loading:
+@@ -424,7 +447,7 @@ class LiveApp:
+     def _worker(self) -> None:
+         capture: ScreenCapture | None = None
+         try:
+-            capture = ScreenCapture(1)
++            capture = ScreenCapture(self.capture_monitor_index)
+             # Capture at DangerSense speed while keeping expensive map/Whisper CV at
+             # its existing cadence. This adds reaction speed without slowing or
+             # reducing the map feature set.
+@@ -590,7 +613,13 @@ def main(argv=None):
+     p.add_argument("--output", type=Path, help="Headless: save annotated map screenshot")
+     p.add_argument("--danger-input", type=Path, nargs="+", help="Headless: scan one or more combat screenshots for lethal telegraphs")
+     p.add_argument("--danger-output", type=Path, help="Headless: save annotated danger screenshot")
++    p.add_argument("--asset-check", action="store_true", help="Verify the self-contained Sanctuary anchor and exit")
+     args = p.parse_args(argv)
++    if args.asset_check:
++        asset = resolve_map_asset(print)
++        payload = {"path": str(asset.path), "source": asset.source, "verified": bool(asset.verified or verify_map(asset.path))}
++        print(json.dumps(payload, indent=2))
++        return 0
+     if args.danger_input:
+         run_headless_danger(args.danger_input, args.danger_output)
+         return 0
+diff --git a/whisper_hunter/assets.py b/whisper_hunter/assets.py
+index 4b617b6..54a39a0 100644
+--- a/whisper_hunter/assets.py
++++ b/whisper_hunter/assets.py
+@@ -1,8 +1,11 @@
+ from __future__ import annotations
+ 
++from dataclasses import dataclass
+ import hashlib
+ import os
+ from pathlib import Path
++import shutil
++import sys
+ import urllib.request
+ 
+ from .config import app_dir
+@@ -12,6 +15,14 @@ from .config import app_dir
+ MAP_URL = "https://raw.githubusercontent.com/mxtsdev/d4-map-overlay/main/map_images/map_5_small.jpg"
+ MAP_GIT_BLOB_SHA1 = "4394f963aff1545d928bcf160809fbd05a5a4bfd"
+ MAP_SIZE = 4_424_290
++MAP_NAME = "map_5_small.jpg"
++
++
++@dataclass(frozen=True, slots=True)
++class MapAsset:
++    path: Path
++    source: str  # override | cache | bundled | downloaded
++    verified: bool
+ 
+ 
+ def git_blob_sha1(data: bytes) -> str:
+@@ -23,11 +34,33 @@ def canonical_map_path() -> Path:
+     override = os.environ.get("D4WH_MAP_PATH")
+     if override:
+         return Path(override).expanduser().resolve()
+-    p = app_dir() / "assets" / "map_5_small.jpg"
++    p = app_dir() / "assets" / MAP_NAME
+     p.parent.mkdir(parents=True, exist_ok=True)
+     return p
+ 
+ 
++def bundled_map_path() -> Path | None:
++    """Return the read-only map shipped inside the release, if present.
++
++    PyInstaller one-file builds expose bundled data under ``sys._MEIPASS``. Source
++    checkouts use ``<repo>/assets``. ``D4WH_BUNDLE_ROOT`` is intentionally supported
++    for deterministic regression tests and local portable builds.
++    """
++    roots: list[Path] = []
++    override_root = os.environ.get("D4WH_BUNDLE_ROOT")
++    if override_root:
++        roots.append(Path(override_root).expanduser())
++    mei = getattr(sys, "_MEIPASS", None)
++    if mei:
++        roots.append(Path(mei))
++    roots.append(Path(__file__).resolve().parents[1])
++    for root in roots:
++        candidate = root / "assets" / MAP_NAME
++        if candidate.exists() and candidate.is_file():
++            return candidate
++    return None
++
++
+ def verify_map(path: Path) -> bool:
+     if not path.exists() or path.stat().st_size != MAP_SIZE:
+         return False
+@@ -38,22 +71,40 @@ def verify_map(path: Path) -> bool:
+     return git_blob_sha1(data) == MAP_GIT_BLOB_SHA1
+ 
+ 
+-def ensure_map_asset(progress=None) -> Path:
+-    path = canonical_map_path()
+-    # A user-supplied current/future map is intentionally allowed to differ from
+-    # the legacy upstream anchor. Integrity pinning applies only to the default
+-    # downloaded asset that we control.
+-    if os.environ.get("D4WH_MAP_PATH"):
++def resolve_map_asset(progress=None) -> MapAsset:
++    override = os.environ.get("D4WH_MAP_PATH")
++    if override:
++        path = Path(override).expanduser().resolve()
+         if path.exists() and path.is_file() and path.stat().st_size > 1024:
+-            return path
++            return MapAsset(path, "override", False)
+         raise RuntimeError(f"D4WH_MAP_PATH is missing or empty: {path}")
+-    if verify_map(path):
+-        return path
+ 
+-    tmp = path.with_suffix(".download")
++    cache = canonical_map_path()
++    if verify_map(cache):
++        return MapAsset(cache, "cache", True)
++
++    # Release builds are self-contained: prefer the exact upstream asset bundled in
++    # the EXE, avoiding a first-run network dependency. Copy it into APPDATA when
++    # possible so future source/portable runs can reuse the same verified bytes.
++    bundled = bundled_map_path()
++    if bundled and verify_map(bundled):
++        try:
++            cache.parent.mkdir(parents=True, exist_ok=True)
++            tmp = cache.with_suffix(".bundled-copy")
++            shutil.copyfile(bundled, tmp)
++            if verify_map(tmp):
++                os.replace(tmp, cache)
++                return MapAsset(cache, "bundled", True)
++            tmp.unlink(missing_ok=True)
++        except OSError:
++            pass
++        return MapAsset(bundled, "bundled", True)
++
++    # Developer/source fallback only. Official release builds should never need it.
++    tmp = cache.with_suffix(".download")
+     if progress:
+-        progress("Downloading the permitted Sanctuary base map (one-time, ~4.4 MB)...")
+-    req = urllib.request.Request(MAP_URL, headers={"User-Ag
