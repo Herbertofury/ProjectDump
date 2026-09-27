@@ -1,0 +1,41 @@
+name: Publish D4 Whisper Hunter 0.5.0 Release
+
+on:
+  push:
+    branches:
+      - build/d4-whisper-hunter-0.5.0-executioner-guard
+    paths:
+      - '.github/workflows/d4-whisper-hunter-050-release.yml'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Download verified Windows artifact from validation run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p _release
+          gh run download 36291087485 --repo "${GITHUB_REPOSITORY}" --name D4WhisperHunter-0.5.0-Windows-x64 --dir _release
+          echo "8ba18dac05f33f603011f397e76fea9e7b86a981cb24e05724f6b82dacdbb215  _release/D4WhisperHunter-0.5.0-Windows-x64.zip" | sha256sum -c -
+          test "$(tr -d '\r\n' < _release/D4WhisperHunter-0.5.0-Windows-x64.sha256)" = "8ba18dac05f33f603011f397e76fea9e7b86a981cb24e05724f6b82dacdbb215"
+          cp projects/d4-whisper-hunter/CHECKPOINT-0.5.0.md _release/D4WhisperHunter-0.5.0-CHECKPOINT.md
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release create d4-whisper-hunter-v0.5.0 \
+            --repo "${GITHUB_REPOSITORY}" \
+            --target e2346cef23ce1796a7e5737860a9a8ccbe8e304e \
+            --title "D4 Whisper Hunter 0.5.0 — Executioner Guard + Smart Evade" \
+            --notes "Verified Windows build from Actions run 36291087485. Adds dedicated Executioner overhead-sword detection, warning cue, and event-driven foreground-only Smart Evade while preserving the 0.4 map/Whisper/DangerSense stack. Runnable ZIP SHA-256: 8ba18dac05f33f603011f397e76fea9e7b86a981cb24e05724f6b82dacdbb215. EXE SHA-256: 1f83399ee34aba4df121b4c39e86356bd0ce47dcd712b20a9608aa760f3e4df5. Source is canonical under projects/d4-whisper-hunter/0.5.0/source and source ZIP SHA-256 is 1bd3403b77b2c5f437514c28da1620cc84e534afab7af02065ab77faf7fb0655." \
+            _release/D4WhisperHunter-0.5.0-Windows-x64.zip \
+            _release/D4WhisperHunter-0.5.0-Windows-x64.sha256 \
+            _release/D4WhisperHunter-0.5.0-CHECKPOINT.md
