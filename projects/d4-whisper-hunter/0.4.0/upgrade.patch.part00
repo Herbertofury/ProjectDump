@@ -1,0 +1,207 @@
+diff --git a/.github/workflows/build-windows.yml b/.github/workflows/build-windows.yml
+index 6674799..7d3db5a 100644
+--- a/.github/workflows/build-windows.yml
++++ b/.github/workflows/build-windows.yml
+@@ -21,12 +21,25 @@ jobs:
+           cache: pip
+       - name: Install current production dependencies
+         run: python -m pip install -r requirements-build.txt
++      - name: Fetch and verify permitted upstream map asset
++        run: python scripts/fetch_upstream_map.py
+       - name: Compile and regress
+         run: |
+           python -m compileall -q whisper_hunter d4_whisper_hunter.py tests
+           python -m pytest -q
+       - name: Build one-file Windows executable
+-        run: pyinstaller --noconfirm --clean --onefile --windowed --name D4WhisperHunter --collect-all cv2 d4_whisper_hunter.py
++        run: pyinstaller --noconfirm --clean --onefile --windowed --name D4WhisperHunter --collect-all cv2 --add-data "assets/map_5_small.jpg;assets" d4_whisper_hunter.py
++      - name: Prove packaged EXE resolves bundled map offline-first
++        shell: pwsh
++        run: |
++          Remove-Item Env:D4WH_MAP_PATH -ErrorAction SilentlyContinue
++          $cache = Join-Path $env:APPDATA 'D4WhisperHunter\assets\map_5_small.jpg'
++          Remove-Item $cache -Force -ErrorAction SilentlyContinue
++          & '.\dist\D4WhisperHunter.exe' --asset-check | Tee-Object -FilePath '_asset-check.json'
++          if ($LASTEXITCODE -ne 0) { throw "Asset check returned $LASTEXITCODE" }
++          $result = Get-Content '_asset-check.json' -Raw | ConvertFrom-Json
++          if (-not [bool]$result.verified) { throw 'Bundled map failed integrity verification' }
++          if ($result.source -ne 'bundled') { throw "Expected bundled map source; got $($result.source)" }
+       - name: Create deterministic packaged-runtime fixture
+         run: python tests/make_ci_fixture.py --out _ci
+       - name: Smoke-test the packaged executable headlessly
+diff --git a/README.md b/README.md
+index 59ca3df..6093eb1 100644
+--- a/README.md
++++ b/README.md
+@@ -1,4 +1,4 @@
+-# D4 Whisper Hunter 0.3.0
++# D4 Whisper Hunter 0.4.0
+ 
+ **Ad-free, screen-reading Diablo IV Whisper + danger-warning overlay for Windows.** It marks and remembers Whispers, tracks Grim Favor progress, plans a fast route to the next cache, and adds low-latency sword/slash/projectile/explosion warnings without reading Diablo IV process memory.
+ 
+@@ -34,7 +34,7 @@ Use `D4WhisperHunter.exe` from the Windows release bundle when available. Open D
+ 3. Run `run-venv.bat`.
+ 4. Open Diablo IV's world map and pan/zoom through the areas you want scanned.
+ 
+-The legacy permitted Sanctuary image from `mxtsdev/d4-map-overlay` is downloaded in the background on first use and integrity-checked. It is only an **anchor**, not the coverage limit. If that anchor is unavailable or does not overlap the current expansion map, open the world map and press **F9 once**: the plugin seeds its local visual atlas from the current view and grows it from overlapping pans.
++The permitted Sanctuary image from `mxtsdev/d4-map-overlay` is now bundled inside the official Windows EXE and integrity-checked, so first-run map registration no longer depends on GitHub/network access. It is only an **anchor**, not the coverage limit. If that anchor is unavailable or does not overlap the current expansion map, open the world map and press **F9 once**: the plugin seeds its local visual atlas from the current view and grows it from overlapping pans.
+ 
+ You can also set `D4WH_MAP_PATH` to any map image you have permission to use. Custom maps are intentionally not forced to match the legacy asset hash.
+ 
+@@ -110,7 +110,7 @@ You can pass multiple sequential screenshots after `--danger-input` to exercise
+ 
+ ## Build a single EXE
+ 
+-Run `build_windows.bat`. It installs build dependencies in an isolated `.venv-build`, compiles the source, runs the regression suite, and only then creates `dist\D4WhisperHunter.exe` with PyInstaller.
++Run `build_windows.bat`. It fetches and verifies the permitted upstream map asset at build time, installs build dependencies in an isolated `.venv-build`, compiles the source, runs the regression suite, and only then creates a self-contained `dist\D4WhisperHunter.exe` with PyInstaller.
+ 
+ The repository also contains `.github/workflows/build-windows.yml`, which builds on `windows-latest`, runs the full unit suite, creates deterministic map and combat-danger fixtures, and smoke-tests the **packaged EXE itself** through both the Whisper and DangerSense headless paths before uploading the Windows ZIP.
+ 
+@@ -133,3 +133,11 @@ The plugin can only discover map icons that are actually rendered in a captured
+ ## Attribution
+ 
+ See `NOTICE.md` and `THIRD_PARTY_LICENSES/`. Diablo IV is a trademark of Blizzard Entertainment. This is an independent companion overlay and is not affiliated with Blizzard Entertainment.
++
++
++## 0.4.0 map reliability fixes
++
++- The official EXE bundles the verified upstream Sanctuary anchor; no first-run map download is required.
++- Static registration tries the original donor overlay's proven 0.5x SIFT map path first, normalized back into our existing full-resolution atlas coordinates, then falls back to our prior full-size registrar.
++- Capture and overlay placement automatically follow the monitor containing the Diablo IV window, including negative virtual-desktop coordinates on left/top secondary displays.
++- Existing persistent atlas, Whisper routing, and DangerSense behavior remain intact.
+diff --git a/build_windows.bat b/build_windows.bat
+index f84183c..126773d 100644
+--- a/build_windows.bat
++++ b/build_windows.bat
+@@ -19,10 +19,12 @@ call .venv-build\Scripts\activate.bat
+ python -m pip install --upgrade pip
+ python -m pip install -r requirements-build.txt
+ if errorlevel 1 exit /b 1
++python scripts\fetch_upstream_map.py
++if errorlevel 1 exit /b 1
+ python -m compileall -q whisper_hunter d4_whisper_hunter.py tests
+ if errorlevel 1 exit /b 1
+ python -m pytest -q
+ if errorlevel 1 exit /b 1
+-pyinstaller --noconfirm --clean --onefile --windowed --name "D4WhisperHunter" --collect-all cv2 d4_whisper_hunter.py
++pyinstaller --noconfirm --clean --onefile --windowed --name "D4WhisperHunter" --collect-all cv2 --add-data "assets\map_5_small.jpg;assets" d4_whisper_hunter.py
+ if errorlevel 1 exit /b 1
+ echo Built and tested: dist\D4WhisperHunter.exe
+diff --git a/pyproject.toml b/pyproject.toml
+index 5c64100..3f98d33 100644
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1,6 +1,6 @@
+ [project]
+ name = "d4-whisper-hunter"
+-version = "0.3.0"
++version = "0.4.0"
+ description = "Ad-free screen-reading Diablo IV Whisper tracker and lethal-telegraph DangerSense overlay"
+ requires-python = ">=3.11"
+ dependencies = [
+diff --git a/scripts/fetch_upstream_map.py b/scripts/fetch_upstream_map.py
+new file mode 100644
+index 0000000..2571769
+--- /dev/null
++++ b/scripts/fetch_upstream_map.py
+@@ -0,0 +1,35 @@
++from __future__ import annotations
++import hashlib
++from pathlib import Path
++import urllib.request
++
++URL='https://raw.githubusercontent.com/mxtsdev/d4-map-overlay/main/map_images/map_5_small.jpg'
++SIZE=4424290
++BLOB='4394f963aff1545d928bcf160809fbd05a5a4bfd'
++OUT=Path(__file__).resolve().parents[1]/'assets'/'map_5_small.jpg'
++
++def blob_sha(data: bytes) -> str:
++    return hashlib.sha1(f'blob {len(data)}\0'.encode()+data).hexdigest()
++
++def main():
++    if OUT.exists():
++        data=OUT.read_bytes()
++        if len(data)==SIZE and blob_sha(data)==BLOB:
++            print(OUT)
++            return 0
++    OUT.parent.mkdir(parents=True,exist_ok=True)
++    tmp=OUT.with_suffix('.download')
++    req=urllib.request.Request(URL,headers={'User-Agent':'D4WhisperHunter-build/0.4'})
++    with urllib.request.urlopen(req,timeout=60) as r,tmp.open('wb') as f:
++        while True:
++            b=r.read(262144)
++            if not b: break
++            f.write(b)
++    data=tmp.read_bytes()
++    if len(data)!=SIZE or blob_sha(data)!=BLOB:
++        tmp.unlink(missing_ok=True)
++        raise SystemExit('upstream map integrity check failed')
++    tmp.replace(OUT)
++    print(OUT)
++    return 0
++if __name__=='__main__': raise SystemExit(main())
+diff --git a/tests/test_core.py b/tests/test_core.py
+index 5ad345c..7ed43fb 100644
+--- a/tests/test_core.py
++++ b/tests/test_core.py
+@@ -275,3 +275,45 @@ def test_danger_alert_gate_debounces_but_allows_urgent_escalation():
+     assert gate.should_alert(urgent, 10.21)
+     assert not gate.should_alert(urgent, 10.35)
+     assert gate.should_alert(urgent, 10.55)
++
++
++def test_scaled_map_registrar_preserves_full_world_coordinates():
++    base = _make_textured_map(2200, 1600)
++    half = cv2.resize(base, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
++    registrar = MapRegistrar(half, max_features=5000, world_scale=2.0)
++    # Mimic the donor overlay path: query/map pixels live at the 0.5x anchor scale,
++    # while returned world coordinates must remain in our full-resolution lineage.
++    x, y, w0, h0 = 80, 40, 980, 720
++    crop = half[y:y+h0, x:x+w0].copy()
++    h, w = crop.shape[:2]
++    reg = registrar.register(crop, min_matches=18)
++    assert reg is not None
++    mapped = registrar.query_points_to_map([(w/2, h/2)], reg)[0]
++    expected = np.array([(x+w/2)*2.0, (y+h/2)*2.0])
++    assert np.linalg.norm(mapped-expected) < 30.0, (mapped, expected, reg.inliers, reg.good_matches)
++
++
++def test_capture_monitor_selection_prefers_diablo_window_overlap():
++    from whisper_hunter.capture import select_monitor_index
++    monitors = [
++        {"left": -1920, "top": 0, "width": 3840, "height": 1080},
++        {"left": 0, "top": 0, "width": 1920, "height": 1080},
++        {"left": -1920, "top": 0, "width": 1920, "height": 1080},
++    ]
++    assert select_monitor_index(monitors, (-1800, 100, -100, 1000)) == 2
++    assert select_monitor_index(monitors, (100, 100, 1800, 1000)) == 1
++    assert select_monitor_index(monitors, None) == 1
++
++
++def test_bundled_map_candidate_precedes_network(monkeypatch, tmp_path: Path):
++    from whisper_hunter import assets
++    root = tmp_path / 'bundle'
++    p = root / 'assets' / assets.MAP_NAME
++    p.parent.mkdir(parents=True)
++    p.write_bytes(b'x' * 2048)
++    monkeypatch.setenv('D4WH_BUNDLE_ROOT', str(root))
++    monkeypatch.delenv('D4WH_MAP_PATH', raising=False)
++    monkeypatch.setattr(assets, 'verify_map', lambda q: Path(q) == p)
++    asset = assets.resolve_map_asset()
++    assert asset.source == 'bundled'
++    assert asset.path == p
+diff --git a/whisper_hunter/app.py b/whisper_hunter/app.py
+index c45ea93..9ded2e7 100644
+--- a/whisper_hunter/app.py
++++ b/whisper_hunter/app.py
+@@ -11,7 +11,7 @@ from pathlib import Path
+ import cv2
+ import numpy as np
+ 
+-from .assets import ensure_map_asset
++from .assets import ensure_map_asset, resolve_map_asset, verify_map
+ from .atlas import FeatureAtlas
+ from .capture import ScreenCapture
+ from .config import app_dir, load_config, save_config
+@@ -147,16 +147,22 @@ class LiveApp:
+         # The old publ
