@@ -1,0 +1,37 @@
+name: TEMP Export D4WH 0.3 Canonical Base
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - build/d4-whisper-hunter-0.4.0-map-reliability
+    paths:
+      - '.github/workflows/d4-whisper-hunter-export-base.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  export-base:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Reconstruct canonical 0.3.0 base
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Force -Path base | Out-Null
+          $parts = Get-ChildItem 'projects/d4-whisper-hunter/0.3.0/source.b64.part*' | Sort-Object Name
+          if ($parts.Count -ne 4) { throw "Expected 4 parts, got $($parts.Count)" }
+          $b64 = (($parts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join '')
+          $bytes = [Convert]::FromBase64String($b64)
+          [IO.File]::WriteAllBytes('D4WH-0.3-base.tar.xz', $bytes)
+          $sha = (Get-FileHash 'D4WH-0.3-base.tar.xz' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($sha -ne '5bbf54473aaf35b2eb645eb37ac298b1c73000c85fd6e6dd070df36e0560c32d') { throw "SHA mismatch $sha" }
+          tar -xJf D4WH-0.3-base.tar.xz -C base
+          Compress-Archive -Path base/* -DestinationPath D4WH-0.3-canonical-base.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: D4WH-0.3-canonical-base
+          path: D4WH-0.3-canonical-base.zip
+          retention-days: 1
