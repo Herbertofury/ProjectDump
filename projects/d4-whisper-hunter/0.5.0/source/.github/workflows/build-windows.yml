@@ -1,0 +1,117 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          cache: pip
+      - name: Install current production dependencies
+        run: python -m pip install -r requirements-build.txt
+      - name: Fetch and verify permitted upstream map asset
+        run: python scripts/fetch_upstream_map.py
+      - name: Compile and regress
+        run: |
+          python -m compileall -q whisper_hunter d4_whisper_hunter.py tests
+          python -m pytest -q
+      - name: Verify Windows Executioner warning sound dispatch
+        shell: pwsh
+        run: |
+          @'
+          from pathlib import Path
+          import winsound
+          from whisper_hunter.audio import DangerSoundEngine
+          from whisper_hunter.config import Config
+          from whisper_hunter.danger import DANGER_HIGH, DangerEvent
+
+          cfg = Config(danger_sound_enabled=True)
+          engine = DangerSoundEngine(cfg)
+          calls = []
+          original = winsound.PlaySound
+          winsound.PlaySound = lambda path, flags: calls.append(Path(path).name)
+          try:
+              sword = DangerEvent(77, "executioner", DANGER_HIGH, .99, (960.,430.), (940,300,40,230), ((940.,300.),(980.,300.),(980.,530.),(940.,530.)), 4., eta_seconds=.35, locked=True)
+              assert engine.alert(sword, 1000.0)
+          finally:
+              winsound.PlaySound = original
+          assert calls == ["executioner.wav"], calls
+          print("Executioner warning sound dispatch PASS", calls)
+          '@ | python -
+      - name: Build one-file Windows executable
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name D4WhisperHunter --collect-all cv2 --add-data "assets/map_5_small.jpg;assets" d4_whisper_hunter.py
+      - name: Prove packaged EXE resolves bundled map offline-first
+        shell: pwsh
+        run: |
+          Remove-Item Env:D4WH_MAP_PATH -ErrorAction SilentlyContinue
+          $cache = Join-Path $env:APPDATA 'D4WhisperHunter\assets\map_5_small.jpg'
+          Remove-Item $cache -Force -ErrorAction SilentlyContinue
+          & '.\dist\D4WhisperHunter.exe' --asset-check | Tee-Object -FilePath '_asset-check.json'
+          if ($LASTEXITCODE -ne 0) { throw "Asset check returned $LASTEXITCODE" }
+          $result = Get-Content '_asset-check.json' -Raw | ConvertFrom-Json
+          if (-not [bool]$result.verified) { throw 'Bundled map failed integrity verification' }
+          if ($result.source -ne 'bundled') { throw "Expected bundled map source; got $($result.source)" }
+      - name: Create deterministic packaged-runtime fixture
+        run: python tests/make_ci_fixture.py --out _ci
+      - name: Smoke-test the packaged executable headlessly
+        shell: pwsh
+        run: |
+          $env:D4WH_MAP_PATH = (Resolve-Path '_ci/fixture-map.png').Path
+          & '.\dist\D4WhisperHunter.exe' --input '_ci/fixture-query.png' --output '_ci/annotated.png'
+          if ($LASTEXITCODE -ne 0) { throw "Packaged executable returned $LASTEXITCODE" }
+          if (!(Test-Path '_ci/annotated.png')) { throw 'Packaged executable did not create annotated output' }
+          if ((Get-Item '_ci/annotated.png').Length -lt 1000) { throw 'Annotated output is unexpectedly small' }
+      - name: Smoke-test packaged DangerSense path
+        shell: pwsh
+        run: |
+          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-danger.png' --danger-output '_ci/danger-annotated.png' | Tee-Object -FilePath '_ci/danger.json'
+          if ($LASTEXITCODE -ne 0) { throw "DangerSense packaged executable returned $LASTEXITCODE" }
+          if (!(Test-Path '_ci/danger-annotated.png')) { throw 'DangerSense packaged executable did not create annotated output' }
+          $result = Get-Content '_ci/danger.json' -Raw | ConvertFrom-Json
+          if (@($result.danger_events).Count -lt 1) { throw 'DangerSense produced no danger events' }
+          $top = @($result.danger_events)[0]
+          if ($top.kind -ne 'explosion') { throw "Expected explosion danger, got $($top.kind)" }
+          if ([int]$top.level -ne 3) { throw "Expected high danger level 3, got $($top.level)" }
+          if (-not [bool]$top.urgent) { throw 'Expected urgent danger event' }
+      - name: Smoke-test packaged Executioner Guard path
+        shell: pwsh
+        run: |
+          & '.\dist\D4WhisperHunter.exe' --danger-input '_ci/fixture-executioner.png' --danger-output '_ci/executioner-annotated.png' | Tee-Object -FilePath '_ci/executioner.json'
+          if ($LASTEXITCODE -ne 0) { throw "Executioner Guard packaged executable returned $LASTEXITCODE" }
+          if (!(Test-Path '_ci/executioner-annotated.png')) { throw 'Executioner Guard annotated output missing' }
+          $result = Get-Content '_ci/executioner.json' -Raw | ConvertFrom-Json
+          if (@($result.danger_events).Count -lt 1) { throw 'Executioner Guard produced no danger events' }
+          $top = @($result.danger_events)[0]
+          if ($top.kind -ne 'executioner') { throw "Expected Executioner danger, got $($top.kind)" }
+          if ([int]$top.level -ne 3 -or -not [bool]$top.urgent -or -not [bool]$top.locked) { throw 'Expected locked urgent level-3 Executioner event' }
+          if ($top.label -ne 'EXECUTIONER SWORD — EVADE') { throw "Unexpected label: $($top.label)" }
+      - name: Assemble release bundle
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release | Out-Null
+          Copy-Item dist/D4WhisperHunter.exe release/
+          Copy-Item README.md,NOTICE.md,LICENSE release/
+          New-Item -ItemType Directory -Force -Path release/THIRD_PARTY_LICENSES | Out-Null
+          Copy-Item THIRD_PARTY_LICENSES/* release/THIRD_PARTY_LICENSES/
+          Copy-Item _asset-check.json release/PACKAGED-BUNDLED-MAP-CHECK.json
+          Copy-Item _ci/danger.json release/PACKAGED-DANGERSENSE-SMOKE.json
+          Copy-Item _ci/executioner.json release/PACKAGED-EXECUTIONER-SMOKE.json
+          Compress-Archive -Path release/* -DestinationPath D4WhisperHunter-Windows-x64.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: D4WhisperHunter-Windows-x64
+          path: D4WhisperHunter-Windows-x64.zip
+          if-no-files-found: error
+          retention-days: 30

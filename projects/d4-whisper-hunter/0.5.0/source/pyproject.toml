@@ -1,0 +1,13 @@
+[project]
+name = "d4-whisper-hunter"
+version = "0.5.0"
+description = "Ad-free Diablo IV Whisper tracker with Executioner Guard, DangerSense and foreground-only Smart Evade"
+requires-python = ">=3.11"
+dependencies = [
+  "numpy>=2.3,<3",
+  "opencv-python>=5.0.0.93,<6",
+  "mss>=10.2,<11",
+]
+
+[project.scripts]
+d4-whisper-hunter = "whisper_hunter.app:main"

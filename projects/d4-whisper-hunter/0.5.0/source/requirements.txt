@@ -1,0 +1,4 @@
+# Runtime dependencies only. No ads, analytics, telemetry, browser runtime, or account SDKs.
+numpy>=2.3,<3
+opencv-python>=5.0.0.93,<6
+mss>=10.2,<11
