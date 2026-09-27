@@ -42,7 +42,7 @@ jobs:
           if ($patchParts.Count -ne 3) { throw "Expected 3 patch parts, got $($patchParts.Count)" }
           (($patchParts | ForEach-Object { Get-Content $_.FullName -Raw }) -join '') | Set-Content -NoNewline -Encoding utf8 'upgrade-0.4.0.patch'
           $patchSha = (Get-FileHash 'upgrade-0.4.0.patch' -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($patchSha -ne 'b9d020d1f3045e8b858bba6735e03979f0b69f0c205acb917f33fed9f1482cce') {
+          if ($patchSha -ne '5a189bfcc6a742fa2dec24d51d48329ef0820686c55eea0ced40a7e2f317df2a') {
             throw "0.4.0 patch SHA mismatch: $patchSha"
           }
 
