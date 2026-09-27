@@ -40,10 +40,12 @@ jobs:
 
           $patchParts = Get-ChildItem 'projects/d4-whisper-hunter/0.4.0/upgrade.patch.part*' | Sort-Object Name
           if ($patchParts.Count -ne 3) { throw "Expected 3 patch parts, got $($patchParts.Count)" }
-          (($patchParts | ForEach-Object { Get-Content $_.FullName -Raw }) -join '') | Set-Content -NoNewline -Encoding utf8 'upgrade-0.4.0.patch'
+          $patchB64 = (($patchParts | ForEach-Object { (Get-Content $_.FullName -Raw).Trim() }) -join '')
+          $patchBytes = [Convert]::FromBase64String($patchB64)
+          [IO.File]::WriteAllBytes('upgrade-0.4.0.patch', $patchBytes)
           $patchSha = (Get-FileHash 'upgrade-0.4.0.patch' -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($patchSha -ne '5a189bfcc6a742fa2dec24d51d48329ef0820686c55eea0ced40a7e2f317df2a') {
-            throw "0.4.0 patch SHA mismatch: $patchSha"
+          if ($patchSha -ne '05ca0cfd6af084b5a4f20bdbb0a1575b367dd691e9fe83002923b1f611d8907e') {
+            throw "0.4.0 decoded patch SHA mismatch: $patchSha"
           }
 
           Push-Location buildsrc
