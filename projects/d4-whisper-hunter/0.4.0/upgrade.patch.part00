@@ -1,5 +1,5 @@
 diff --git a/.github/workflows/build-windows.yml b/.github/workflows/build-windows.yml
-index 6674799..7d3db5a 100644
+index 66747992856a063f792751a8b560833e00f7e63c..7d3db5a213f6446fa881e9a431c70137b0f24bf1 100644
 --- a/.github/workflows/build-windows.yml
 +++ b/.github/workflows/build-windows.yml
 @@ -21,12 +21,25 @@ jobs:
@@ -30,7 +30,7 @@ index 6674799..7d3db5a 100644
          run: python tests/make_ci_fixture.py --out _ci
        - name: Smoke-test the packaged executable headlessly
 diff --git a/README.md b/README.md
-index 59ca3df..6093eb1 100644
+index 59ca3df5a3f47dba0298459f5ada804bd32e74ca..6093eb1cc9272604174da41dbdaeec39f890747c 100644
 --- a/README.md
 +++ b/README.md
 @@ -1,4 +1,4 @@
@@ -70,7 +70,7 @@ index 59ca3df..6093eb1 100644
 +- Capture and overlay placement automatically follow the monitor containing the Diablo IV window, including negative virtual-desktop coordinates on left/top secondary displays.
 +- Existing persistent atlas, Whisper routing, and DangerSense behavior remain intact.
 diff --git a/build_windows.bat b/build_windows.bat
-index f84183c..126773d 100644
+index f84183cb7e556643bad55e03ef9739bda2642b8f..126773ddc82c679679894fd7674e80816aa56cf1 100644
 --- a/build_windows.bat
 +++ b/build_windows.bat
 @@ -19,10 +19,12 @@ call .venv-build\Scripts\activate.bat
@@ -88,7 +88,7 @@ index f84183c..126773d 100644
  if errorlevel 1 exit /b 1
  echo Built and tested: dist\D4WhisperHunter.exe
 diff --git a/pyproject.toml b/pyproject.toml
-index 5c64100..3f98d33 100644
+index 5c641000f722ba71a283760e66d1b23f2eade39d..3f98d333b1adf32367d4b8bf6b081f87aac038b0 100644
 --- a/pyproject.toml
 +++ b/pyproject.toml
 @@ -1,6 +1,6 @@
@@ -101,7 +101,7 @@ index 5c64100..3f98d33 100644
  dependencies = [
 diff --git a/scripts/fetch_upstream_map.py b/scripts/fetch_upstream_map.py
 new file mode 100644
-index 0000000..2571769
+index 0000000000000000000000000000000000000000..25717693a9481d3fe3f310c33794847d8b8cfc89
 --- /dev/null
 +++ b/scripts/fetch_upstream_map.py
 @@ -0,0 +1,35 @@
@@ -141,7 +141,7 @@ index 0000000..2571769
 +    return 0
 +if __name__=='__main__': raise SystemExit(main())
 diff --git a/tests/test_core.py b/tests/test_core.py
-index 5ad345c..7ed43fb 100644
+index 5ad345ca833e29cdfdad4824ed153f890a15f727..7ed43fb0fc60f8f4e67dd7a022916ccaff5eb6fc 100644
 --- a/tests/test_core.py
 +++ b/tests/test_core.py
 @@ -275,3 +275,45 @@ def test_danger_alert_gate_debounces_but_allows_urgent_escalation():
@@ -191,17 +191,4 @@ index 5ad345c..7ed43fb 100644
 +    assert asset.source == 'bundled'
 +    assert asset.path == p
 diff --git a/whisper_hunter/app.py b/whisper_hunter/app.py
-index c45ea93..9ded2e7 100644
---- a/whisper_hunter/app.py
-+++ b/whisper_hunter/app.py
-@@ -11,7 +11,7 @@ from pathlib import Path
- import cv2
- import numpy as np
- 
--from .assets import ensure_map_asset
-+from .assets import ensure_map_asset, resolve_map_asset, verify_map
- from .atlas import FeatureAtlas
- from .capture import ScreenCapture
- from .config import app_dir, load_config, save_config
-@@ -147,16 +147,22 @@ class LiveApp:
-         # The old publ
+index c45ea93546e23317f4609dfd041e662e4dbcd2de..9ded2e7632
