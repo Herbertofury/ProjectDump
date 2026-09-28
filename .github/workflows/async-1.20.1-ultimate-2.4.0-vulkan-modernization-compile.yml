@@ -8,6 +8,7 @@ on:
     paths:
       - 'minecraft/async-1.20.1-ultimate/**'
       - '.github/workflows/async-1.20.1-ultimate-2.4.0-vulkan-hybrid.yml'
+      - '.github/workflows/async-1.20.1-ultimate-2.4.0-vulkan-modernization-compile.yml'
 
 permissions:
   contents: read
