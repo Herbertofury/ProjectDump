@@ -36,3 +36,7 @@ A project-wiki change is not considered published merely because its source Mark
 This keeps the documentation source-controlled while making the actual reader-facing documentation the GitHub Wiki at:
 
 https://github.com/Herbertofury/ProjectDump/wiki
+
+## Minecraft mod development
+
+- [[HariMultiThread Ultimate — Vulkan hybrid|HariMultiThread-Vulkan-Hybrid]]

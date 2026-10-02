@@ -98,3 +98,7 @@
 ## Control-plane reference
 
 - [[Project Constellation legacy continuity reference|PCX-036-project-constellation]]
+
+## Minecraft mod development
+
+- [[HariMultiThread Ultimate — Vulkan hybrid|HariMultiThread-Vulkan-Hybrid]]
