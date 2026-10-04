@@ -1,5 +1,36 @@
 # HariMultiThread Ultimate — Vulkan hybrid
 
+## 2.4.10 candidate: final memory check in progress
+
+**The latest accepted release remains 2.4.9.** The 2.4.10 candidate is built, independently reproduced and backed up. It is not promoted while the resource check below is open.
+
+The exact candidate passed all **13 broad native client profiles, three original C2ME 9.8 profiles, the dedicated server and 24 focused suites**. Original portals, mob AI, whirlwind expiry, chunk unload/return, NBT, resource reload, resize and second-JVM reopen remain verified. Actual Vulkan readback matches every expected pixel for RGBA/R8 across three mip levels, padding, nonzero positions and overlapping writes. Native Ctrl+F9 input also produced a complete FPS report.
+
+| Same-host Linux Mesa software test | Average FPS change | 1% low change | p99 frame-time change |
+| --- | ---: | ---: | ---: |
+| Vulkan, identical 8× animated-texture fixture | +18.22% | +24.55% | −22.01% |
+| Stock Vulkan, twelve-trial confirmation | −0.99% | +1.51% | −1.07% |
+| Stock GL compatibility, twelve-trial confirmation | +0.38% | +5.97% | −2.72% |
+
+The original short stock tests flagged tail latency; all raw trials are retained. Longer independent captures, with sixty seconds of warmup and thirty seconds of every frame, cleared the 5% frame-metric regression gate. A separate resource gate remains **closed**: stock Vulkan peak process RSS was +12.63%, despite −7.93% live heap at capture end. Actual Java/native-memory diagnostics are comparing the same binaries under matched adaptive and fixed heap policies. These diagnostic runs do not replace or discard the original results. The animation-heavy Vulkan test used −10.67% process CPU per frame and −11.89% peak RSS.
+
+No image quality, animation updates, resolution, draw work or simulation settings are reduced. The optimization stages only the exact source span consumed by each Vulkan texture upload and retains every copy and barrier. Ordinary play does not sample clocks or allocate capture arrays while the FPS capture is idle. Ctrl+F9 warms up for five seconds and captures thirty seconds to `harimt-fps-last.json`; keep the previous report before starting another.
+
+Hardware GPU FPS, Windows/macOS execution, arbitrary modpacks and every boss combat phase remain outside this Linux software proof. GL-control gains are not attributed to the Vulkan texture patch.
+
+- [Candidate and complete original proof archives](https://drive.google.com/drive/folders/16zuPwFiiKZ5ewPIE11keigFUaJvsd717).
+- [Complete candidate source, 1001 hash-checked files and 24 pinned steps](https://drive.google.com/file/d/1Fh4VrhccNWoyDq4049bd82BDgtfd280o/view).
+- [Source and exact continuation checkpoint](https://github.com/Herbertofury/ProjectDump/tree/async-1.20.1-ultimate-2.4.0-vulkan-hybrid-20260926).
+- [Independent stock confirmation](https://github.com/Herbertofury/ProjectDump/actions/runs/37192813688) and [native memory investigation](https://github.com/Herbertofury/ProjectDump/actions/runs/37194598352).
+
+Candidate JAR: **30,763,983 bytes**, SHA256 `8b593bac1ac77670849ed992c808d327dd6d9f188ddfdea341ac88f16edf8c9f`. Product source commit: `edc2d2a04b2dd7b48b71eb26ad7bb32aca2f8ad2`. All native archives, initial FPS captures, stock confirmations, profiling trials and original launch-failure logs are saved with verified raw archive hashes.
+
+---
+
+## Accepted 2.4.9 release and previous history
+
+# HariMultiThread Ultimate — Vulkan hybrid
+
 Minecraft **1.20.1 · Forge 47.4.23 · Java 17**. Accepted release: **2.4.9-noxviola.1-vulkan-hybrid**.
 
 Hari’s parallel entity work and the Forge Vulkan renderer are merged into one mod. The exact reproducible JAR passed **13 native client profiles, three additional original C2ME 9.8 profiles, dedicated-server and packaged-production checks, and 23 focused regression suites**. All completed test artifacts and source are backed up with verified raw download hashes.
