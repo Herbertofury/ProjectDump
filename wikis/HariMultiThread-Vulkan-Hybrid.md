@@ -1,3 +1,9 @@
+# Canonical project destination
+
+This project has moved to [Minecraft-Vulkan-Hybrid](https://github.com/Herbertofury/Minecraft-Vulkan-Hybrid). Complete source, tests, assets, licensing and project history are in [draft migration PR #1](https://github.com/Herbertofury/Minecraft-Vulkan-Hybrid/pull/1), with the [canonical project wiki](https://github.com/Herbertofury/Minecraft-Vulkan-Hybrid/wiki). Main remains unchanged pending review. The original release record below is retained for provenance.
+
+---
+
 # HariMultiThread Ultimate — Vulkan hybrid
 
 Minecraft **1.20.1 · Forge 47.4.23 · Java 17**. Accepted release: **2.4.10-noxviola.1-vulkan-hybrid**.
