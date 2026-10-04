@@ -1,5 +1,109 @@
 # HariMultiThread Ultimate — Vulkan hybrid
 
+Minecraft **1.20.1 · Forge 47.4.23 · Java 17**. Accepted release: **2.4.9-noxviola.1-vulkan-hybrid**.
+
+Hari’s parallel entity work and the Forge Vulkan renderer are merged into one mod. The exact reproducible JAR passed **13 native client profiles, three additional original C2ME 9.8 profiles, dedicated-server and packaged-production checks, and 23 focused regression suites**. All completed test artifacts and source are backed up with verified raw download hashes.
+
+## Downloads and installation
+
+1. Use Minecraft 1.20.1, Forge 47.4.23 and Java 17.
+2. Replace the previous Hari/Async JAR with [HariMultiThread-Ultimate-1.20.1-2.4.9-vulkan-hybrid.jar](https://drive.google.com/file/d/1Kpk-RaWGtc8O1Da3J0xeuLP_g9xw4fmg/view).
+3. The Forge Vulkan renderer is included; remove a separate VulkanMod JAR. Keep the normal dependencies of additional mods.
+4. C2ME Forge is optional. The broad matrix uses stock [0.2.0-forge.9.6](https://www.curseforge.com/minecraft/mc-mods/concurrent-chunk-management-engine-forge/files/8929972). Stock [0.2.0-forge.9.8](https://www.curseforge.com/minecraft/mc-mods/concurrent-chunk-management-engine-forge/files/9040801) has its own three focused proofs below. Third-party JARs remain unchanged.
+
+- [Verified release folder](https://drive.google.com/drive/folders/1TZCi84twLpXuRPULJ0rvxTSdfcvt91W-).
+- [Complete source ZIP](https://drive.google.com/file/d/1-EqZEtEE5MEkvtzplkSliUEl8zPKUTup/view).
+- [Installation notes](https://drive.google.com/file/d/1k1Ls3lXClvHP1d8YeJTo4t-KPH0VJmGu/view).
+- [Complete test and download hash index](https://drive.google.com/file/d/1PASbnvio3werzVKfZR9wDNb_g_ewVssZ/view).
+
+JAR size: **30,750,839 bytes**. SHA-256:
+
+```text
+c1082c8282ff40221c0ea982ce329ec6ab9a26c80790d643d1277b412b8fb396
+```
+
+The Drive links retain existing project sharing permissions.
+
+## Correctness and performance work
+
+Original C2ME LIGHT ticket addition and removal now use the same level after the actual provider Mixin merges. The repair recognizes real Forge/SRG and OptiFine release implementations and retains original owner queues, removal operations and exceptions. Both original C2ME versions pass actual clean client shutdown and saved-world reopen.
+
+Duplicate-entity exception cancellation is removed. Deliberate entity and client-tick faults retain original crash reports and recoverable saves. Rubidium cleanup/acquire/invalidate ownership is checked from the actual running classes in both JVMs. Native mob AI, original whirlwind expiry, chunk ownership, shader resources, Vulkan lifetime and swapchain handling remain intact.
+
+Pooled chunk work and batched upload regions reduce queue work and allocation. The equivalent-work benchmark processes **5,120,000 items per sample**: median component time changes from **60.42 ms to 14.17 ms** (about 76.6% less), and allocation from **123,360,000 to 21,120,000 bytes** (about 82.9% less). **128 disjoint regions use one copy command**, retaining both required graphics-to-transfer and transfer-to-graphics dependencies. These are component measurements, separate from hardware Minecraft FPS.
+
+## Rendering compatibility
+
+Compatible profiles use the merged Vulkan renderer. External renderer/shader integrations and Fabulous graphics select the complete OpenGL route before Vulkan renderer initialization. Hari async processing and the separate Vulkan collision backend remain available.
+
+The external GL contract recognizes **111 exact overloads**. Unsupported calls, including **2,248 reviewed unsupported overloads**, select full OpenGL; generic shader/compute placeholders do not advertise fake support. Arbitrary OpenGL programs are not universally translated into Vulkan. This allows the tested original Oculus/Embeddium, MakeUp shader, OptiFine, Rubidium and other renderer profiles to retain their original features.
+
+## Exact-candidate native proofs
+
+Every accepted client profile uses an installed `forgeclient`, original first-JVM dimension portals, original mob AI, four actual scene views, 49 loaded home/far chunks, actual unload/return, retained chest NBT, resource reload, real resizing, a clean save and a distinct same-world second JVM. Each JVM records **300 frames after 120 warmup frames at 1280 × 720, render distance four**.
+
+| Original profile | C2ME Forge | Renderer | Exact passing job |
+|---|---|---|---|
+| aether | Absent | Vulkan | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036664) |
+| oculus-embeddium | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036652) |
+| optimized-stack | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036828) |
+| rubidium | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036680) |
+| lazurite | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036657) |
+| entityculling | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036686) |
+| optifine | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036671) |
+| immediatelyfast | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036733) |
+| continuity | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036692) |
+| distanthorizons | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37165635433/job/111327879276) |
+| oculus-shaders | 9.6 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37166903303/job/111331590303) |
+| midnight | Absent | Vulkan | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37168634595/job/111336814178) |
+| dimensions-c2me | 9.6 | Vulkan | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37168634595/job/111336814285) |
+
+Additional original C2ME 9.8 proofs:
+
+| Original profile | C2ME Forge | Renderer | Exact passing job |
+|---|---|---|---|
+| optifine | 9.8 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668733/job/111325035935) |
+| distanthorizons | 9.8 | OpenGL compatibility | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37165635449/job/111327837239) |
+| dimensions-c2me | 9.8 | Vulkan | [PASS](https://github.com/Herbertofury/ProjectDump/actions/runs/37168634593/job/111336814171) |
+
+The dedicated Aether/Midnight dimension proof passed in [job 111325036397](https://github.com/Herbertofury/ProjectDump/actions/runs/37164668802/job/111325036397). Standard dedicated and packaged-production gates passed in [37163922589](https://github.com/Herbertofury/ProjectDump/actions/runs/37163922589) and [37163922551](https://github.com/Herbertofury/ProjectDump/actions/runs/37163922551). The reproducible build and 23 regression suites passed in [37163922566](https://github.com/Herbertofury/ProjectDump/actions/runs/37163922566).
+
+MakeUp-UltraFast 9.5f remains enabled through both original realms and resource reloads in the shader profile. Actual native window captures show textured Aether and Midnight entities, lighting effects and shadows. Acceptance covers the original spawn catalogue and persistence paths; every boss combat phase is not claimed.
+
+Earlier failed workflow runs remain failed. The table accepts individually passing jobs on this exact JAR, with each full immutable artifact independently downloaded and reconciled. No acceptance is transferred from an older binary or another C2ME version.
+
+## QA timing recovery and scope
+
+The final Midnight and combined-realm Vulkan jobs use official **Khronos SDK 1.4.363.0**, checksum-pinned to the September 29 release. The actual loaded validation library is verified from each original client JVM. **Core and full synchronization validation stay enabled**, including queue-submit checks. Updating the old 1.3.275 validation tooling resolved native software-input starvation without changing the product JAR. Original double-Space flight succeeds through actual key events; no flight timer or game-state injection is used.
+
+Slow software input preparation temporarily resizes the real window to 480 × 270; 1280 × 720 is restored before every scene gate. All frame samples and terrain/mob captures retain the required full resolution. No NoAI, forced respawn, original portal bypass, shader disabling, ticket clearing, or tick/shutdown suppression is used.
+
+Native scope is **Linux Mesa software Vulkan/OpenGL**. Windows/macOS GPU behavior, hardware FPS and arbitrary modpacks remain unmeasured. The broad matrix uses C2ME 9.6; the three 9.8 profiles do not claim a separate full 13-profile matrix. Upstream Rubidium/Lucent dynamic-lighting restrictions remain documented.
+
+## Source and complete backups
+
+Product source: [3bd2621](https://github.com/Herbertofury/ProjectDump/tree/3bd2621048e166cf24c8a782c79edc77b8b5b2ab/minecraft/async-1.20.1-ultimate). The complete merged archive contains **998 source files reconstructed with all 23 pinned steps**, executable Gradle wrappers, overlays, focused regressions and original licenses.
+
+From the source ZIP:
+
+```sh
+cd source
+chmod +x gradlew
+./gradlew --no-daemon clean :forge:build --stacktrace
+```
+
+On Windows use `gradlew.bat --no-daemon clean :forge:build --stacktrace`.
+
+The pinned upstreams are [JustHari01/HariMultiThread at f381611](https://github.com/JustHari01/HariMultiThread/tree/f381611c2d71a85192e2028f9e30c03823a6482b) and [kzktor/Forgified-VulkanMod at 0ceac5d](https://github.com/kzktor/Forgified-VulkanMod/tree/0ceac5d47f84c910d2f5f6d007b0ffe266c6f736).
+
+[Complete project backup folder](https://drive.google.com/drive/folders/1vq6hWD_QqVdxMlgYrupWbhVdlNDa8K-B) contains eight byte-verified native proof volumes covering all **16 client artifacts plus the dedicated dimension artifact**, the full standard native proof, reproducible compiled checkpoint, source checkpoints and retained failed diagnostics. PROOF-INDEX.json maps every volume, artifact hash and native evidence file. Newly uploaded 2.4.9 deliverables were accepted and raw-byte verified. The previously rejected five 2.4.1 archives were not retried or rerouted.
+
+## Previous accepted 2.4.1 record
+
+The following frozen record documents the prior accepted binary and its separate historical delivery status.
+
+# HariMultiThread Ultimate — Vulkan hybrid
+
 Minecraft **1.20.1 · Forge 47.4.23 · Java 17**. Accepted release: **2.4.1-noxviola.1-vulkan-hybrid**.
 
 Hari's parallel entity work and the Forge Vulkan renderer are merged into one mod. The tested JAR is reproducible byte for byte. Native evidence covers installed Minecraft clients and servers, strict C2ME ownership checks, actual world saves, resource reloads and Vulkan synchronization validation.
