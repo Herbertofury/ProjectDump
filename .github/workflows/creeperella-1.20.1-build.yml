@@ -5,12 +5,13 @@ on:
     branches:
       - build/creeperella-1.20.1
       - build/creeperella-1.20.1-ci2
+      - build/creeperella-1.2.0
   pull_request:
     branches:
       - main
     paths:
       - '.github/workflows/creeperella-1.20.1-build.yml'
-      - 'projects/creeperella/ci/v1.1.0/**'
+      - 'projects/creeperella/ci/v1.2.0/**'
   workflow_dispatch:
 
 jobs:
@@ -32,70 +33,49 @@ jobs:
         with:
           gradle-version: '9.3.0'
 
-      - name: Reconstruct and validate Creeperella source
+      - name: Reconstruct and validate Creeperella 1.2.0 source
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64
+          rm -rf /tmp/creeperella /tmp/creeperella.zip /tmp/creeperella.b64 /tmp/creeperella-hardening.patch
           mkdir -p /tmp/creeperella
-          head -c 15000 projects/creeperella/ci/v1.1.0/source.b64.part00 > /tmp/creeperella.b64
-          head -c 15000 projects/creeperella/ci/v1.1.0/source.b64.part01 >> /tmp/creeperella.b64
-          head -c 15000 projects/creeperella/ci/v1.1.0/source.b64.part02 >> /tmp/creeperella.b64
-          cat projects/creeperella/ci/v1.1.0/source.b64.part03 >> /tmp/creeperella.b64
+          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part00 > /tmp/creeperella.b64
+          head -c 15000 projects/creeperella/ci/v1.2.0/source.b64.part01 >> /tmp/creeperella.b64
+          head -c 3608 projects/creeperella/ci/v1.2.0/source.b64.part02 >> /tmp/creeperella.b64
           tr -d '\r\n' < /tmp/creeperella.b64 | base64 -d > /tmp/creeperella.zip
-          echo '519e8a082aa0c4f043636248cd5f609ca49b51a9142b0e704af46c4c91cbccb7  /tmp/creeperella.zip' | sha256sum -c -
+          echo '773bd723beacbdc6da3547442445a7c64765e0efa3a206aa620d484deec54fdc  /tmp/creeperella.zip' | sha256sum -c -
           unzip -t /tmp/creeperella.zip
           unzip -q /tmp/creeperella.zip -d /tmp/creeperella
-          test -f /tmp/creeperella/build.gradle
-          test -f /tmp/creeperella/src/main/java/dev/herbertofury/creeperella/Creeperella.java
-          test -f /tmp/creeperella/src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
-          grep -q '^minecraft_version=1.20.1$' /tmp/creeperella/gradle.properties
-          grep -q '^forge_version=47.4.23$' /tmp/creeperella/gradle.properties
-          grep -q '^mod_version=1.1.0$' /tmp/creeperella/gradle.properties
-          grep -q 'BLOSSOM' /tmp/creeperella/src/main/java/dev/herbertofury/creeperella/entity/CreeperellaKind.java
-          test "$(find /tmp/creeperella/src/main/java -name '*.java' | wc -l)" -ge 10
-          test "$(find /tmp/creeperella/src/main/resources -name '*.json' | wc -l)" -ge 20
 
-      - name: Apply ForgeGradle 7 production remapping
-        shell: bash
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          p = Path('/tmp/creeperella/build.gradle')
-          s = p.read_text()
-          forge_line = "    id 'net.minecraftforge.gradle' version '[7.0.29,8.0)'\n"
-          renamer_line = "    id 'net.minecraftforge.renamer' version '1.1.2'\n"
-          if renamer_line not in s:
-              if forge_line not in s:
-                  raise SystemExit('ForgeGradle plugin line not found')
-              s = s.replace(forge_line, forge_line + renamer_line, 1)
-          dep_block = '''dependencies {
-              implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
-          }
-          '''
-          production = '''dependencies {
-              implementation minecraft.dependency("net.minecraftforge:forge:${minecraft_version}-${forge_version}")
-          }
+          cp projects/creeperella/ci/v1.2.0/hardening-v3.patch /tmp/creeperella-hardening.patch
+          cd /tmp/creeperella
+          patch -p1 < /tmp/creeperella-hardening.patch
 
-          renamer.mappings.from minecraft.dependency.toSrgFile
-          renamer.classes(tasks.named('jar', Jar)) {
-              archiveClassifier = 'srg'
-          }
+          echo '8d7abf0b325882cb9c5f48a06c84d4db1f9314843d6759c4f9c81e0aade08ad2  src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java' | sha256sum -c -
+          echo 'c53bcbeadb69474b5f14ff3416665b81e4fe0a2c9fb1d9ba2c0d8899f8f88618  src/main/java/dev/herbertofury/creeperella/registry/ModItems.java' | sha256sum -c -
+          echo '45ca025deed19367a239d4e65ed739b23433e7fbf462d50bbabbce634d8d51a3  src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java' | sha256sum -c -
+          echo '733df8b7276b8ef05edadd02323fba570d7e6062a6bf98484d4a30fea009960e  src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java' | sha256sum -c -
 
-          tasks.named('build') {
-              dependsOn tasks.named('renameJar')
-          }
-          '''
-          if 'renamer.mappings.from minecraft.dependency.toSrgFile' not in s:
-              if dep_block not in s:
-                  raise SystemExit('Forge dependency block not found')
-              s = s.replace(dep_block, production, 1)
-          p.write_text(s)
-          PY
-          grep -q "net.minecraftforge.renamer.*1.1.2" /tmp/creeperella/build.gradle
-          grep -q 'renamer.mappings.from minecraft.dependency.toSrgFile' /tmp/creeperella/build.gradle
-          grep -q "archiveClassifier = 'srg'" /tmp/creeperella/build.gradle
+          test -f build.gradle
+          test -f src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
+          test -f src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java
+          grep -q '^minecraft_version=1.20.1$' gradle.properties
+          grep -q '^forge_version=47.4.23$' gradle.properties
+          grep -q '^mod_version=1.2.0$' gradle.properties
+          grep -q 'ENABLE_COMPANIONS' src/main/java/dev/herbertofury/creeperella/config/CreeperellaConfig.java
+          grep -q 'performCompanionExplosion' src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
+          grep -q 'public void setSwellDir' src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
+          grep -q 'public void ignite' src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
+          grep -q 'net.minecraft.world.entity.TamableAnimal' src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
+          grep -q 'FoodProperties' src/main/java/dev/herbertofury/creeperella/registry/ModItems.java
+          grep -q 'onExplosionDetonate' src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java
+          grep -q 'getAffectedEntities().removeIf' src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java
+          grep -q 'findLongRangeTarget' src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java
+          grep -q 'ProjectileUtil.getEntityHitResult' src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java
+          grep -q 'FUSE_WHISTLE' src/main/java/dev/herbertofury/creeperella/registry/ModItems.java
+          test "$(find src/main/java -name '*.java' | wc -l)" -ge 14
+          grep -q "net.minecraftforge.renamer.*1.1.2" build.gradle
+          grep -q 'renamer.mappings.from minecraft.dependency.toSrgFile' build.gradle
 
       - name: Compile, remap and build production JAR
         working-directory: /tmp/creeperella
@@ -122,7 +102,7 @@ jobs:
           echo 'ed31ce02ac69176f34353235cb2508d5a0f1e088  forge-installer.jar' | sha1sum -c -
           java -jar forge-installer.jar --installServer
           prod_jar="$(find /tmp/creeperella/build/libs -maxdepth 1 -type f -name '*-srg.jar' -print -quit)"
-          cp "$prod_jar" mods/creeperella-1.1.0.jar
+          cp "$prod_jar" mods/creeperella-1.2.0.jar
           echo 'eula=true' > eula.txt
           : > server.log
           setsid ./run.sh nogui > server.log 2>&1 &
@@ -144,7 +124,7 @@ jobs:
             exit 1
           fi
           grep -Eiq 'creeperella|Bloom & Boom' server.log
-          echo 'Production-remapped Creeperella loaded and Forge server reached ready state.'
+          echo 'Production-remapped Creeperella 1.2.0 loaded and Forge server reached ready state.'
           kill -TERM -- "-$pid" 2>/dev/null || true
           sleep 2
           kill -KILL -- "-$pid" 2>/dev/null || true
@@ -153,7 +133,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: creeperella-1.1.0-production-ci
+          name: creeperella-1.2.0-production-ci
           if-no-files-found: warn
           path: |
             /tmp/creeperella/build/libs/*-srg.jar
