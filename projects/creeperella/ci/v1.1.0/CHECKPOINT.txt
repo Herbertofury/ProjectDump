@@ -1,0 +1,4 @@
+Creeperella: Bloom & Boom 1.1.0
+Minecraft 1.20.1 / Forge 47.4.23 / Java 17
+CI source ZIP SHA-256: 519e8a082aa0c4f043636248cd5f609ca49b51a9142b0e704af46c4c91cbccb7
+Purpose: compile/build + dedicated-server startup verification.
