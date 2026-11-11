@@ -1,0 +1,249 @@
+--- a/src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
++++ b/src/main/java/dev/herbertofury/creeperella/entity/CreeperellaEntity.java
+@@ -14,7 +14,7 @@
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.EntityType;
+ import net.minecraft.world.entity.LivingEntity;
+-import net.minecraft.world.entity.animal.TamableAnimal;
++import net.minecraft.world.entity.TamableAnimal;
+ import net.minecraft.world.entity.monster.Creeper;
+ import net.minecraft.world.entity.player.Player;
+ import net.minecraft.world.level.Level;
+@@ -213,6 +213,27 @@
+         return EntityType.CREEPER.getDefaultLootTable();
+     }
+ 
++    /**
++     * Hard safety boundary for companions: no vanilla AI, modded goal, or stale ignition state may
++     * ever push a tamed Creeperella into Creeper's destructive one-life fuse path. Companion
++     * detonations are only performed through the reusable command/reformation system.
++     */
++    @Override
++    public void setSwellDir(int direction) {
++        if (this.companionTamed && direction > 0) {
++            super.setSwellDir(-1);
++            return;
++        }
++        super.setSwellDir(direction);
++    }
++
++    @Override
++    public void ignite() {
++        if (!this.companionTamed) {
++            super.ignite();
++        }
++    }
++
+     @Override
+     public void aiStep() {
+         // Tamed companions never use the vanilla self-destructive fuse. Their explosions are deliberate,
+--- a/src/main/java/dev/herbertofury/creeperella/registry/ModItems.java
++++ b/src/main/java/dev/herbertofury/creeperella/registry/ModItems.java
+@@ -2,6 +2,7 @@
+ 
+ import dev.herbertofury.creeperella.Creeperella;
+ import dev.herbertofury.creeperella.item.FuseWhistleItem;
++import net.minecraft.world.food.FoodProperties;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.Rarity;
+ import net.minecraftforge.common.ForgeSpawnEggItem;
+@@ -24,16 +25,27 @@
+     public static final RegistryObject<Item> BLOSSOM_CREEPER_SPAWN_EGG = ITEMS.register("blossom_creeper_spawn_egg",
+             () -> new ForgeSpawnEggItem(ModEntities.BLOSSOM_CREEPER, 0xF7CAD7, 0xA55372, new Item.Properties()));
+ 
++    private static final FoodProperties ROSY_FUSE_CAKE_FOOD = new FoodProperties.Builder()
++            .nutrition(6).saturationMod(0.6F).build();
++    private static final FoodProperties BUNNY_BOOM_BITE_FOOD = new FoodProperties.Builder()
++            .nutrition(4).saturationMod(0.5F).build();
++    private static final FoodProperties HONEY_POP_FOOD = new FoodProperties.Builder()
++            .nutrition(3).saturationMod(0.6F).build();
++    private static final FoodProperties CHERRY_BOMB_BONBON_FOOD = new FoodProperties.Builder()
++            .nutrition(4).saturationMod(0.5F).build();
++    private static final FoodProperties BLOSSOM_BURST_COOKIE_FOOD = new FoodProperties.Builder()
++            .nutrition(3).saturationMod(0.4F).build();
++
+     public static final RegistryObject<Item> ROSY_FUSE_CAKE = ITEMS.register("rosy_fuse_cake",
+-            () -> new Item(new Item.Properties()));
++            () -> new Item(new Item.Properties().food(ROSY_FUSE_CAKE_FOOD)));
+     public static final RegistryObject<Item> BUNNY_BOOM_BITE = ITEMS.register("bunny_boom_bite",
+-            () -> new Item(new Item.Properties()));
++            () -> new Item(new Item.Properties().food(BUNNY_BOOM_BITE_FOOD)));
+     public static final RegistryObject<Item> HONEY_POP = ITEMS.register("honey_pop",
+-            () -> new Item(new Item.Properties()));
++            () -> new Item(new Item.Properties().food(HONEY_POP_FOOD)));
+     public static final RegistryObject<Item> CHERRY_BOMB_BONBON = ITEMS.register("cherry_bomb_bonbon",
+-            () -> new Item(new Item.Properties()));
++            () -> new Item(new Item.Properties().food(CHERRY_BOMB_BONBON_FOOD)));
+     public static final RegistryObject<Item> BLOSSOM_BURST_COOKIE = ITEMS.register("blossom_burst_cookie",
+-            () -> new Item(new Item.Properties()));
++            () -> new Item(new Item.Properties().food(BLOSSOM_BURST_COOKIE_FOOD)));
+ 
+     public static final RegistryObject<Item> FUSE_WHISTLE = ITEMS.register("fuse_whistle",
+             () -> new FuseWhistleItem(new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON)));
+--- a/src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java
++++ b/src/main/java/dev/herbertofury/creeperella/event/CommonEvents.java
+@@ -24,6 +24,7 @@
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.item.Items;
+ import net.minecraftforge.event.entity.living.LivingAttackEvent;
++import net.minecraftforge.event.level.ExplosionEvent;
+ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+ import net.minecraftforge.eventbus.api.SubscribeEvent;
+ import net.minecraftforge.fml.common.Mod;
+@@ -95,6 +96,24 @@
+     }
+ 
+     @SubscribeEvent
++    public static void onExplosionDetonate(ExplosionEvent.Detonate event) {
++        if (!CreeperellaConfig.ENABLE_COMPANIONS.get()
++                || !CreeperellaConfig.PROTECT_OWNER_AND_PETS_FROM_FOLLOWER_EXPLOSIONS.get()) {
++            return;
++        }
++
++        Entity sourceEntity = event.getExplosion().getExploder();
++        if (!(sourceEntity instanceof CreeperellaEntity companion) || !companion.isCompanionTamed()) {
++            return;
++        }
++
++        // Remove protected allies before vanilla computes explosion damage/knockback. The LivingAttackEvent
++        // guard below remains as defense in depth for modded explosion implementations.
++        event.getAffectedEntities().removeIf(entity ->
++                entity instanceof LivingEntity living && companion.isOwnedAlly(living));
++    }
++
++    @SubscribeEvent
+     public static void onLivingAttack(LivingAttackEvent event) {
+         if (!CreeperellaConfig.ENABLE_COMPANIONS.get()
+                 || !CreeperellaConfig.PROTECT_OWNER_AND_PETS_FROM_FOLLOWER_EXPLOSIONS.get()) {
+--- a/src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java
++++ b/src/main/java/dev/herbertofury/creeperella/item/FuseWhistleItem.java
+@@ -12,10 +12,14 @@
+ import net.minecraft.world.entity.Entity;
+ import net.minecraft.world.entity.LivingEntity;
+ import net.minecraft.world.entity.player.Player;
++import net.minecraft.world.entity.projectile.ProjectileUtil;
+ import net.minecraft.world.item.Item;
+ import net.minecraft.world.item.ItemStack;
+ import net.minecraft.world.level.Level;
+ import net.minecraft.world.phys.AABB;
++import net.minecraft.world.phys.EntityHitResult;
++import net.minecraft.world.phys.HitResult;
++import net.minecraft.world.phys.Vec3;
+ 
+ import java.util.Comparator;
+ import java.util.List;
+@@ -86,30 +90,89 @@
+             return InteractionResultHolder.success(stack);
+         }
+ 
+-        CreeperellaEntity companion = resolveCompanion(stack, player, false);
+-        if (companion == null) {
+-            player.displayClientMessage(Component.literal("No Creeperella companion is in command range.")
+-                    .withStyle(ChatFormatting.RED), true);
+-            return InteractionResultHolder.consume(stack);
+-        }
+-
+         if (player.isShiftKeyDown()) {
++            CreeperellaEntity companion = resolveCompanion(stack, player, true);
++            if (companion == null) {
++                player.displayClientMessage(Component.literal("No ready Creeperella companion is in command range.")
++                        .withStyle(ChatFormatting.RED), true);
++                return InteractionResultHolder.consume(stack);
++            }
+             if (!companion.commandDetonateNow(player)) {
+                 showCooldown(player, companion);
+             } else {
+                 player.displayClientMessage(Component.literal("BOOM! She'll reform beside you shortly.")
+                         .withStyle(ChatFormatting.GOLD), true);
+             }
+-        } else {
+-            if (companion.recallTo(player)) {
+-                player.displayClientMessage(Component.literal("Recalled ")
+-                        .append(companion.getDisplayName()).withStyle(ChatFormatting.LIGHT_PURPLE), true);
++            return InteractionResultHolder.consume(stack);
++        }
++
++        LivingEntity aimedTarget = findLongRangeTarget(player);
++        if (aimedTarget != null) {
++            CreeperellaEntity companion = resolveCompanion(stack, player, true);
++            if (companion == null) {
++                player.displayClientMessage(Component.literal("No ready Creeperella companion is in command range.")
++                        .withStyle(ChatFormatting.RED), true);
++                return InteractionResultHolder.consume(stack);
++            }
++            if (!companion.isValidCommandTarget(player, aimedTarget)) {
++                player.displayClientMessage(Component.literal("That target is protected from your Creeperella.")
++                        .withStyle(ChatFormatting.YELLOW), true);
++                return InteractionResultHolder.consume(stack);
++            }
++            if (!companion.commandTarget(player, aimedTarget)) {
++                showCooldown(player, companion);
++                return InteractionResultHolder.consume(stack);
+             }
++            player.displayClientMessage(Component.literal("Boom run: ")
++                    .append(companion.getDisplayName())
++                    .append(Component.literal(" -> "))
++                    .append(aimedTarget.getDisplayName())
++                    .withStyle(ChatFormatting.GOLD), true);
++            return InteractionResultHolder.consume(stack);
++        }
++
++        CreeperellaEntity companion = resolveCompanion(stack, player, false);
++        if (companion == null) {
++            player.displayClientMessage(Component.literal("No Creeperella companion is in command range.")
++                    .withStyle(ChatFormatting.RED), true);
++            return InteractionResultHolder.consume(stack);
++        }
++        if (companion.recallTo(player)) {
++            player.displayClientMessage(Component.literal("Recalled ")
++                    .append(companion.getDisplayName()).withStyle(ChatFormatting.LIGHT_PURPLE), true);
++        } else if (companion.isReforming()) {
++            showCooldown(player, companion);
+         }
+ 
+         return InteractionResultHolder.consume(stack);
+     }
+ 
++    private static LivingEntity findLongRangeTarget(Player player) {
++        double range = CreeperellaConfig.COMMAND_RANGE.get();
++        Vec3 eye = player.getEyePosition();
++        Vec3 look = player.getViewVector(1.0F);
++
++        // Respect walls: first clip the view ray against blocks, then only search entities along
++        // the unobstructed section. This makes the whistle feel deliberate instead of x-ray targeting.
++        HitResult blockHit = player.pick(range, 1.0F, false);
++        double visibleRange = range;
++        if (blockHit.getType() != HitResult.Type.MISS) {
++            visibleRange = Math.min(range, eye.distanceTo(blockHit.getLocation()));
++        }
++
++        Vec3 end = eye.add(look.scale(visibleRange));
++        AABB searchBox = player.getBoundingBox().expandTowards(look.scale(visibleRange)).inflate(1.0D);
++        EntityHitResult hit = ProjectileUtil.getEntityHitResult(
++                player, eye, end, searchBox,
++                entity -> entity instanceof LivingEntity living
++                        && living.isAlive()
++                        && living != player
++                        && living.isPickable()
++                        && !living.isSpectator(),
++                visibleRange * visibleRange);
++        return hit != null && hit.getEntity() instanceof LivingEntity living ? living : null;
++    }
++
+     private static void bind(ItemStack stack, CreeperellaEntity companion) {
+         stack.getOrCreateTag().putUUID(TAG_BOUND, companion.getUUID());
+     }
+@@ -122,7 +186,12 @@
+         if (tag != null && tag.hasUUID(TAG_BOUND)) {
+             UUID id = tag.getUUID(TAG_BOUND);
+             Entity entity = serverLevel.getEntity(id);
+-            if (entity instanceof CreeperellaEntity companion && companion.isOwnedBy(player)) {
++            double commandRange = CreeperellaConfig.COMMAND_RANGE.get();
++            if (entity instanceof CreeperellaEntity companion
++                    && companion.isOwnedBy(player)
++                    && companion.distanceToSqr(player) <= commandRange * commandRange) {
++                // A bound companion stays authoritative even while cooling down so the whistle can
++                // report its remaining recharge instead of silently switching to a different pet.
+                 if (!requireReady || companion.isReadyToDetonate()) {
+                     return companion;
+                 }
