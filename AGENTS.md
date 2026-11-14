@@ -24,3 +24,9 @@ Project Constellation is **ACTIVE** and runs in **NORMAL_OPERATION**. Its durabl
 ## Skills
 
 Every skill and skill-driven workflow follows the same durable-source rule. Keep versionable continuity state in GitHub and appropriate complete artifacts in Google Drive. Do not make ephemeral sandbox copies the sole checkpoint.
+
+## Shared engineering core and scoped skills
+
+Read `.agents/foundry/AGENTS-adapter.md` for the pinned shared engineering core. The existing durable continuity/source-priority contract above remains repository-owned and unchanged; do not sync its project-specific state into the global core.
+
+For continuity reconciliation and checkpoint verification, use `.agents/skills/checkpoint-reconciliation/SKILL.md`. For Minecraft development, the existing substantive skill remains `tools/minecraft-dev-kit/SKILL.md`; read it in place with its referenced files rather than duplicating a stale copy. Guidance-only changes must not trigger source-recovery/publication workflows or promote active verification branches.
